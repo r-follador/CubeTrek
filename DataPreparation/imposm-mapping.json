@@ -1,0 +1,34 @@
+{
+    "tables": {
+        "peaks": {
+            "columns": [
+                {
+                    "type": "id",
+                    "name": "osm_id",
+                    "key": null
+                },
+                {
+                    "type": "geometry",
+                    "name": "geometry",
+                    "key": null
+                },
+                {
+                    "type": "string",
+                    "name": "name",
+                    "key": "name"
+                },
+                {
+                    "type": "string",
+                    "name": "ele",
+                    "key": "ele"
+                }
+            ],
+            "type": "point",
+            "mapping": {
+                "natural": [
+                    "peak"
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
+
+<head>
+    <title>Log in</title>
+    <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+
+    <link href="../css/signin.css" rel="stylesheet">
+</head>
+<body class="text-center">
+
+<main class="form-signin">
+    <div th:if="${param.error}" class="alert alert-primary" role="alert">
+        Invalid username and password.
+    </div>
+
+    <div th:if="${param.logout}" class="alert alert-primary" role="alert">
+        You have been logged out.
+    </div>
+
+    <form th:action="@{/login}" method="post">
+        <img class="mb-4" src="../assets/logo.svg" alt="" width="200" height="200">
+        <h1 class="h3 mb-3 fw-normal">Sign in</h1>
+        <label for="username" class="visually-hidden">Username</label>
+        <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
+        <label for="password" class="visually-hidden">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+        <p class="mt-5 mb-3 text-muted">&copy; 2021</p>
+    </form>
+</main>
+
+</body>
+</html>

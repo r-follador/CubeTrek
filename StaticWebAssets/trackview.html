@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CubeTrek</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+
+    <link href="dashboard.css" rel="stylesheet">
+
+    <script src="babylon.max.js"></script>
+    <script src="babylonjs.loaders.js"></script>
+
+    <script src="d3-regression.min.js"></script>
+    <script src="d3.js"></script>
+
+</head>
+<body>
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">← CubeTrek</a>
+    <div class="navbar-brand col-auto me-0 px-3 lead">
+         Montalin Hike on Sunny Autumn Day
+    </div>
+    <ul class="navbar-nav">
+            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                <img height="20px" src="cubetrek_settings.svg"></a>
+    </ul>
+    <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+            <a class="nav-link" href="#" href="/logout">Sign out</a>
+        </li>
+    </ul>
+</header>
+
+    <div class="progress" id="progressdiv">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar" style="width: 5%"></div>
+    </div>
+    <div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
+        A simple danger alert—check it out!
+    </div>
+    <div class="row g-0">
+        <div class="col-xl-8 position-relative">
+            <canvas class="mw-100 mh-100 p-0 m-0" style="width: 100%; touch-action: none; z-index: 0; outline: none;" id="renderCanvas" touch-action="none"></canvas>
+            <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked onchange="mapstyle('summer')">
+                <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" onchange="mapstyle('winter')">
+                <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off" onchange="mapstyle('satellite')">
+                <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
+            </div>
+        </div>
+        <div class="col-xl-4 p-1">
+            <div class="row">
+                <div class="col-12 p-0 m-0" id="graph"></div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <div class="dropdown">
+                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                        ...
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal Speed</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical Speed</a></li>
+                    </ul>
+                </div>
+                <div class="p-1">versus</div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                        ...
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed Time</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving Time</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
+                    </ul>
+                </div>
+            </div>
+
+
+            <div class="row pb-2">
+                <div class="figure-caption">Sunday, 12. April 2020 11:00 <button class="btn btn-primary btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button></div>
+                <div class="display-6"><img height="50px" src="cubetrek_icon_hiking.svg">Montalin Hike on a Sunny Autumn Day blablablablabla blblabl blabla blab llalblalbalblab blablalbabl</div>
+            </div>
+
+            <div class="row">
+                <h4 class="h4 col"><small class="text-muted fw-light">Distance</small> <div id="value_distance">15.5 km</div></h4>
+                <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small> <div id="value_elevation_up">1500m</div></h4>
+            </div>
+            <div class="row">
+                <h4 class="h4 col"><small class="text-muted fw-light">Time</small> <div id="value_time">2:22 h</div></h4>
+                <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small> <div id="value_elevation_down">1500m</div></h4>
+            </div>
+            <div class="row pb-2">
+                <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small> <div id="value_highest_point">1500m</div></h4>
+                <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small> <div id="value_lowest_point">1500m</div></h4>
+            </div>
+            <div class="row">
+                <h4 class="h4 col"><small class="text-muted fw-light">Average Speed</small></h4>
+            </div>
+            <div class="row">
+                <h5 class="h5 col"><small class="text-muted fw-light">Horizontal→</small> <div id="value_horizontal_average">...</div></h5>
+                <h5 class="h5 col"><small class="text-muted fw-light">Vertical↑</small> <div id="value_vertical_up_average">...</div></h5>
+                <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small> <div id="value_vertical_down_average">...</div></h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-2">
+                <h4 class="h4 col text-muted fw-light">Comment</h4>
+            </div>
+            <div class="col">
+                <i>None</i>
+            </div>
+        </div>
+    </div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">View Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Track</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="inputTitle" class="form-label">Track Title</label>
+                        <input type="text" class="form-control" id="inputTitle" value="Montalin Blabla">
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputType" class="form-label">Track Type</label>
+                        <select class="form-select" id="inputType">
+                            <option value="Hike" selected>Hike</option>
+                            <option value="Run">Run</option>
+                            <option value="Mountaineering">Mountaineering</option>
+                            <option value="Skimountaineering">Ski Mountaineering</option>
+                            <option value="Crosscountryski">Cross Country Skiing</option>
+                            <option value="Biking">Biking</option>
+                            <option value="Snowshoeing">Snowshoeing</option>
+                            <option value="Unknown">Unknown Activity</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputComment" class="form-label">Comment</label>
+                        <textarea class="form-control" id="inputComment" rows="10">Blabla</textarea>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    var trackname = 9060;
+    var distance = 15000;
+    var elevationUp = 1550;
+    var elevationDown = 1430;
+    var highestElevationPoint = 1800;
+    var lowestElevationPoint = 1420;
+    var writeAccess = true;
+</script>
+<script src="trackview.js"></script>
+
+</body>
+</html>

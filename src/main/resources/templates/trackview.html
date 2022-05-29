@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VerticalTrack</title>
+    <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/webjars/d3js/d3.min.js}"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
+
+
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+
+    <style>
+        #parent-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #title {
+            background-color: rgba(255, 255, 255, 0.50);
+            position: absolute;
+            top: 20px;
+            left: 100px;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 3/1;
+            touch-action: none;
+            z-index: 0;
+        }
+
+        #graph {
+            position: absolute;
+            bottom: 0;
+            left: 30px;
+        }
+
+        path {
+            stroke: #ff8001;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 1;
+            shape-rendering: crispEdges;
+        }
+    </style>
+</head>
+<body>
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">VerticalTrack 3</a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
+            aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+            <a class="nav-link" href="#" th:href="@{/logout}">Sign out</a>
+        </li>
+    </ul>
+</header>
+
+                <div class="container-fluid" id="parent-container">
+                    <div class="progress" id="progressdiv">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar" style="width: 5%"></div>
+                    </div>
+                    <canvas id="renderCanvas" touch-action="none" width="1000" height="500"></canvas>
+
+                    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" id="title">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-1">
+                            <h3 class="h3" th:text="${trackid}" id="activity_title">Hike</h3>
+                            <div class="btn-toolbar mb-2 mb-md-0">
+                                <div class="btn-group me-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+                <div style="height: 200px; width: 700px" class="block-bg" id="graph"></div>
+
+
+                <script>
+                    var trackname = [[${trackid}]];
+                </script>
+                <script src="../js/trackview.js"></script>
+
+</body>
+</html>

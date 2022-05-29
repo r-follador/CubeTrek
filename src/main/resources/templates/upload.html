@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
+
+<head>
+    <title>VerticalTrack</title>
+    <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
+    <style>
+        .drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 20px;
+            width: 480px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">VerticalTrack 3</a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+            <a class="nav-link" href="#" th:href="@{/logout}">Sign out</a>
+        </li>
+    </ul>
+</header>
+<div class="container-fluid">
+    <div class="row">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="../dashboard">
+                            <span data-feather="home"></span>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file"></span>
+                            Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="shopping-cart"></span>
+                            Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="users"></span>
+                            Customers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="bar-chart-2"></span>
+                            Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="layers"></span>
+                            Integrations
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Saved reports</span>
+                    <a class="link-secondary" href="#" aria-label="Add a new report">
+                        <span data-feather="plus-circle"></span>
+                    </a>
+                </h6>
+                <ul class="nav flex-column mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Current month
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Last quarter
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Social engagement
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Year-end sale
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2" th:text="'Upload for ' + ${user.getEmail()}" >Upload</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+                        <span data-feather="calendar"></span>
+                        This week
+                    </button>
+                </div>
+            </div>
+
+                <div id="drop_zone" class="drop-area">
+                    <input type="file" id="uploadfile" multiple>
+                    <p>Click or drag files. Accepted file types: GPX and FIT.</p>
+                </div>
+
+
+
+            <table class="table" id="table" style="display: none;">
+               <thead><tr>
+                   <th>File name</th>
+                   <th>Track Name</th>
+                   <th>Type</th>
+                   <th>Date</th>
+                   <th>Distance</th>
+                   <th>Elevation Gain</th>
+                   <th>Time</th>
+                   <th> </th>
+               </tr></thead>
+                <tbody>
+                </tbody>
+            </table>
+
+
+        </main>
+    </div>
+</div>
+<script>
+    const inputElement = document.getElementById("uploadfile");
+    const dropbox = document.getElementById("drop_zone");
+    const table = document.getElementById("table");
+
+    inputElement.addEventListener("change", changeFiles, false);
+    dropbox.addEventListener("dragenter", dragenter, false);
+    dropbox.addEventListener("dragover", dragover, false);
+    dropbox.addEventListener("drop", drop, false);
+
+    function changeFiles() {
+        handleFiles(this.files)
+    }
+    function handleFiles(fileList) {
+
+        for (let i = 0, numFiles = fileList.length; i < numFiles; i++) {
+            const file = fileList[i];
+            sendFile(file);
+        }
+    }
+
+    var tableStore = {key1: "empty"};
+    var concurrentuploads = 0;
+
+    function sendFile(file) {
+        table.style.display = 'block';
+        const uri = "/upload";
+        const xhr = new XMLHttpRequest();
+        const fd = new FormData();
+
+        tableStore[file.name+file.lastModified] = table.insertRow(-1);
+        tableStore[file.name+file.lastModified].insertCell(0).appendChild(document.createTextNode(file.name));
+        tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<div class=\"progress\"><div class=\"progress-bar progress-bar-striped progress-bar-animated\" role=\"progressbar\" style=\"width: 0%\" id='progress"+file.name+file.lastModified+"'></div></div>";
+        tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "<div class=\"spinner-border spinner-border-sm text-info\" role=\"status\" />";
+
+
+        xhr.open("POST", uri, true);
+        xhr.upload.onprogress = function(evt)
+        {
+            var percentComplete = evt.loaded / file.size * 100;
+            document.getElementById("progress"+file.name+file.lastModified).setAttribute("style","width: "+percentComplete+"%");
+        };
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                tableStore[file.name+file.lastModified].deleteCell(2);
+                tableStore[file.name+file.lastModified].deleteCell(1);
+                var responsejson = JSON.parse(xhr.responseText);
+                tableStore[file.name+file.lastModified].insertCell(1).innerHTML = responsejson.title;
+                tableStore[file.name+file.lastModified].insertCell(2).innerHTML = responsejson.activitytype;
+                tableStore[file.name+file.lastModified].insertCell(3).innerHTML = (new Date(Date.parse(responsejson.date))).toLocaleString();
+                tableStore[file.name+file.lastModified].insertCell(4).innerHTML = (parseFloat(responsejson.trackSummary.distance)/1000).toFixed(1) + " km";
+                tableStore[file.name+file.lastModified].insertCell(5).innerHTML = responsejson.trackSummary.elevationUp + " m";
+                tableStore[file.name+file.lastModified].insertCell(6).innerHTML = minToString(parseInt(responsejson.trackSummary.duration))+ " h";
+                tableStore[file.name+file.lastModified].insertCell(7).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank'>View</a>";
+            }
+            else if (xhr.readyState === 4 && xhr.status === 400) {
+                tableStore[file.name+file.lastModified].deleteCell(2);
+                tableStore[file.name+file.lastModified].deleteCell(1);
+                var responsejson = JSON.parse(xhr.responseText);
+                tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
+                tableStore[file.name+file.lastModified].insertCell(2).innerHTML = responsejson.response;
+            } else if (xhr.readyState === 4 && xhr.status === 0) {
+                tableStore[file.name+file.lastModified].deleteCell(2);
+                tableStore[file.name+file.lastModified].deleteCell(1);
+                tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
+                tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "No response from server";
+            } else if (xhr.readyState === 4) {
+                tableStore[file.name+file.lastModified].deleteCell(2);
+                tableStore[file.name+file.lastModified].deleteCell(1);
+                tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
+                tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "Error "+xhr.status;
+            }
+        };
+        fd.append('file', file);
+        // Initiate a multipart/form-data upload
+        concurrentuploads++;
+        setTimeout(function() {
+            xhr.send(fd);
+        }, Math.max(concurrentuploads-5,0)*10); //TODO: longer timeouts for production
+    }
+
+    function minToString(minutes) {
+        var m = minutes % 60;
+        var h = (minutes-m)/60;
+        return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+    function dragenter(e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    function dragover(e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    function drop(e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+
+
+
+
+</script>
+
+</body>
+</html>

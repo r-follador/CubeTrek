@@ -1,0 +1,5 @@
+{
+    "cachedir": "/tmp/imposm_cache",
+    "connection": "postgis://postgres:***REMOVED***@localhost:5432/verticaltrack",
+    "mapping": "/home/rainer/Software_Dev/IdeaProjects/Cubetrek/DataPreparation/imposm-mapping.json"
+}
