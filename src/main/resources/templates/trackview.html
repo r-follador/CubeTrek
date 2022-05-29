@@ -5,101 +5,200 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>VerticalTrack</title>
-    <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <script th:src="@{/webjars/d3js/d3.min.js}"></script>
+    <title>CubeTrek</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+
     <link href="../css/dashboard.css" rel="stylesheet">
 
+    <script src="../js/babylon.max.js"></script>
+    <script src="../js/babylonjs.loaders.js"></script>
 
-    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="../js/d3-regression.min.js"></script>
+    <script src="../js/d3.js"></script>
 
-
-    <style>
-        #parent-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        #title {
-            background-color: rgba(255, 255, 255, 0.50);
-            position: absolute;
-            top: 20px;
-            left: 100px;
-        }
-
-        #renderCanvas {
-            width: 100%;
-            height: 100%;
-            aspect-ratio: 3/1;
-            touch-action: none;
-            z-index: 0;
-        }
-
-        #graph {
-            position: absolute;
-            bottom: 0;
-            left: 30px;
-        }
-
-        path {
-            stroke: #ff8001;
-            stroke-width: 2;
-            fill: none;
-        }
-
-        .axis path,
-        .axis line {
-            fill: none;
-            stroke: #ffffff;
-            stroke-width: 1;
-            shape-rendering: crispEdges;
-        }
-    </style>
 </head>
 <body>
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">VerticalTrack 3</a>
-    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse"
-            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
-            aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">← CubeTrek</a>
+    <div class="navbar-brand col-auto me-0 px-3 lead">
+        [[${trackmetadata.title}]]
+    </div>
+    <ul class="navbar-nav">
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            <img height="20px" src="../assets/cubetrek_settings.svg"></a>
+    </ul>
     <ul class="navbar-nav px-3">
         <li class="nav-item text-nowrap">
-            <a class="nav-link" href="#" th:href="@{/logout}">Sign out</a>
+            <a class="nav-link" href="#">Sign out</a>
         </li>
     </ul>
 </header>
 
-                <div class="container-fluid" id="parent-container">
-                    <div class="progress" id="progressdiv">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar" style="width: 5%"></div>
-                    </div>
-                    <canvas id="renderCanvas" touch-action="none" width="1000" height="500"></canvas>
+<div class="progress" id="progressdiv">
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar" style="width: 5%"></div>
+</div>
+<div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
+    A simple danger alert—check it out!
+</div>
+<div class="row g-0">
+    <div class="col-xl-8 position-relative">
+        <canvas class="mw-100 mh-100 p-0 m-0" style="width: 100%; touch-action: none; z-index: 0; outline: none;" id="renderCanvas" touch-action="none"></canvas>
+        <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
+            <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked onchange="mapstyle('summer')">
+            <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
+            <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" onchange="mapstyle('winter')">
+            <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
+            <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off" onchange="mapstyle('satellite')">
+            <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
+        </div>
+    </div>
+    <div class="col-xl-4 p-1">
+        <div class="row">
+            <div class="col-12 p-0 m-0" id="graph"></div>
+        </div>
+        <div class="d-flex justify-content-end">
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                    ...
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal Speed</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical Speed</a></li>
+                </ul>
+            </div>
+            <div class="p-1">versus</div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                    ...
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed Time</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving Time</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
+                </ul>
+            </div>
+        </div>
 
-                    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" id="title">
-                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-1">
-                            <h3 class="h3" th:text="${trackid}" id="activity_title">Hike</h3>
-                            <div class="btn-toolbar mb-2 mb-md-0">
-                                <div class="btn-group me-2">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
+
+        <div class="row pb-2">
+            <div class="figure-caption">[[${dateCreatedString}]] <button class="btn btn-primary btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button></div>
+            <div class="display-6"><img height="50px" src="../assets/cubetrek_icon_hiking.svg">[[${trackmetadata.title}]]</div>
+        </div>
+
+        <div class="row">
+            <h4 class="h4 col"><small class="text-muted fw-light">Distance</small> <div id="value_distance">[[${trackmetadata.distance}]] m</div></h4>
+            <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small> <div id="value_elevation_up">[[${trackmetadata.elevationUp}]] km</div></h4>
+        </div>
+        <div class="row">
+            <h4 class="h4 col"><small class="text-muted fw-light">Elapsed Time</small> <div id="value_time">[[${timeString}]] h</div></h4>
+            <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small> <div id="value_elevation_down">[[${trackmetadata.elevationDown}]]</div></h4>
+        </div>
+        <div class="row pb-2">
+            <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small> <div id="value_highest_point">[[${trackmetadata.highestpointEle}]]</div></h4>
+            <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small> <div id="value_lowest_point">[[${trackmetadata.lowestpointEle}]]</div></h4>
+        </div>
+        <div class="row">
+            <h4 class="h4 col"><small class="text-muted fw-light">Average Speed</small></h4>
+        </div>
+        <div class="row">
+            <h5 class="h5 col"><small class="text-muted fw-light">Horizontal→</small> <div id="value_horizontal_average">...</div></h5>
+            <h5 class="h5 col"><small class="text-muted fw-light">Vertical↑</small> <div id="value_vertical_up_average">...</div></h5>
+            <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small> <div id="value_vertical_down_average">...</div></h5>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-2">
+            <h4 class="h4 col text-muted fw-light">Comment</h4>
+        </div>
+        <div class="col" th:unless="${#strings.isEmpty(trackmetadata.comment)}">
+            [[${trackmetadata.comment}]]
+        </div>
+        <div class="col" th:if="${#strings.isEmpty(trackmetadata.comment)}">
+            <i>None</i>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">View Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
                 </div>
-                <div style="height: 200px; width: 700px" class="block-bg" id="graph"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Track</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="inputTitle" class="form-label">Track Title</label>
+                        <input type="text" class="form-control" id="inputTitle" value="Montalin Blabla">
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputType" class="form-label">Track Type</label>
+                        <select class="form-select" id="inputType">
+                            <option value="Hike" selected>Hike</option>
+                            <option value="Run">Run</option>
+                            <option value="Mountaineering">Mountaineering</option>
+                            <option value="Skimountaineering">Ski Mountaineering</option>
+                            <option value="Crosscountryski">Cross Country Skiing</option>
+                            <option value="Biking">Biking</option>
+                            <option value="Snowshoeing">Snowshoeing</option>
+                            <option value="Unknown">Unknown Activity</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputComment" class="form-label">Comment</label>
+                        <textarea class="form-control" id="inputComment" rows="10">Blabla</textarea>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
-                <script>
-                    var trackname = [[${trackid}]];
-                </script>
-                <script src="../js/trackview.js"></script>
+<script>
+    var trackid = [[${trackmetadata.id}]];
+    var distance = [[${trackmetadata.distance}]];
+    var elevationUp = [[${trackmetadata.elevationUp}]];
+    var elevationDown = [[${trackmetadata.elevationDown}]];
+    var highestElevationPoint = [[${trackmetadata.highestpointEle}]];
+    var lowestElevationPoint = [[${trackmetadata.lowestpointEle}]];
+    var writeAccess = true;
+</script>
+<script src="../js/trackview.js"></script>
 
 </body>
 </html>

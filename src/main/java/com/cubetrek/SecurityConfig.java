@@ -16,14 +16,6 @@ import org.springframework.web.cors.CorsUtils;
 @Configuration
 @EnableWebSecurity(debug = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        //Websecurity takes precedence to HttpSecurity
-        web.ignoring().requestMatchers(CorsUtils::isPreFlightRequest)
-                //.antMatchers("/webjars/**", "/css/**", "/assets/**", "/js/**");
-                .antMatchers("**");
-        //TODO: remove; no login required
-    }
 
 
     @Override

@@ -610,6 +610,7 @@ function settings() {
 
     if (metric) {
         document.getElementById("metricChecked").checked = true;
+        setMetric();
     } else {
         document.getElementById("metricChecked").checked = false;
         setMetric();

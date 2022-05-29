@@ -123,45 +123,34 @@ public class MainController {
     @GetMapping(value="/view/{itemid}")
     public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
-        model.addAttribute("trackid", trackid);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        model.addAttribute("user", user);
-
-        return "trackview";
+        return trackViewerService.mapView3D(user, trackid, model);
     }
 
     @GetMapping(value="/view_2d/{itemid}")
     public String viewTrack_2d(@PathVariable("itemid") long trackid, Model model)
     {
-        model.addAttribute("trackid", trackid);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-
         return trackViewerService.mapView2D(user, trackid, model);
     }
 
     @ResponseBody
     @GetMapping(value = "/api/simplifiedtrack/{itemid}.geojson", produces = "application/json")
     public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, Model model) {
-        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        //Users user = (Users)authentication.getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
 
-        //return trackViewerService.getTrackGeojson(user, trackid);
-
-        //Todo: reset authentication
-
-        return trackViewerService.getTrackGeojson(null, trackid);
+        return trackViewerService.getTrackGeojson(user, trackid);
     }
 
     @ResponseBody
     @GetMapping(value = "/api/gltf/{itemid}.gltf", produces = "text/plain")
     public String getGLTF(@PathVariable("itemid") long trackid, Model model) {
-        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        //Users user = (Users)authentication.getPrincipal();
-        //return trackViewerService.getGLTF(user, trackid);
-        //Todo: reset authentication
-        return trackViewerService.getGLTF(null, trackid);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        return trackViewerService.getGLTF(user, trackid);
     }
 
     /**

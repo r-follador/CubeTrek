@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class TrackViewerService {
@@ -26,9 +27,7 @@ public class TrackViewerService {
 
     public String getGLTF(Users user, long trackid) {
         TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
-        //isAccessAllowed(user, track);
-        //Todo: reset access check
-
+        isAccessAllowed(user, track);
         LatLonBoundingBox boundingBox = addPadding(track.getBBox());
 
 
@@ -59,8 +58,7 @@ public class TrackViewerService {
     @Transactional
     public TrackGeojson getTrackGeojson(Users user, long trackid) {
         TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
-        //isAccessAllowed(user, track);
-        //Todo: reset access check
+        isAccessAllowed(user, track);
 
         return new TrackGeojson(track);
     }
@@ -76,6 +74,21 @@ public class TrackViewerService {
         model.addAttribute("user", user);
 
         return "trackview_2d";
+    }
+
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm");
+
+    @Transactional
+    public String mapView3D(Users user, long trackid, Model model) {
+        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
+        isAccessAllowed(user, track);
+        model.addAttribute("trackmetadata", track);
+        model.addAttribute("user", user);
+        int hours = track.getDuration() / 60;
+        int minutes = track.getDuration() % 60;
+        model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
+        model.addAttribute("dateCreatedString", track.getDateTrack().format(formatter));
+        return "trackview";
     }
 
     private static boolean isAccessAllowed(Users user, TrackMetadata track) {
