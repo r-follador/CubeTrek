@@ -44,6 +44,16 @@ public class ExceptionHandling {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler({EditTrackmetadataException.class})
+    public final ResponseEntity<Object> handleEditTrackmetadaata(EditTrackmetadataException ex) {
+
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setResponse(ex.msg);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+
 
     @AllArgsConstructor
     public static class FileNotAccepted extends RuntimeException {

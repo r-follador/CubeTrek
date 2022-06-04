@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -200,9 +201,6 @@ public class MainController {
         };
 
         response.setHeader("Location", mapaccession);
-
-        //response.setHeader("Location", String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=j2l5mrAxnWdu6xX99JQp", zoom, x,y));
-
         response.setStatus(302);
     }
 
@@ -215,14 +213,42 @@ public class MainController {
     }
 
     @ResponseBody
-    @PostMapping(value="/api/modify")
-    public EditTrackmetadataResponse editTrackmetadata(EditTrackmetadataDto editTrackmetadataDto) {
-        if (!editTrackmetadataDto.check())
-            throw new ExceptionHandling.EditTrackmetadataException(editTrackmetadataDto.getErrorMessage());
-
-        return new EditTrackmetadataResponse(true);
-
+    @RequestMapping(value="/api/modify")
+    public UpdateTrackmetadataResponse updateTrackmetadata(@RequestBody EditTrackmetadataDto editTrackmetadataDto) {
+        //TODO: check permission
+        return storageService.editTrackmetadata(editTrackmetadataDto);
     }
 
+    @Transactional
+    @ResponseBody
+    @GetMapping(value="/api/modify/id={id}&favorite={favorite}")
+    public UpdateTrackmetadataResponse updateTrackFavorite(@PathVariable("id") long id, @PathVariable("favorite") boolean favorite) {
+        //TODO: check permission
+        trackMetadataRepository.updateTrackFavorite(id, favorite);
+        if (favorite)
+            trackMetadataRepository.updateTrackHidden(id, false);
+        return new UpdateTrackmetadataResponse(true);
+    }
+
+    @Transactional
+    @ResponseBody
+    @GetMapping(value="/api/modify/id={id}&hidden={hidden}")
+    public UpdateTrackmetadataResponse updateTrackHidden(@PathVariable("id") long id, @PathVariable("hidden") boolean hidden) {
+        //TODO: check permission
+        trackMetadataRepository.updateTrackHidden(id, hidden);
+        if (hidden) //if hidden, it can't be favorited
+            trackMetadataRepository.updateTrackFavorite(id, false);
+        return new UpdateTrackmetadataResponse(true);
+    }
+
+    @Transactional
+    @ResponseBody
+    @DeleteMapping(value="/api/delete/id={id}")
+    public UpdateTrackmetadataResponse deleteTrack(@PathVariable("id") long id) {
+        //TODO: check permission
+        System.out.println("Delete "+id);
+        trackMetadataRepository.deleteById(id);
+        return new UpdateTrackmetadataResponse(true);
+    }
 
 }

@@ -8,36 +8,36 @@ public class EditTrackmetadataDto {
 
     @Getter
     @Setter
-    public long index;
+    private Long index;
 
     @Getter
     @Setter
-    public String title;
+    private String title;
 
     @Getter
     @Setter
-    public TrackMetadata.Activitytype activitytype;
+    private TrackMetadata.Activitytype activitytype;
 
     @Getter
     @Setter
-    public String note;
+    private String note;
 
     @Getter
-    String errorMessage;
+    private String errorMessage;
 
     public boolean check() {
-        if (title == null || title.isBlank()) {
+        if (index == null) {
+            errorMessage = "Error: Wrong track";
+            return false;
+        }
+
+        if (title != null && title.isBlank()) {
             errorMessage = "Title cannot be empty";
             return false;
         }
 
-        if (title.length() > 250) {
+        if (title != null && title.length() > 250) {
             errorMessage = "Title is too long (max. 250 characters)";
-            return false;
-        }
-
-        if (activitytype == null) {
-            errorMessage = "Activity Type cannot be empty";
             return false;
         }
 

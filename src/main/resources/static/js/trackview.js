@@ -272,7 +272,7 @@ function prepareGraph(jsonData) {
         if (isNaN(horizontalSpeed_km_per_h))
             horizontalSpeed_km_per_h = 0;
 
-        if (time_diff_hour < (1/60)) {
+        if ((time-previousTime)/1000 < (60) || Math.abs(elevation-previousElevation)>3) {
             movingTime += (time - previousTime);
             if (elevation-previousElevation > 0) {
                 verticalDistSumUp += (elevation-previousElevation);
@@ -300,6 +300,9 @@ function prepareGraph(jsonData) {
     minAltitude = d3.min(datas, function(d) {return d.altitude});
 
     drawGraph(graphYAxis, graphXAxis);
+
+    let movingTimeMinutes = movingTime/60000;
+    document.getElementById("movingtime").innerText = Math.floor(movingTimeMinutes/60)+":"+Math.floor(movingTimeMinutes%60).toString().padStart(2,"0");
 }
 
 function drawGraph(yaxis, xaxis) {
@@ -714,14 +717,95 @@ function saveEdit() {
     let editType = document.getElementById("inputType").value;
     let editComment = document.getElementById("inputComment").value;
 
-    let data = {index: trackid, title: editTitle, activitytype: editType, comment: editComment};
+    let data = {index: trackid, title: editTitle, activitytype: editType, note: editComment};
 
     fetch(root+"modify", {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(res => {
-        console.log("Request complete! response:", res);
+        res.json().then(response => {
+            if (res.ok) {
+                document.getElementById("successmessageedit").innerText = "Changes saved";
+                document.getElementById("successmessageedit").style.display = "block";
+                location.reload();
+            } else {
+                document.getElementById("errormessageedit").innerText = response.response;
+                document.getElementById("errormessageedit").style.display = "block";
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
     });
+}
 
+function clickfavorite() {
+    fetch(root+"modify/id="+trackid+"&favorite="+(!favorite), {
+        method: "GET"
+    }).then(res => {
+        res.json().then(response => {
+            if (res.ok) {
+                favorite = !favorite;
+                if (favorite)
+                    document.getElementById("favoritestar").src="../assets/icon_favorite_select.svg";
+                else
+                    document.getElementById("favoritestar").src="../assets/icon_favorite_unselect.svg";
+
+                document.getElementById("favoriteChecked").checked = favorite;
+                if (hidden)
+                    location.reload();
+            } else {
+                //not good
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
+    });
+}
+
+function clickhide(confirmed) {
+    if (!hidden && !confirmed) {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmhidden')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide();
+        document.getElementById("hiddenChecked").checked = false;
+        return;
+    }
+    fetch(root+"modify/id="+trackid+"&hidden="+(!hidden), {
+        method: "GET"
+    }).then(res => {
+        res.json().then(response => {
+            if (res.ok) {
+                location.reload();
+            } else {
+                //not good
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
+    });
+}
+
+function clickdelete(confirmed) {
+    if (!confirmed) {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmdelete')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide();
+        return;
+    }
+    fetch(root + "delete/id=" + trackid, {
+        method: "DELETE"
+    }).then(res => {
+        res.json().then(response => {
+            if (res.ok) {
+                location.href="../../dashboard";
+            } else {
+                //not good
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
+    });
 }

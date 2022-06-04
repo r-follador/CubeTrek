@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -219,7 +221,7 @@ public class StorageService {
     }
 
     private String createTitle(LatLon highestPoint, TrackMetadata trackMetadata) {
-        OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 150);
+        OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
         if (peak != null)
             return peak.getName();
 
@@ -239,10 +241,35 @@ public class StorageService {
             logger.error("Error reverse Geocode", e);
             return null;
         }
-        System.out.println(geoFeatureText);
         if (geoFeatureText.equals("-"))
             return null;
         else
             return geoFeatureText;
+    }
+
+    @Transactional
+    public UpdateTrackmetadataResponse editTrackmetadata(@RequestBody EditTrackmetadataDto editTrackmetadataDto) {
+        if (editTrackmetadataDto==null)
+            throw new ExceptionHandling.EditTrackmetadataException("Failed to Submit Modifications");
+
+        if (!editTrackmetadataDto.check())
+            throw new ExceptionHandling.EditTrackmetadataException(editTrackmetadataDto.getErrorMessage());
+
+        trackMetadataRepository.updateTrackMetadata(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), editTrackmetadataDto.getNote(), editTrackmetadataDto.getActivitytype());
+
+        return new UpdateTrackmetadataResponse(true);
+    }
+
+    @Transactional
+    public UpdateTrackmetadataResponse editTrackFavorite(@RequestBody EditTrackmetadataDto editTrackmetadataDto) {
+        if (editTrackmetadataDto==null)
+            throw new ExceptionHandling.EditTrackmetadataException("Failed to Submit Modifications");
+
+        if (!editTrackmetadataDto.check())
+            throw new ExceptionHandling.EditTrackmetadataException(editTrackmetadataDto.getErrorMessage());
+
+        trackMetadataRepository.updateTrackMetadata(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), editTrackmetadataDto.getNote(), editTrackmetadataDto.getActivitytype());
+
+        return new UpdateTrackmetadataResponse(true);
     }
 }

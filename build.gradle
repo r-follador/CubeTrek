@@ -34,6 +34,7 @@ dependencies {
     implementation 'org.webjars:webjars-locator:0.45'
     implementation 'org.webjars:d3js:6.6.0'
     implementation 'org.webjars.npm:axios:0.26.1'
+    implementation 'com.atlassian.commonmark:commonmark:0.17.0'
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
     developmentOnly 'org.springframework.boot:spring-boot-devtools:2.6.7'

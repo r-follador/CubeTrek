@@ -19,7 +19,16 @@ public interface TrackMetadataRepository extends JpaRepository<TrackMetadata, Lo
     boolean existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(Users owner, ZonedDateTime dateTrack, Point center, int distance, int duration);
 
     @Modifying
-    @Query("update trackmetadata u set u.title = :title, u.comment = :comment where u.id = :id")
-    void updateTrackMetadata(@Param(value = "id") long id, @Param(value = "title") String title, @Param(value = "comment") String comment);
+    @Query("update trackmetadata u set u.title = :title, u.comment = :comment, u.activitytype = :activitytype where u.id = :id")
+    void updateTrackMetadata(@Param(value = "id") long id, @Param(value = "title") String title, @Param(value = "comment") String comment, @Param(value="activitytype") TrackMetadata.Activitytype activitytype);
+
+    @Modifying
+    @Query("update trackmetadata u set u.favorite = :favorite where u.id = :id")
+    void updateTrackFavorite(@Param(value = "id") long id, @Param(value = "favorite") boolean favorite);
+
+    @Modifying
+    @Query("update trackmetadata u set u.hidden = :hidden where u.id = :id")
+    void updateTrackHidden(@Param(value = "id") long id, @Param(value = "hidden") boolean hidden);
+
 
 }

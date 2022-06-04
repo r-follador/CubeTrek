@@ -27,7 +27,34 @@ public class TrackMetadata implements Serializable {
     }
 
     public enum Activitytype {
-        Unknown, Hike, Run, Skimountaineering, Crosscountryski, Mountaineering, Biking, Snowshoeing;
+        Unknown("Unknown", "cubetrek_icon_unknownactivity.svg"),
+        Hike("Hiking", "cubetrek_icon_hiking.svg"),
+        Run("Running", "cubetrek_icon_running.svg"),
+        Skimountaineering("Ski Mountaineering", "cubetrek_icon_skitouring.svg"),
+        Crosscountryski ("Cross-Country Skiing", "cubetrek_icon_xcountry_skiing.svg"),
+        Mountaineering("Mountaineering", "cubetrek_icon_mountaineering.svg"),
+        Biking("Biking", "cubetrek_icon_mountainbike.svg"),
+        Snowshoeing("Snowshoeing", "cubetrek_icon_snowshoe.svg"),
+        Downhillskiing("Downhill Skiing", "cubetrek_icon_downhill_skiing.svg"),
+        Ebike("E-Biking", "cubetrek_icon_ebike.svg"),
+        Watersports("Watersports", "cubetrek_icon_canoe.svg"),
+        Kite("Kiting", "cubetrek_icon_kite.svg");
+
+        private final String displayValue;
+        private final String iconName;
+
+        private Activitytype(String displayValue, String iconName) {
+            this.displayValue = displayValue;
+            this.iconName = iconName;
+        }
+
+        public String getDisplayValue() {
+            return displayValue;
+        }
+
+        public String getIconName() {
+            return iconName;
+        }
     }
 
 

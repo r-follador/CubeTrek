@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 @AllArgsConstructor
-public class EditTrackmetadataResponse {
+@Getter
+@Setter
+public class UpdateTrackmetadataResponse {
     boolean success;
 }

@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CubeTrek</title>
+    <link rel="icon" type="image/svg" href="../assets/logo.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 
@@ -20,18 +21,13 @@
 </head>
 <body>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">← CubeTrek</a>
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="../dashboard">← CubeTrek</a>
     <div class="navbar-brand col-auto me-0 px-3 lead">
         [[${trackmetadata.title}]]
     </div>
-    <ul class="navbar-nav">
+    <ul class="navbar-nav px-3">
         <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
             <img height="20px" src="../assets/cubetrek_settings.svg"></a>
-    </ul>
-    <ul class="navbar-nav px-3">
-        <li class="nav-item text-nowrap">
-            <a class="nav-link" href="#">Sign out</a>
-        </li>
     </ul>
 </header>
 
@@ -57,7 +53,7 @@
         <div class="row">
             <div class="col-12 p-0 m-0" id="graph"></div>
         </div>
-        <div class="d-flex justify-content-end">
+        <div class="d-flex p-0 m-0 justify-content-end">
             <div class="dropdown">
                 <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">
                     ...
@@ -82,45 +78,56 @@
             </div>
         </div>
 
+        <div class="card p-0 mt-3">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col">
+                      <img id="favoritestar" th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'" height="20px" title="Click to Favorite/Unfavorite" onclick="clickfavorite()">
+                        <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row pb-2">
+                    <div class="figure-caption">[[${dateCreatedString}]]</div>
+                    <div class="display-6" data-bs-toggle="modal" data-bs-target="#editModal" onmouseover="document.getElementById('edittitle').style.visibility = 'visible';" onmouseout="document.getElementById('edittitle').style.visibility = 'hidden';">
+                        <img height="50px" th:src="${'../assets/'+trackmetadata.activitytype.getIconName()}" th:title="${trackmetadata.activitytype.getDisplayValue()}">[[${trackmetadata.title}]]
+                        <img style="visibility:hidden" id="edittitle" height="20px" src="../assets/cubetrek_modify.svg">
+                    </div>
+                </div>
 
-        <div class="row pb-2">
-            <div class="figure-caption">[[${dateCreatedString}]] <button class="btn btn-primary btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button></div>
-            <div class="display-6"><img height="50px" src="../assets/cubetrek_icon_hiking.svg">[[${trackmetadata.title}]]</div>
-        </div>
-
-        <div class="row">
-            <h4 class="h4 col"><small class="text-muted fw-light">Distance</small> <div id="value_distance">[[${trackmetadata.distance}]] m</div></h4>
-            <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small> <div id="value_elevation_up">[[${trackmetadata.elevationUp}]] km</div></h4>
-        </div>
-        <div class="row">
-            <h4 class="h4 col"><small class="text-muted fw-light">Elapsed Time</small> <div id="value_time">[[${timeString}]] h</div></h4>
-            <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small> <div id="value_elevation_down">[[${trackmetadata.elevationDown}]]</div></h4>
-        </div>
-        <div class="row pb-2">
-            <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small> <div id="value_highest_point">[[${trackmetadata.highestpointEle}]]</div></h4>
-            <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small> <div id="value_lowest_point">[[${trackmetadata.lowestpointEle}]]</div></h4>
-        </div>
-        <div class="row">
-            <h4 class="h4 col"><small class="text-muted fw-light">Average Speed</small></h4>
-        </div>
-        <div class="row">
-            <h5 class="h5 col"><small class="text-muted fw-light">Horizontal→</small> <div id="value_horizontal_average">...</div></h5>
-            <h5 class="h5 col"><small class="text-muted fw-light">Vertical↑</small> <div id="value_vertical_up_average">...</div></h5>
-            <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small> <div id="value_vertical_down_average">...</div></h5>
+                <div class="row">
+                    <h4 class="h4 col"><small class="text-muted fw-light">Distance</small> <div id="value_distance">[[${trackmetadata.distance}]] m</div></h4>
+                    <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small> <div id="value_elevation_up">[[${trackmetadata.elevationUp}]] km</div></h4>
+                </div>
+                <div class="row">
+                    <h4 class="h4 col"><small class="text-muted fw-light">Elapsed/Moving Time</small> <div id="value_time">[[${timeString}]] h / <span id="movingtime">---</span> h</div></h4>
+                    <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small> <div id="value_elevation_down">[[${trackmetadata.elevationDown}]]</div></h4>
+                </div>
+                <div class="row pb-2">
+                    <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small> <div id="value_highest_point">[[${trackmetadata.highestpointEle}]]</div></h4>
+                    <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small> <div id="value_lowest_point">[[${trackmetadata.lowestpointEle}]]</div></h4>
+                </div>
+                <div class="row">
+                    <h4 class="h4 col"><small class="text-muted fw-light">Average Speed</small></h4>
+                </div>
+                <div class="row">
+                    <h5 class="h5 col"><small class="text-muted fw-light">Horizontal→</small> <div id="value_horizontal_average">...</div></h5>
+                    <h5 class="h5 col"><small class="text-muted fw-light">Vertical↑</small> <div id="value_vertical_up_average">...</div></h5>
+                    <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small> <div id="value_vertical_down_average">...</div></h5>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="container">
-    <div class="row">
-        <div class="col-2">
-            <h4 class="h4 col text-muted fw-light">Comment</h4>
+<div class="container mt-3">
+    <div class="card p-0 mt-3" onmouseover="document.getElementById('editnote').style.visibility = 'visible';" onmouseout="document.getElementById('editnote').style.visibility = 'hidden';">
+        <div class="card-header">
+            Notes <img style="visibility:hidden" id="editnote" height="15px" src="../assets/cubetrek_modify.svg">
         </div>
-        <div class="col" th:unless="${#strings.isEmpty(trackmetadata.comment)}">
-            [[${trackmetadata.comment}]]
-        </div>
-        <div class="col" th:if="${#strings.isEmpty(trackmetadata.comment)}">
-            <i>None</i>
+        <div class="card-body" data-bs-toggle="modal" data-bs-target="#editNoteModal" th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes, click to add</i>>' : formattedNote}">
+
         </div>
     </div>
 </div>
@@ -131,14 +138,28 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">View Settings</h5>
+                <h5 class="modal-title" id="exampleModalLabel">Settings</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <h5>View Settings</h5>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
                     <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
                 </div>
+                <hr>
+                <h5>Track Settings</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="favoriteChecked" th:checked="${trackmetadata.favorite}" onclick="clickfavorite()">
+                    <label class="form-check-label" for="favoriteChecked">Favorite</label>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Track</button>
+                <button type="button" class="btn btn-secondary" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Notes</button>
+                <div class="form-check form-switch mt-3">
+                    <input class="form-check-input" type="checkbox" id="hiddenChecked" th:checked="${trackmetadata.hidden}" onclick="clickhide(false)">
+                    <label class="form-check-label" for="hiddenChecked">Hide Track</label>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="clickdelete(false)">Delete Track</button>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -151,33 +172,32 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Track</h5>
+                <h5 class="modal-title">Edit Track Name and Type</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-danger" style="display: none;" id="errormessageedit" role="alert">
+                    A simple danger alert—check it out!
+                </div>
+                <div class="alert alert-successr" style="display: none;" id="successmessageedit" role="alert">
+                    A simple danger alert—check it out!
+                </div>
                 <form>
                     <div class="mb-3">
                         <label for="inputTitle" class="form-label">Track Title</label>
-                        <input type="text" class="form-control" id="inputTitle" value="Montalin Blabla">
+                        <input type="text" class="form-control" id="inputTitle" th:value="${trackmetadata.title}" maxlength="250">
                     </div>
                     <div class="mb-3">
                         <label for="inputType" class="form-label">Track Type</label>
+
                         <select class="form-select" id="inputType">
-                            <option value="Hike" selected>Hike</option>
-                            <option value="Run">Run</option>
-                            <option value="Mountaineering">Mountaineering</option>
-                            <option value="Skimountaineering">Ski Mountaineering</option>
-                            <option value="Crosscountryski">Cross Country Skiing</option>
-                            <option value="Biking">Biking</option>
-                            <option value="Snowshoeing">Snowshoeing</option>
-                            <option value="Unknown">Unknown Activity</option>
+                            <option th:each="activityOpt : ${T(com.cubetrek.database.TrackMetadata.Activitytype).values()}"
+                                    th:value="${activityOpt}"
+                                    th:text="${activityOpt.displayValue}"
+                                    th:selected="${activityOpt==trackmetadata.activitytype}"
+                                    ></option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="inputComment" class="form-label">Comment</label>
-                        <textarea class="form-control" id="inputComment" rows="10">Blabla</textarea>
-                    </div>
-
                 </form>
             </div>
             <div class="modal-footer">
@@ -188,6 +208,69 @@
     </div>
 </div>
 
+<div class="modal fade" id="editNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" style="display: none;" id="errormessagenoteedit" role="alert">
+                    A simple danger alert—check it out!
+                </div>
+                <form>
+                    <div class="mb-3">
+                        <textarea class="form-control" id="inputComment" rows="10" th:text="${trackmetadata.comment}"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div>Use markdown for formatting</div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="confirmhidden" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hide Track</h5>
+            </div>
+            <div class="modal-body">
+                <p>Hiding a track will exclude it from the Dashboard and your totals.</p>
+                <p>The only way to view hidden tracks later on is through the designated link on the dashboard.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="clickhide(true)">Hide Track</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="confirmdelete" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Track</h5>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this Track?</p>
+                <p>This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="clickdelete(true)">Delete Track</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 <script>
     var trackid = [[${trackmetadata.id}]];
@@ -196,7 +279,8 @@
     var elevationDown = [[${trackmetadata.elevationDown}]];
     var highestElevationPoint = [[${trackmetadata.highestpointEle}]];
     var lowestElevationPoint = [[${trackmetadata.lowestpointEle}]];
-    var writeAccess = true;
+    var favorite = [[${trackmetadata.favorite}]];
+    var hidden = [[${trackmetadata.hidden}]];
 </script>
 <script src="../js/trackview.js"></script>
 

@@ -9,6 +9,9 @@ import com.sunlocator.topolibrary.HGTFileLoader_LocalStorage;
 import com.sunlocator.topolibrary.HGTWorker;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
 import com.sunlocator.topolibrary.MapTile.MapTileWorker;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +75,7 @@ public class TrackViewerService {
         model.addAttribute("center_lat", track.getCenter().getCoordinates()[0].y);
         model.addAttribute("center_lon", track.getCenter().getCoordinates()[0].x);
         model.addAttribute("user", user);
+        model.addAttribute("writeAccess", true);
 
         return "trackview_2d";
     }
@@ -88,7 +92,15 @@ public class TrackViewerService {
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("dateCreatedString", track.getDateTrack().format(formatter));
+        model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         return "trackview";
+    }
+
+    private final Parser markdownParser =  Parser.builder().build();
+    private final HtmlRenderer markdownRenderer = HtmlRenderer.builder().build();
+    private String markdownToHTML(String markdown) {
+        Node document = markdownParser.parse(markdown);
+        return markdownRenderer.render(document);
     }
 
     private static boolean isAccessAllowed(Users user, TrackMetadata track) {
