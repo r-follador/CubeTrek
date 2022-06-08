@@ -243,10 +243,18 @@ public class MainController {
 
     @Transactional
     @ResponseBody
-    @DeleteMapping(value="/api/delete/id={id}")
+    @GetMapping(value="/api/modify/id={id}&sharing={sharing}")
+    public UpdateTrackmetadataResponse modifySharing(@PathVariable("id") long id, @PathVariable("sharing") TrackMetadata.Sharing sharing) {
+        //TODO: check permission
+        trackMetadataRepository.updateTrackSharing(id, sharing);
+        return new UpdateTrackmetadataResponse(true);
+    }
+
+    @Transactional
+    @ResponseBody
+    @DeleteMapping(value="/api/modify/id={id}")
     public UpdateTrackmetadataResponse deleteTrack(@PathVariable("id") long id) {
         //TODO: check permission
-        System.out.println("Delete "+id);
         trackMetadataRepository.deleteById(id);
         return new UpdateTrackmetadataResponse(true);
     }

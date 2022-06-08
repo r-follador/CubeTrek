@@ -82,8 +82,9 @@
             <div class="card-header">
                 <div class="row">
                     <div class="col">
-                      <img id="favoritestar" th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'" height="20px" title="Click to Favorite/Unfavorite" onclick="clickfavorite()">
+                        <a href="#" title="Click to Favorite/Unfavorite" onclick="clickfavorite()"><img id="favoritestar" th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'" height="25px"></a>
                         <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
+                        <button type="button" class="btn btn-outline-primary ms-3 align-middle" onclick="clickshare()"><img id="publicicon" th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:inline' : 'display:none'}" src="../assets/icon_public.svg" height="15px"> Share</button>
                     </div>
                 </div>
             </div>
@@ -126,7 +127,7 @@
         <div class="card-header">
             Notes <img style="visibility:hidden" id="editnote" height="15px" src="../assets/cubetrek_modify.svg">
         </div>
-        <div class="card-body" data-bs-toggle="modal" data-bs-target="#editNoteModal" th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes, click to add</i>>' : formattedNote}">
+        <div class="card-body" data-bs-toggle="modal" data-bs-target="#editNoteModal" th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes, click to add</i>' : formattedNote}">
 
         </div>
     </div>
@@ -153,13 +154,19 @@
                     <input class="form-check-input" type="checkbox" id="favoriteChecked" th:checked="${trackmetadata.favorite}" onclick="clickfavorite()">
                     <label class="form-check-label" for="favoriteChecked">Favorite</label>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Track</button>
-                <button type="button" class="btn btn-secondary" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Notes</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Track</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Notes</button>
+                <h6 class="mt-3">Privacy</h6>
+                <div class="form-check form-switch mt-3">
+                    <input class="form-check-input" type="checkbox" id="publicChecked" th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC}" onclick="setTrackShare()">
+                    <label class="form-check-label" for="publicChecked" id="publicCheckedLabel" th:text="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'Public, anyone with the link can view this track' : 'Private, only you can view this track'}">Public</label>
+                </div>
+                <h6 class="mt-3">Hide or Delete Track</h6>
                 <div class="form-check form-switch mt-3">
                     <input class="form-check-input" type="checkbox" id="hiddenChecked" th:checked="${trackmetadata.hidden}" onclick="clickhide(false)">
                     <label class="form-check-label" for="hiddenChecked">Hide Track</label>
                 </div>
-                <button type="button" class="btn btn-danger" onclick="clickdelete(false)">Delete Track</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="clickdelete(false)">Delete Track</button>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -270,6 +277,34 @@
     </div>
 </div>
 
+<div class="modal" id="sharemodal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Track</h5>
+            </div>
+            <div class="modal-body">
+                <div th:style="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}" id="publicSet">
+                    <p>Anyone with the link can view this track.</p>
+                    <input type="text" class="form-control" id="sharelink" readonly>
+                    <button type="button" class="btn btn-primary m-2" onclick="copylinktoclipboard()">Copy</button>
+                    <div class="alert alert-primary m-2" style="visibility:hidden" role="alert" id="sharelinkalert">
+                        Link copied to clipboard!
+                    </div>
+
+                </div>
+                <div th:style="${trackmetadata.sharing != T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}"  id="privateSet">
+                    <p>If you share this track, anyone with the link can view it.</p>
+                    <button type="button" class="btn btn-primary m-2" onclick="setTrackShare('PUBLIC')">Set Track to Public</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 <script>
@@ -281,6 +316,7 @@
     var lowestElevationPoint = [[${trackmetadata.lowestpointEle}]];
     var favorite = [[${trackmetadata.favorite}]];
     var hidden = [[${trackmetadata.hidden}]];
+    var sharing = "[[${trackmetadata.sharing}]]";
 </script>
 <script src="../js/trackview.js"></script>
 

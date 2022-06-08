@@ -809,3 +809,53 @@ function clickdelete(confirmed) {
         console.log(error);
     });
 }
+
+function clickshare() {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('sharemodal')).show();
+    document.getElementById("sharelink").value = window.location.href;
+    document.getElementById("sharelinkalert").style.visibility = 'hidden';
+}
+
+function copylinktoclipboard() {
+    var copyText = document.getElementById("sharelink").value;
+    navigator.clipboard.writeText(copyText).then(() => {
+        document.getElementById("sharelinkalert").style.visibility = 'visible';
+    });
+}
+
+function setTrackShare(state) {
+    if (typeof state === 'undefined') {
+        if (sharing === "PUBLIC")
+            setTrackShare("PRIVATE");
+        else
+            setTrackShare("PUBLIC");
+        return;
+    }
+    fetch(root+"modify/id="+trackid+"&sharing="+state, {
+        method: "GET"
+    }).then(res => {
+        res.json().then(response => {
+            if (res.ok) {
+                sharing = state;
+                if (state === "PUBLIC") {
+                    document.getElementById("publicSet").style.display = "block";
+                    document.getElementById("privateSet").style.display = "none";
+                    document.getElementById("publicicon").style.display = "inline";
+                    document.getElementById("publicChecked").checked = true;
+                    document.getElementById("publicCheckedLabel").innerText = "Public, anyone with the link can view this track";
+                } else {
+                    document.getElementById("publicSet").style.display = "none";
+                    document.getElementById("privateSet").style.display = "block";
+                    document.getElementById("publicicon").style.display = "none";
+                    document.getElementById("publicChecked").checked = false;
+                    document.getElementById("publicCheckedLabel").innerText = "Private, only you can view this track";
+                }
+            } else {
+                //not good
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
+    });
+}

@@ -30,5 +30,8 @@ public interface TrackMetadataRepository extends JpaRepository<TrackMetadata, Lo
     @Query("update trackmetadata u set u.hidden = :hidden where u.id = :id")
     void updateTrackHidden(@Param(value = "id") long id, @Param(value = "hidden") boolean hidden);
 
+    @Modifying
+    @Query("update trackmetadata u set u.sharing = :sharing where u.id = :id")
+    void updateTrackSharing(@Param(value = "id") long id, @Param(value = "sharing") TrackMetadata.Sharing sharing);
 
 }
