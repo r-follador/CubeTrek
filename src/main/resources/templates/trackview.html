@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CubeTrek</title>
+    <title>[[${trackmetadata.title}]] - CubeTrek</title>
     <link rel="icon" type="image/svg" href="../assets/logo.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
@@ -18,8 +18,23 @@
     <script src="../js/d3-regression.min.js"></script>
     <script src="../js/d3.js"></script>
 
+    <script src='../js/maplibre-gl.js'></script>
+    <link href='../css/maplibre-gl.css' rel='stylesheet' />
+
 </head>
 <body>
+<style>
+    .marker2d {
+        display: block;
+        border: none;
+        border-radius: 50%;
+        background-color: rgba(68,146,220,0.42);
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        padding: 0;
+    }
+</style>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
     <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="../dashboard">← CubeTrek</a>
     <div class="navbar-brand col-auto me-0 px-3 lead">
@@ -37,54 +52,66 @@
 <div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
     A simple danger alert—check it out!
 </div>
-<div class="row g-0">
-    <div class="col-xl-8 position-relative">
-        <canvas class="mw-100 mh-100 p-0 m-0" style="width: 100%; touch-action: none; z-index: 0; outline: none;" id="renderCanvas" touch-action="none"></canvas>
-        <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
-            <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked onchange="mapstyle('summer')">
-            <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
-            <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" onchange="mapstyle('winter')">
-            <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
-            <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off" onchange="mapstyle('satellite')">
-            <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
-        </div>
-    </div>
-    <div class="col-xl-4 p-1">
-        <div class="row">
-            <div class="col-12 p-0 m-0" id="graph"></div>
-        </div>
-        <div class="d-flex p-0 m-0 justify-content-end">
-            <div class="dropdown">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">
-                    ...
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal Speed</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical Speed</a></li>
-                </ul>
-            </div>
-            <div class="p-1">versus</div>
-            <div class="dropdown">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis" data-bs-toggle="dropdown" aria-expanded="false">
-                    ...
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed Time</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving Time</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
-                </ul>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
+            <canvas class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;" id="renderCanvas" touch-action="none"></canvas>
+            <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked onchange="mapstyle('summer')">
+                <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" onchange="mapstyle('winter')">
+                <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off" onchange="mapstyle('satellite')">
+                <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
             </div>
         </div>
 
-        <div class="card p-0 mt-3">
+        <div class="col-xl-4 d-flex flex-xl-column p-0">
+            <div class="d-flex flex-fill w-100 flex-column p-0 m-0" style="height: 25vh; min-height: 250px">
+                <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%"></div>
+                <div class="d-flex flex-row justify-content-end p-0 pb-1 me-2 m-0">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                            ...
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal Speed</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical Speed</a></li>
+                        </ul>
+                    </div>
+                    <div class="p-1">versus</div>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                            ...
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed Time</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving Time</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="w-100" style="height: 25vh; min-height: 250px">
+                <div id="map2d" style="height: 100%; width: 100%; min-width: 100px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-3">
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card p-0 mt-3">
             <div class="card-header">
                 <div class="row">
                     <div class="col">
-                        <a href="#" title="Click to Favorite/Unfavorite" onclick="clickfavorite()"><img id="favoritestar" th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'" height="25px"></a>
+                        <a href="#" title="Click to Favorite/Unfavorite" onclick="clickfavorite()"><img id="favoritestar" th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'" height="20px"></a>
                         <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
-                        <button type="button" class="btn btn-outline-primary ms-3 align-middle" onclick="clickshare()"><img id="publicicon" th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:inline' : 'display:none'}" src="../assets/icon_public.svg" height="15px"> Share</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm ms-3 align-middle" onclick="clickshare()"><img id="publicicon" th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:inline' : 'display:none'}" src="../assets/icon_public.svg" height="15px"> Share</button>
                     </div>
                 </div>
             </div>
@@ -119,16 +146,16 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="container mt-3">
-    <div class="card p-0 mt-3" onmouseover="document.getElementById('editnote').style.visibility = 'visible';" onmouseout="document.getElementById('editnote').style.visibility = 'hidden';">
+        </div>
+        <div class="col-lg-7">
+            <div class="card p-0 mt-3" onmouseover="document.getElementById('editnote').style.visibility = 'visible';" onmouseout="document.getElementById('editnote').style.visibility = 'hidden';">
         <div class="card-header">
             Notes <img style="visibility:hidden" id="editnote" height="15px" src="../assets/cubetrek_modify.svg">
         </div>
         <div class="card-body" data-bs-toggle="modal" data-bs-target="#editNoteModal" th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes, click to add</i>' : formattedNote}">
 
+        </div>
+    </div>
         </div>
     </div>
 </div>

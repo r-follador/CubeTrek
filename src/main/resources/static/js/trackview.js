@@ -50,6 +50,7 @@ var delayCreateScene = function() {
             })
         })
         jsonData = values[1]; //returned from getJSON
+        prepareMap2d(jsonData);
         coordinateSystem.centerLat = jsonData.properties.bbox.centerLat;
         coordinateSystem.centerLon = jsonData.properties.bbox.centerLon;
         coordinateSystem.metersPerDegreeLat = jsonData.properties.bbox.metersPerDegreeLat;
@@ -213,6 +214,46 @@ var delayCreateScene = function() {
     settings();
     return scene;
 };
+var marker;
+
+function prepareMap2d(jsonData) {
+    var map = new maplibregl.Map({
+        container: 'map2d',
+        style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=j2l5mrAxnWdu6xX99JQp', // stylesheet location
+        bounds: [[jsonData.properties.bbox.boundingBoxW,jsonData.properties.bbox.boundingBoxS],[jsonData.properties.bbox.boundingBoxE,jsonData.properties.bbox.boundingBoxN]],
+        touchPitch: false,
+        maxPitch: 0,
+        minZoom: 8,
+        maxZoom: 16,
+        attributionControl: false
+    });
+
+    map.on('load', function () {
+        map.addSource('route', {
+                type: 'geojson',
+                data: jsonData
+            }
+        );
+        map.addLayer({
+            'id': 'route',
+            'type': 'line',
+            'source': 'route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#ff8001',
+                'line-width': 3
+            }
+        });
+    });
+
+    var el = document.createElement('div');
+    el.className = 'marker2d';
+    marker= new maplibregl.Marker(el).setLngLat([0,0]).addTo(map);
+    map.on('load')
+}
 
 const datas = [];
 
@@ -306,10 +347,10 @@ function prepareGraph(jsonData) {
 }
 
 function drawGraph(yaxis, xaxis) {
-    const margingraph = {top: 10, right: 30, bottom: 30, left: 60};
+    const margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
     let width = document.getElementById('graph').clientWidth-margingraph.left-margingraph.right,
-        height = (width / 3.236)-margingraph.top-margingraph.bottom;
+        height = document.getElementById('graph').clientHeight-margingraph.top-margingraph.bottom;
 
 // append the svg object to the body of the page
     d3.select("#graph").select("svg").remove(); //clear if exists already
@@ -622,6 +663,7 @@ function settings() {
 
 //RUN
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+canvas.addEventListener("wheel", evt => evt.preventDefault());
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 const scene = delayCreateScene(); //Call the createScene function
 
@@ -649,6 +691,7 @@ function getPosition(lat, lon) {
 }
 
 function moveMarker(lat, lon) {
+    marker.setLngLat([lon, lat]); //2D map
     var x = (coordinateSystem.centerLon-lon)*coordinateSystem.metersPerDegreeLon;
     var y = (lat-coordinateSystem.centerLat)*coordinateSystem.metersPerDegreeLat;
     scene.particleSystems[0].emitter.x=x;
@@ -665,6 +708,7 @@ function moveMarker(lat, lon) {
 
 function hideMarker() {
     scene.particleSystems[0].stop();
+    marker.setLngLat([0, 0]); //2D map
 }
 
 function mapstyle(style) {
