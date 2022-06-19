@@ -1,3 +1,4 @@
+//Tons of Globals, a sign of shitty programming
 var maxAltitude = 5000;
 var minAltitude = 0;
 var width_x = 1000;
@@ -11,6 +12,8 @@ const root = "../api/";
 let metric = true;
 const miles_per_km = 0.621371;
 const feet_per_m = 3.28084;
+var kdtree;
+var graph;
 
 var delayCreateScene = function() {
     var scene = new BABYLON.Scene(engine);
@@ -50,6 +53,7 @@ var delayCreateScene = function() {
             })
         })
         jsonData = values[1]; //returned from getJSON
+        kdtree = new kdTree(jsonData.geometry.coordinates[0]);
         prepareMap2d(jsonData);
         coordinateSystem.centerLat = jsonData.properties.bbox.centerLat;
         coordinateSystem.centerLon = jsonData.properties.bbox.centerLon;
@@ -145,7 +149,6 @@ var delayCreateScene = function() {
                             break;
                         }
                     }
-
                 }
 
                 let x=(track[j][0]-jsonData.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
@@ -220,7 +223,7 @@ function prepareMap2d(jsonData) {
     var map = new maplibregl.Map({
         container: 'map2d',
         style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=j2l5mrAxnWdu6xX99JQp', // stylesheet location
-        bounds: [[jsonData.properties.bbox.boundingBoxW,jsonData.properties.bbox.boundingBoxS],[jsonData.properties.bbox.boundingBoxE,jsonData.properties.bbox.boundingBoxN]],
+        bounds: [[jsonData.properties.bbox.boundingBoxW-0.01,jsonData.properties.bbox.boundingBoxS-0.01],[jsonData.properties.bbox.boundingBoxE+0.01,jsonData.properties.bbox.boundingBoxN+0.01]],
         touchPitch: false,
         maxPitch: 0,
         minZoom: 8,
@@ -247,6 +250,10 @@ function prepareMap2d(jsonData) {
                 'line-width': 3
             }
         });
+    });
+
+    map.on('mousemove', function (e) {
+        findLine(e.lngLat.lat, e.lngLat.lng);
     });
 
     var el = document.createElement('div');
@@ -276,12 +283,12 @@ let graphYAxis = GraphAxis.Elevation;
 
 function changeGraphX(type) {
     graphXAxis = type;
-    drawGraph(graphYAxis, graphXAxis);
+    graph = new drawGraph(graphYAxis, graphXAxis);
 }
 
 function changeGraphY(type) {
     graphYAxis = type;
-    drawGraph(graphYAxis, graphXAxis);
+    graph = new drawGraph(graphYAxis, graphXAxis);
 }
 
 let horizontal_average;
@@ -340,58 +347,58 @@ function prepareGraph(jsonData) {
     maxAltitude = d3.max(datas, function(d) {return d.altitude});
     minAltitude = d3.min(datas, function(d) {return d.altitude});
 
-    drawGraph(graphYAxis, graphXAxis);
+    graph = new drawGraph(graphYAxis, graphXAxis);
 
     let movingTimeMinutes = movingTime/60000;
     document.getElementById("movingtime").innerText = Math.floor(movingTimeMinutes/60)+":"+Math.floor(movingTimeMinutes%60).toString().padStart(2,"0");
 }
 
 function drawGraph(yaxis, xaxis) {
-    const margingraph = {top: 10, right: 5, bottom: 25, left: 40};
+    this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
-    let width = document.getElementById('graph').clientWidth-margingraph.left-margingraph.right,
-        height = document.getElementById('graph').clientHeight-margingraph.top-margingraph.bottom;
+    this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right,
+        this.height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
 
 // append the svg object to the body of the page
     d3.select("#graph").select("svg").remove(); //clear if exists already
-    svg = d3.select("#graph")
+    this.svg = d3.select("#graph")
         .append("svg")
-        .attr("width", width + margingraph.left + margingraph.right)
-        .attr("height", height + margingraph.top + margingraph.bottom)
+        .attr("width", this.width + this.margingraph.left + this.margingraph.right)
+        .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
         .append("g")
         .attr("transform",
-            "translate(" + margingraph.left + "," + margingraph.top + ")");
+            "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
 
-    let yScale;
-    let xScale;
-    let functionpath = d3.line();
+    this.yScale;
+    this.xScale;
+    this.functionpath = d3.line();
 
-    const regressionGenerator = d3.regressionLoess().bandwidth(0.03);
+    this.regressionGenerator = d3.regressionLoess().bandwidth(0.03);
 
     switch (yaxis) {
         case GraphAxis.Elevation:
             document.getElementById("dropdowngraphyaxis").innerText = "Elevation";
-            yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.altitude*(metric?1:feet_per_m)); }));
-            functionpath.y(function(d) { return yScale(d.altitude*(metric?1:feet_per_m)) });
-            regressionGenerator.y(d => d.altitude*(metric?1:feet_per_m));
+            this.yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.altitude*(metric?1:feet_per_m)); }));
+            this.functionpath.y((d) => { return this.yScale(d.altitude*(metric?1:feet_per_m)) });
+            this.regressionGenerator.y(d => d.altitude*(metric?1:feet_per_m));
             break;
         case GraphAxis.Distance:
             document.getElementById("dropdowngraphyaxis").innerText = "Distance";
-            yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }));
-            functionpath.y(function(d) { return yScale(d.distance*(metric?1/1000:miles_per_km/1000)) });
-            regressionGenerator.y(d => d.distance*(metric?1/1000:miles_per_km/1000));
+            this.yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }));
+            this.functionpath.y((d) => {return this.yScale(d.distance*(metric?1/1000:miles_per_km/1000)) });
+            this.regressionGenerator.y(d => d.distance*(metric?1/1000:miles_per_km/1000));
             break;
         case GraphAxis.VerticalSpeed:
             document.getElementById("dropdowngraphyaxis").innerText = "Vertical Speed";
-            yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.vertical_speed*(metric?1:feet_per_m)); }));
-            functionpath.y(function(d) { return yScale(d.vertical_speed*(metric?1:feet_per_m)) });
-            regressionGenerator.y(d => d.vertical_speed*(metric?1:feet_per_m));
+            this.yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.vertical_speed*(metric?1:feet_per_m)); }));
+            this.functionpath.y((d) => {return this.yScale(d.vertical_speed*(metric?1:feet_per_m)) });
+            this.regressionGenerator.y(d => d.vertical_speed*(metric?1:feet_per_m));
             break;
         case GraphAxis.HorizontalSpeed:
             document.getElementById("dropdowngraphyaxis").innerText = "Horizontal Speed";
-            yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.horizontal_speed*(metric?1:miles_per_km)); }));
-            functionpath.y(function(d) { return yScale(d.horizontal_speed*(metric?1:miles_per_km)) });
-            regressionGenerator.y(d => d.horizontal_speed*(metric?1:miles_per_km));
+            this.yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.horizontal_speed*(metric?1:miles_per_km)); }));
+            this.functionpath.y((d) => { return this.yScale(d.horizontal_speed*(metric?1:miles_per_km)) });
+            this.regressionGenerator.y(d => d.horizontal_speed*(metric?1:miles_per_km));
             break;
         default:
             break;
@@ -400,124 +407,124 @@ function drawGraph(yaxis, xaxis) {
     switch (xaxis) {
         case GraphAxis.ElapsedTime:
             document.getElementById("dropdowngraphxaxis").innerText = "Elapsed time";
-            xScale = d3.scaleTime().domain(d3.extent(datas, function(d) { return d.time; }));
-            functionpath.x(function(d) { return xScale(d.time) });
-            regressionGenerator.x(d => d.time);
+            this.xScale = d3.scaleTime().domain(d3.extent(datas, function(d) { return d.time; }));
+            this.functionpath.x((d) => { return this.xScale(d.time) });
+            this.regressionGenerator.x(d => d.time);
             break;
         case GraphAxis.Distance:
             document.getElementById("dropdowngraphxaxis").innerText = "Distance";
-            xScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }));
-            functionpath.x(function(d) { return xScale(d.distance*(metric?1/1000:miles_per_km/1000)) });
-            regressionGenerator.x(d => d.distance*(metric?1/1000:miles_per_km/1000));
+            this.xScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }));
+            this.functionpath.x((d) => { return this.xScale(d.distance*(metric?1/1000:miles_per_km/1000)) });
+            this.regressionGenerator.x(d => d.distance*(metric?1/1000:miles_per_km/1000));
             break;
         case GraphAxis.MovingTime:
             document.getElementById("dropdowngraphxaxis").innerText = "Moving Time";
-            xScale = d3.scaleTime().domain(d3.extent(datas, function(d) { return d.moving_time; }));
-            functionpath.x(function(d) { return xScale(d.moving_time) });
-            regressionGenerator.x(d => d.moving_time);
+            this.xScale = d3.scaleTime().domain(d3.extent(datas, function(d) { return d.moving_time; }));
+            this.functionpath.x((d) => { return this.xScale(d.moving_time) });
+            this.regressionGenerator.x(d => d.moving_time);
             break;
         default:
             break
     }
 
-    let xAxisLabel = d3.axisBottom(xScale);
-    let yAxisLabel = d3.axisLeft(yScale);
+    this.xAxisLabel = d3.axisBottom(this.xScale);
+    this.yAxisLabel = d3.axisLeft(this.yScale);
 
-    yScale.range([height,0]);
-    xScale.range([0, width]);
+    this.yScale.range([this.height,0]);
+    this.xScale.range([0, this.width]);
 
     if (xaxis === GraphAxis.MovingTime) {
-        xAxisLabel.tickFormat(d3.utcFormat("%H:%M"));
+        this.xAxisLabel.tickFormat(d3.utcFormat("%H:%M"));
     }
 
-    svg.append("g")
-        .attr("transform", "translate(0," + height + ")")
+    this.svg.append("g")
+        .attr("transform", "translate(0," + this.height + ")")
         .attr("class","myXaxis")
-        .call(xAxisLabel);
+        .call(this.xAxisLabel);
 
-    svg.append("g")
+    this.svg.append("g")
         .attr("class","myYaxis")
-        .call(yAxisLabel);
+        .call(this.yAxisLabel);
 
-    svg.append("path")
+    this.svg.append("path")
         .datum(datas)
         .attr("fill", "none")
         .attr("stroke", "#ff8001")
         .attr("stroke-width", 2)
         .attr("class", "datapath")
-        .attr("d", functionpath)
+        .attr("d", this.functionpath)
 
     if (yaxis === GraphAxis.VerticalSpeed) {
-        var areaUp = d3.area()
+        this.areaUp = d3.area()
             .y0(yScale(0))
-            .y1(function(d) { if (d.vertical_speed>0) {return yScale(d.vertical_speed*(metric?1:feet_per_m))}else{return yScale(0);}});
+            .y1((d) => { if (d.vertical_speed>0) {return this.yScale(d.vertical_speed*(metric?1:feet_per_m))}else{return this.yScale(0);}});
 
-        var areaDown = d3.area()
+        this.areaDown = d3.area()
             .y0(yScale(0))
-            .y1(function(d) { if (d.vertical_speed<0) {return yScale(d.vertical_speed*(metric?1:feet_per_m))}else{return yScale(0);}});
+            .y1((d) => { if (d.vertical_speed<0) {return this.yScale(d.vertical_speed*(metric?1:feet_per_m))}else{return this.yScale(0);}});
 
 
         switch (xaxis) {
             case GraphAxis.MovingTime:
-                areaUp.x(function(d) { return xScale(d.moving_time); })
-                areaDown.x(function(d) { return xScale(d.moving_time); })
+                this.areaUp.x((d) => { return this.xScale(d.moving_time); })
+                this.areaDown.x((d) => { return this.xScale(d.moving_time); })
                 break;
             case GraphAxis.ElapsedTime:
-                areaUp.x(function(d) { return xScale(d.time); })
-                areaDown.x(function(d) { return xScale(d.time); })
+                this.areaUp.x((d) => { return this.xScale(d.time); })
+                this.areaDown.x((d) => { return this.xScale(d.time); })
                 break;
             case GraphAxis.Distance:
-                areaUp.x(function(d) { return xScale(d.distance*(metric?1/1000:miles_per_km/1000)); })
-                areaDown.x(function(d) { return xScale(d.distance*(metric?1/1000:miles_per_km/1000)); })
+                this.areaUp.x((d) => { return this.xScale(d.distance*(metric?1/1000:miles_per_km/1000)); })
+                this.areaDown.x((d) => { return this.xScale(d.distance*(metric?1/1000:miles_per_km/1000)); })
                 break;
         }
 
-        svg.append("path")
+        this.svg.append("path")
             .datum(datas)
             .attr("class","areaUp")
             .attr("fill", "#ffd3fe")
-            .attr("d", areaUp)
+            .attr("d", this.areaUp)
 
-        svg.append("path")
+        this.svg.append("path")
             .datum(datas)
             .attr("class","areaUp")
             .attr("fill", "#caf6b9")
-            .attr("d", areaDown)
+            .attr("d", this.areaDown)
     }
 
     if (yaxis === GraphAxis.HorizontalSpeed || yaxis === GraphAxis.VerticalSpeed) {
-        let regressionpath = d3.line()
-            .x(d => xScale(d[0]))
-            .y(d => yScale(d[1]));
+        this.regressionpath = d3.line()
+            .x(d => this.xScale(d[0]))
+            .y(d => this.yScale(d[1]));
 
         d3.select(".datapath")
             .attr("stroke", "rgb(126,126,126)")
             .attr("stroke-width", 1);
 
-        svg.append("path")
-            .datum(regressionGenerator(datas))
+        this.svg.append("path")
+            .datum(this.regressionGenerator(datas))
             .attr("class","graphregression")
             .attr("fill", "none")
             .attr("stroke", "#ff8001")
             .attr("stroke-width", 2)
-            .attr("d", regressionpath)
+            .attr("d", this.regressionpath)
     }
 
     // This allows to find the closest X index of the mouse:
-    let bisect;
+    this.bisect;
     switch (xaxis) {
         case GraphAxis.MovingTime:
-            bisect = d3.bisector(function(d) { return d.moving_time; }).left;
+            this.bisect = d3.bisector(function(d) { return d.moving_time; }).left;
             break;
         case GraphAxis.ElapsedTime:
-            bisect = d3.bisector(function(d) { return d.time; }).left;
+            this.bisect = d3.bisector(function(d) { return d.time; }).left;
             break;
         case GraphAxis.Distance:
-            bisect = d3.bisector(function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }).left;
+            this.bisect = d3.bisector(function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }).left;
             break;
     }
     // Create the circle that travels along the curve of chart
-    focus = svg
+    this.focus = this.svg
         .append('g')
         .append('circle')
         .style("fill", "rgba(68,146,220,0.42)")
@@ -526,105 +533,119 @@ function drawGraph(yaxis, xaxis) {
         .style("opacity", 0)
 
     // Create the text that travels along the curve of chart
-    var xfocusText = svg
+    this.xfocusText = this.svg
         .append('g')
         .append('text')
         .style("opacity", 0)
         .attr("text-anchor", "left")
         .attr("alignment-baseline", "middle")
-    var yfocusText = svg
+    this.yfocusText = this.svg
         .append('g')
         .append('text')
         .style("opacity", 0)
         .attr("text-anchor", "left")
         .attr("alignment-baseline", "middle")
-
-    // Create a rect on top of the svg area: this rectangle recovers mouse position
-    svg
-        .append('rect')
-        .style("fill", "none")
-        .style("pointer-events", "all")
-        .attr('width', width)
-        .attr('height', height)
-        .on('mouseover', mouseover)
-        .on('mousemove', mousemove)
-        .on('mouseout', mouseout);
 
     // What happens when the mouse move -> show the annotations at the right positions.
-    function mouseover() {
-        focus.style("opacity", 1)
-        xfocusText.style("opacity",1)
-        yfocusText.style("opacity",1)
+
+    var that = this;
+
+    this.showGraphMarker = function(){
+        that.focus.style("opacity", 1)
+        that.xfocusText.style("opacity",1)
+        that.yfocusText.style("opacity",1)
     }
 
-    function mousemove() {
+    this.mouseover = function(){
+        that.showGraphMarker();
+    }
+
+    this.mousemove = function() {
         // recover coordinate we need
-        var x0 = xScale.invert(d3.pointer(event, this)[0]);
-        var i = bisect(datas, x0, 1);
+        var x0 = that.xScale.invert(d3.pointer(event, this)[0]);
+        var i = that.bisect(datas, x0, 1);
         selectedData = datas[i]
         if (selectedData=== undefined)
             return;
-        let xtext;
-        let ytext
-        let xdata;
-        let ydata;
+
+        that.moveGraphMarker(selectedData);
+        moveMapMarker(jsonData.geometry.coordinates[0][i][1], jsonData.geometry.coordinates[0][i][0]);
+    }
+
+    this.moveGraphMarker = function(selectedData) {
+        this.xtext;
+        this.ytext
+        this.xdata;
+        this.ydata;
 
         switch (xaxis) {
             case GraphAxis.MovingTime:
-                xdata = selectedData.moving_time;
-                xtext = d3.utcFormat("%H:%M")(xdata) + " h";
+                this.xdata = selectedData.moving_time;
+                this.xtext = d3.utcFormat("%H:%M")(that.xdata) + " h";
                 break;
             case GraphAxis.ElapsedTime:
-                xdata = selectedData.time;
-                xtext = d3.timeFormat("%H:%M")(xdata);
+                this.xdata = selectedData.time;
+                this.xtext = d3.timeFormat("%H:%M")(that.xdata);
                 break;
             case GraphAxis.Distance:
-                xdata = (selectedData.distance*(metric?1/1000:miles_per_km/1000));
-                xtext = (xdata).toFixed(2) + (metric?" km":" mi");
+                this.xdata = (selectedData.distance*(metric?1/1000:miles_per_km/1000));
+                this.xtext = (that.xdata).toFixed(2) + (metric?" km":" mi");
                 break;
         }
 
         switch (yaxis) {
             case GraphAxis.Distance:
-                ydata = (selectedData.distance*(metric?1/1000:miles_per_km/1000));
-                ytext = (ydata).toFixed(2) + (metric?" km":" mi");
+                this.ydata = (selectedData.distance*(metric?1/1000:miles_per_km/1000));
+                this.ytext = (that.ydata).toFixed(2) + (metric?" km":" mi");
                 break;
             case GraphAxis.Elevation:
-                ydata = (selectedData.altitude*(metric?1:feet_per_m));
-                ytext = ydata.toFixed(0) + (metric?" m":" ft");
+                this.ydata = (selectedData.altitude*(metric?1:feet_per_m));
+                this.ytext = that.ydata.toFixed(0) + (metric?" m":" ft");
                 break;
             case GraphAxis.VerticalSpeed:
-                ydata = (selectedData.vertical_speed*(metric?1:feet_per_m));
-                ytext = ydata.toFixed(1) + (metric?" m/h":" ft/h");
+                this.ydata = (selectedData.vertical_speed*(metric?1:feet_per_m));
+                this.ytext = that.ydata.toFixed(1) + (metric?" m/h":" ft/h");
                 break;
             case GraphAxis.HorizontalSpeed:
-                ydata = (selectedData.horizontal_speed*(metric?1:miles_per_km));
-                ytext = ydata.toFixed(1) + (metric?" km/h":" mph");
+                this.ydata = (selectedData.horizontal_speed*(metric?1:miles_per_km));
+                this.ytext = that.ydata.toFixed(1) + (metric?" km/h":" mph");
                 break;
         }
 
-
-
-        focus
-            .attr("cx", xScale(xdata))
-            .attr("cy", yScale(ydata))
-        xfocusText
-            .html(xtext)
-            .attr("x", xScale(xdata)+15)
-            .attr("y", yScale(ydata))
-        yfocusText
-            .html(ytext)
-            .attr("x", xScale(xdata)+15)
-            .attr("y", yScale(ydata)+15)
-
-        moveMarker(jsonData.geometry.coordinates[0][i][1], jsonData.geometry.coordinates[0][i][0]);
+        that.focus
+            .attr("cx", that.xScale(this.xdata))
+            .attr("cy", that.yScale(this.ydata))
+        that.xfocusText
+            .html(this.xtext)
+            .attr("x", that.xScale(this.xdata)+15)
+            .attr("y", that.yScale(this.ydata))
+        that.yfocusText
+            .html(this.ytext)
+            .attr("x", that.xScale(this.xdata)+15)
+            .attr("y", that.yScale(this.ydata)+15)
     }
-    function mouseout() {
-        focus.style("opacity", 0)
-        xfocusText.style("opacity", 0)
-        yfocusText.style("opacity", 0)
-        hideMarker();
+
+    this.hideGraphMarker = function() {
+        that.focus.style("opacity", 0)
+        that.xfocusText.style("opacity", 0)
+        that.yfocusText.style("opacity", 0);
     }
+
+    this.mouseout = function() {
+        that.hideGraphMarker();
+        hideMapMarker();
+    }
+
+    // Create a rect on top of the svg area: this rectangle recovers mouse position
+    this.svg
+        .append('rect')
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .attr('width', this.width)
+        .attr('height', this.height)
+        .on('mouseover', this.mouseover)
+        .on('mousemove', this.mousemove)
+        .on('mouseout', this.mouseout);
 }
 
 var getJSON = function(url) {
@@ -651,7 +672,6 @@ function settings() {
         metric = (localStorage.getItem("metric")==="true");
     }
 
-
     if (metric) {
         document.getElementById("metricChecked").checked = true;
         setMetric();
@@ -676,7 +696,7 @@ engine.runRenderLoop(function () {
 // Watch for browser/canvas resize events
 window.addEventListener("resize", function () {
     engine.resize();
-    drawGraph(graphYAxis, graphXAxis);
+    graph = new drawGraph(graphYAxis, graphXAxis);
 });
 
 function getPosition(lat, lon) {
@@ -690,7 +710,20 @@ function getPosition(lat, lon) {
         return false;
 }
 
-function moveMarker(lat, lon) {
+function findLine(lat, lon) {
+    var closest = kdtree.nearest([lon, lat], 1, 0.00001);
+    if (closest.length<1) {
+        hideMapMarker();
+        graph.hideGraphMarker();
+        return;
+    }
+    moveMapMarker(closest[0][0][1], closest[0][0][0]);
+    var index = jsonData.geometry.coordinates[0].indexOf(closest[0][0]);
+    graph.showGraphMarker();
+    graph.moveGraphMarker(datas[index]);
+}
+
+function moveMapMarker(lat, lon) {
     marker.setLngLat([lon, lat]); //2D map
     var x = (coordinateSystem.centerLon-lon)*coordinateSystem.metersPerDegreeLon;
     var y = (lat-coordinateSystem.centerLat)*coordinateSystem.metersPerDegreeLat;
@@ -706,7 +739,7 @@ function moveMarker(lat, lon) {
     return false;
 }
 
-function hideMarker() {
+function hideMapMarker() {
     scene.particleSystems[0].stop();
     marker.setLngLat([0, 0]); //2D map
 }
@@ -753,7 +786,7 @@ function setMetric() {
     document.getElementById("value_vertical_down_average").innerText=(vertical_down_average*(metric?1:feet_per_m)).toFixed(1)+(metric?" m/h":" ft/h");
     document.getElementById("value_vertical_up_average").innerText=(vertical_up_average*(metric?1:feet_per_m)).toFixed(1)+(metric?" m/h":" ft/h")
 
-    drawGraph(graphYAxis, graphXAxis);
+    graph = new drawGraph(graphYAxis, graphXAxis);
 }
 
 function saveEdit() {
@@ -903,3 +936,7 @@ function setTrackShare(state) {
         console.log(error);
     });
 }
+
+
+/////////////
+//K_D tree implementation; (C) by Rainer, 2022
