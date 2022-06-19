@@ -92,7 +92,6 @@ var delayCreateScene = function() {
             dirLight.direction = new BABYLON.Vector3(-1 * c.position.y, c.position.x, 0);
         })
 
-
         particleSystem.particleTexture = new BABYLON.Texture("../assets/flare.png", scene);
         particleSystem.emitter = new BABYLON.Vector3(0, 0, 0);
         particleSystem.minEmitPower = 100*Math.pow(2,14-zoomfactor);
@@ -162,6 +161,19 @@ var delayCreateScene = function() {
             meshes[i].material.emissiveTexture.update();
         }
 
+        scene.onPointerObservable.add((pointerInfo) => {
+            if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+                var hit = scene.pick(scene.pointerX, scene.pointerY)
+                if (hit.hit) {
+                    var lat = (hit.pickedPoint._y/coordinateSystem.metersPerDegreeLat)+coordinateSystem.centerLat;
+                    var lon = coordinateSystem.centerLon-(hit.pickedPoint._x/coordinateSystem.metersPerDegreeLon);
+                    findLine(lat,lon);
+                } else {
+                    findLine(null);
+                }
+            }
+        });
+
         prepareGraph(jsonData);
         document.getElementById("progressdiv").style.display = "none";
         var n_bound = jsonData.properties.tileBBoxes[0].n_Bound;
@@ -223,7 +235,7 @@ function prepareMap2d(jsonData) {
     var map = new maplibregl.Map({
         container: 'map2d',
         style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=j2l5mrAxnWdu6xX99JQp', // stylesheet location
-        bounds: [[jsonData.properties.bbox.boundingBoxW-0.01,jsonData.properties.bbox.boundingBoxS-0.01],[jsonData.properties.bbox.boundingBoxE+0.01,jsonData.properties.bbox.boundingBoxN+0.01]],
+        bounds: [[jsonData.properties.bbox.boundingBoxW-0.005,jsonData.properties.bbox.boundingBoxS-0.005],[jsonData.properties.bbox.boundingBoxE+0.005,jsonData.properties.bbox.boundingBoxN+0.005]],
         touchPitch: false,
         maxPitch: 0,
         minZoom: 8,
@@ -456,11 +468,11 @@ function drawGraph(yaxis, xaxis) {
 
     if (yaxis === GraphAxis.VerticalSpeed) {
         this.areaUp = d3.area()
-            .y0(yScale(0))
+            .y0(this.yScale(0))
             .y1((d) => { if (d.vertical_speed>0) {return this.yScale(d.vertical_speed*(metric?1:feet_per_m))}else{return this.yScale(0);}});
 
         this.areaDown = d3.area()
-            .y0(yScale(0))
+            .y0(this.yScale(0))
             .y1((d) => { if (d.vertical_speed<0) {return this.yScale(d.vertical_speed*(metric?1:feet_per_m))}else{return this.yScale(0);}});
 
 
@@ -711,6 +723,11 @@ function getPosition(lat, lon) {
 }
 
 function findLine(lat, lon) {
+    if (lat == null) {
+        hideMapMarker();
+        graph.hideGraphMarker();
+        return;
+    }
     var closest = kdtree.nearest([lon, lat], 1, 0.00001);
     if (closest.length<1) {
         hideMapMarker();
