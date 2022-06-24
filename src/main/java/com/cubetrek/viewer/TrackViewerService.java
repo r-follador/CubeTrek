@@ -13,6 +13,8 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -28,12 +30,13 @@ public class TrackViewerService {
 
     HGTFileLoader_LocalStorage hgtFileLoader_3DEM = new HGTFileLoader_LocalStorage("/home/rainer/Software_Dev/HGT/");
 
-    public String getGLTF(Users user, long trackid) {
-        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
-        isAccessAllowed(user, track);
+    final static public String noAccessMessage = "Track ID does not exist or access denied";
+
+    public String getGLTF(Authentication authentication, long trackid) {
+        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
+        isReadAccessAllowed(authentication, track);
+
         LatLonBoundingBox boundingBox = addPadding(track.getBBox());
-
-
         GLTFDatafile gltfFile = null;
         try {
             //System.out.println(boundingBox.toString());
@@ -59,40 +62,26 @@ public class TrackViewerService {
     }
 
     @Transactional
-    public TrackGeojson getTrackGeojson(Users user, long trackid) {
+    public TrackGeojson getTrackGeojson(Authentication authentication, long trackid) {
         TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
-        isAccessAllowed(user, track);
+        isReadAccessAllowed(authentication, track);
 
         return new TrackGeojson(track);
-    }
-
-    @Transactional
-    public String mapView2D(Users user, long trackid, Model model) {
-        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
-        isAccessAllowed(user, track);
-
-        model.addAttribute("trackmetadata", track);
-        model.addAttribute("center_lat", track.getCenter().getCoordinates()[0].y);
-        model.addAttribute("center_lon", track.getCenter().getCoordinates()[0].x);
-        model.addAttribute("user", user);
-        model.addAttribute("writeAccess", true);
-
-        return "trackview_2d";
     }
 
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm");
 
     @Transactional
-    public String mapView3D(Users user, long trackid, Model model) {
+    public String mapView3D(Authentication authentication, long trackid, Model model) {
         TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException("Track ID does not exist"));
-        isAccessAllowed(user, track);
+        isReadAccessAllowed(authentication, track);
         model.addAttribute("trackmetadata", track);
-        model.addAttribute("user", user);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("dateCreatedString", track.getDateTrack().format(formatter));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
+        model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         return "trackview";
     }
 
@@ -103,10 +92,28 @@ public class TrackViewerService {
         return markdownRenderer.render(document);
     }
 
-    private static boolean isAccessAllowed(Users user, TrackMetadata track) {
-        if (!track.getOwner().getId().equals(user.getId()) && track.getSharing() != TrackMetadata.Sharing.PUBLIC) {
-            throw new ExceptionHandling.TrackViewerException("Track ID cannot be accessed");
+    private void isReadAccessAllowed(Authentication authentication, TrackMetadata track) {
+        //throw new ExceptionHandling.TrackViewerException("Track ID cannot be accessed");
+        boolean accessAllowed;
+        if (track.getSharing() == TrackMetadata.Sharing.PUBLIC) //open for anyone
+            accessAllowed = true;
+        else if (authentication instanceof AnonymousAuthenticationToken) //not logged in
+            accessAllowed = false;
+        else {
+            Users user = (Users) authentication.getPrincipal();
+            accessAllowed = track.getOwner().getId().equals(user.getId());
         }
-        return true;
+        if (!accessAllowed)
+            throw new ExceptionHandling.TrackViewerException(noAccessMessage);
     }
+
+    private boolean isWriteAccessAllowed(Authentication authentication, TrackMetadata track) {
+        if (authentication instanceof AnonymousAuthenticationToken) //not logged in
+            return false;
+        else {
+            Users user = (Users) authentication.getPrincipal();
+            long ownerid = track.getOwner().getId();
+            return ownerid == user.getId();
+        }
+     }
 }

@@ -18,6 +18,9 @@ public interface TrackMetadataRepository extends JpaRepository<TrackMetadata, Lo
     //find duplicates by key features
     boolean existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(Users owner, ZonedDateTime dateTrack, Point center, int distance, int duration);
 
+    @Query("select u.owner.id from trackmetadata u where u.id = :id")
+    long getOwnerId(@Param(value="id") long id);
+
     @Modifying
     @Query("update trackmetadata u set u.title = :title, u.comment = :comment, u.activitytype = :activitytype where u.id = :id")
     void updateTrackMetadata(@Param(value = "id") long id, @Param(value = "title") String title, @Param(value = "comment") String comment, @Param(value="activitytype") TrackMetadata.Activitytype activitytype);

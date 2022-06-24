@@ -8,6 +8,7 @@ import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -125,33 +126,21 @@ public class MainController {
     public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-        return trackViewerService.mapView3D(user, trackid, model);
-    }
-
-    @GetMapping(value="/view_2d/{itemid}")
-    public String viewTrack_2d(@PathVariable("itemid") long trackid, Model model)
-    {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-        return trackViewerService.mapView2D(user, trackid, model);
+        return trackViewerService.mapView3D(authentication, trackid, model);
     }
 
     @ResponseBody
     @GetMapping(value = "/api/simplifiedtrack/{itemid}.geojson", produces = "application/json")
     public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-
-        return trackViewerService.getTrackGeojson(user, trackid);
+        return trackViewerService.getTrackGeojson(authentication, trackid);
     }
 
     @ResponseBody
     @GetMapping(value = "/api/gltf/{itemid}.gltf", produces = "text/plain")
     public String getGLTF(@PathVariable("itemid") long trackid, Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-        return trackViewerService.getGLTF(user, trackid);
+        return trackViewerService.getGLTF(authentication, trackid);
     }
 
     /**
@@ -215,15 +204,15 @@ public class MainController {
     @ResponseBody
     @RequestMapping(value="/api/modify")
     public UpdateTrackmetadataResponse updateTrackmetadata(@RequestBody EditTrackmetadataDto editTrackmetadataDto) {
-        //TODO: check permission
-        return storageService.editTrackmetadata(editTrackmetadataDto);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return storageService.editTrackmetadata(authentication, editTrackmetadataDto);
     }
 
     @Transactional
     @ResponseBody
     @GetMapping(value="/api/modify/id={id}&favorite={favorite}")
     public UpdateTrackmetadataResponse updateTrackFavorite(@PathVariable("id") long id, @PathVariable("favorite") boolean favorite) {
-        //TODO: check permission
+        isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
         trackMetadataRepository.updateTrackFavorite(id, favorite);
         if (favorite)
             trackMetadataRepository.updateTrackHidden(id, false);
@@ -234,7 +223,7 @@ public class MainController {
     @ResponseBody
     @GetMapping(value="/api/modify/id={id}&hidden={hidden}")
     public UpdateTrackmetadataResponse updateTrackHidden(@PathVariable("id") long id, @PathVariable("hidden") boolean hidden) {
-        //TODO: check permission
+        isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
         trackMetadataRepository.updateTrackHidden(id, hidden);
         if (hidden) //if hidden, it can't be favorited
             trackMetadataRepository.updateTrackFavorite(id, false);
@@ -245,7 +234,7 @@ public class MainController {
     @ResponseBody
     @GetMapping(value="/api/modify/id={id}&sharing={sharing}")
     public UpdateTrackmetadataResponse modifySharing(@PathVariable("id") long id, @PathVariable("sharing") TrackMetadata.Sharing sharing) {
-        //TODO: check permission
+        isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
         trackMetadataRepository.updateTrackSharing(id, sharing);
         return new UpdateTrackmetadataResponse(true);
     }
@@ -254,9 +243,22 @@ public class MainController {
     @ResponseBody
     @DeleteMapping(value="/api/modify/id={id}")
     public UpdateTrackmetadataResponse deleteTrack(@PathVariable("id") long id) {
-        //TODO: check permission
+        isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
         trackMetadataRepository.deleteById(id);
         return new UpdateTrackmetadataResponse(true);
+    }
+
+    private void isWriteAccessAllowed(Authentication authentication, long trackId) {
+        boolean writeAccess;
+        if (authentication instanceof AnonymousAuthenticationToken) //not logged in
+            writeAccess = false;
+        else {
+            Users user = (Users) authentication.getPrincipal();
+            long ownerid = trackMetadataRepository.getOwnerId(trackId);
+            writeAccess = ownerid == user.getId();
+        }
+        if (!writeAccess)
+            throw new ExceptionHandling.TrackViewerException(TrackViewerService.noAccessMessage);
     }
 
 }

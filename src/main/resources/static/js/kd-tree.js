@@ -1,6 +1,6 @@
 /**
  * k-d Tree JavaScript  *
- * Adapted from https://github.com/ubilabs/kd-tree-javascript
+ * Adapted for cubetrek from https://github.com/ubilabs/kd-tree-javascript
  */
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -26,7 +26,6 @@
 
     function kdTree(points_in) {
         var points = [...points_in]; //shallow copy to modify
-        console.log(points);
         var metric = distance;
 
         var self = this;
