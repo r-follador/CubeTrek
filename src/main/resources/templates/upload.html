@@ -14,6 +14,11 @@
             width: 480px;
             padding: 5px;
         }
+        .dragging {
+            border: 4px #000000;
+        }
+
+        #drop_zone * {pointer-events: none;}
     </style>
 </head>
 <body>
@@ -155,8 +160,10 @@
 
     inputElement.addEventListener("change", changeFiles, false);
     dropbox.addEventListener("dragenter", dragenter, false);
+    dropbox.addEventListener("dragleave", dragleave, false);
     dropbox.addEventListener("dragover", dragover, false);
     dropbox.addEventListener("drop", drop, false);
+    dropbox.addEventListener("click", clickdropbox, false);
 
     function changeFiles() {
         handleFiles(this.files)
@@ -238,6 +245,13 @@
     function dragenter(e) {
         e.stopPropagation();
         e.preventDefault();
+        dropbox.classList.add('dragging');
+    }
+
+    function dragleave(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        dropbox.classList.remove('dragging');
     }
 
     function dragover(e) {
@@ -254,7 +268,9 @@
         handleFiles(files);
     }
 
-
+    function clickdropbox(e) {
+        inputElement.click();
+    }
 
 
 

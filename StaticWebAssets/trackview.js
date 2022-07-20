@@ -29,7 +29,7 @@ var delayCreateScene = function() {
             }
             document.getElementById("progressbar").setAttribute("style","width: "+loadedPercent+"%")
         }),
-        getJSON(root + "simplifiedtrack/"+trackname+".geojson")
+        getJSON(root + "geojson/"+trackname+".geojson")
     ]).catch(error => {
         document.getElementById("errormessage").innerText = "Error Loading Assets; Try again.";
         document.getElementById("errormessage").style.display = "block";

@@ -7,6 +7,8 @@ import com.cubetrek.registration.UserRegistrationService;
 import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -50,6 +52,8 @@ public class MainController {
     @Autowired
     private OsmPeaksRepository osmPeaksRepository;
 
+    Logger logger = LoggerFactory.getLogger(MainController.class);
+
 
     @GetMapping("/registration")
     public String showRegistrationForm(WebRequest request, Model model) {
@@ -74,9 +78,17 @@ public class MainController {
     }
 
 
-    @GetMapping("/index")
-    public String index() {
-        return "index";
+    @GetMapping("/")
+    public String index(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof AnonymousAuthenticationToken)
+            return "index";
+        else {
+            Users user = (Users)authentication.getPrincipal();
+            model.addAttribute("user", user);
+            model.addAttribute("tracks", trackMetadataRepository.findByOwner(user));
+            return "dashboard";
+        }
     }
 
     @GetMapping("/login")
@@ -122,6 +134,12 @@ public class MainController {
         return storageService.store(user, file);
     }
 
+    @ResponseBody
+    @PostMapping(value = "/upload_anonymous", produces = "application/json")
+    public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
+        return storageService.store(null, file);
+    }
+
     @GetMapping(value="/view/{itemid}")
     public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
@@ -130,7 +148,7 @@ public class MainController {
     }
 
     @ResponseBody
-    @GetMapping(value = "/api/simplifiedtrack/{itemid}.geojson", produces = "application/json")
+    @GetMapping(value = "/api/geojson/{itemid}.geojson", produces = "application/json")
     public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return trackViewerService.getTrackGeojson(authentication, trackid);
@@ -150,8 +168,8 @@ public class MainController {
 
         byte[] image = null;
         try {
-            //URL url = new URL(String.format("https://api.maptiler.com/maps/basic/%d/%d/%d.png?key=j2l5mrAxnWdu6xX99JQp", zoom, x,y)); //Sun Locator style map (no shading)
-            URL url = new URL(String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=j2l5mrAxnWdu6xX99JQp", zoom, x,y)); //Swiss Topo style map (shading)
+            //URL url = new URL(String.format("https://api.maptiler.com/maps/basic/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x,y)); //Sun Locator style map (no shading)
+            URL url = new URL(String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x,y)); //Swiss Topo style map (shading)
             InputStream in = new BufferedInputStream(url.openStream());
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[1024];
@@ -180,13 +198,15 @@ public class MainController {
     public void getGLTF(@PathVariable("type") String type, @PathVariable("zoom") int zoom, @PathVariable("x") int x, @PathVariable("y") int y, HttpServletResponse response) {
         String mapaccession = switch (type) {
             case "winter" ->
-                    String.format("https://api.maptiler.com/maps/winter/%d/%d/%d.png?key=j2l5mrAxnWdu6xX99JQp", zoom, x, y);
+                    String.format("https://api.maptiler.com/maps/winter/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
             case "satellite" ->
-                    String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=j2l5mrAxnWdu6xX99JQp", zoom, x, y);
+                    String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+            case "satellite_ch" ->
+                    String.format("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/%d/%d/%d.jpeg", zoom, x, y);
             case "standard" ->
-                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=j2l5mrAxnWdu6xX99JQp", zoom, x, y);
+                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
             default ->
-                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=j2l5mrAxnWdu6xX99JQp", zoom, x, y);
+                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
         };
 
         response.setHeader("Location", mapaccession);
@@ -245,6 +265,7 @@ public class MainController {
     public UpdateTrackmetadataResponse deleteTrack(@PathVariable("id") long id) {
         isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
         trackMetadataRepository.deleteById(id);
+        logger.info("Delete ID '"+id+"'");
         return new UpdateTrackmetadataResponse(true);
     }
 

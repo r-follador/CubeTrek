@@ -1,10 +1,398 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-Index
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+
+      .b-example-divider {
+        height: 3rem;
+        background-color: rgba(0, 0, 0, .1);
+        border: solid rgba(0, 0, 0, .15);
+        border-width: 1px 0;
+        box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+      }
+
+      .b-example-vr {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 100vh;
+      }
+
+      .bi {
+        vertical-align: -.125em;
+        fill: currentColor;
+      }
+
+      .nav-scroller {
+        position: relative;
+        z-index: 2;
+        height: 2.75rem;
+        overflow-y: hidden;
+      }
+
+      .nav-scroller .nav {
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 1rem;
+        margin-top: -1px;
+        overflow-x: auto;
+        text-align: center;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .drop-area {
+        border: 2px dashed #ccc;
+        border-radius: 20px;
+        padding: 5px;
+      }
+
+      .dragging {
+        background-color: #b5c9ff;
+      }
+
+      #drop_zone * {pointer-events: none;}
+    </style>
+
+    
+  </head>
+  <body>
+    
+<header>
+  <div class="collapse bg-dark" id="navbarHeader">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-6 col-md-7 py-4">
+          <h4 class="text-white">About</h4>
+          <p class="text-light">CubeTrek is an experimental App to visualize GPS Tracks in 3D to realistically depict the topography. It's intended for
+          Outdoor activities in mountainous and hilly Terrain, such as Skiing, Mountaineering, Mountainbiking and Trailrunning.</p>
+          <p class="text-light">If you encounter any problems, errors and bugs, shoot me an email.</p>
+        </div>
+        <div class="col-sm-4 offset-md-1 py-4">
+          <h4 class="text-white">Contact</h4>
+          <ul class="list-unstyled">
+            <li><a href="mailto:contact@cubetrek.com" class="text-white">Email me</a></li>
+          </ul>
+          <h4 class="text-white">More Projects</h4>
+          <ul class="list-unstyled">
+            <li><a href="http://sunlocator.com" class="text-white">Sun Locator</a><br>
+              An Android App to predict the Sun position and shadowing</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="navbar navbar-dark bg-dark shadow-sm">
+    <div class="container">
+      <div class="navbar-brand d-flex align-items-center">
+        <img class="me-2" width="30" src="/assets/logo.svg">CubeTrek
+      </div>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="py-5 text-center container">
+    <div class="row py-lg-5">
+      <div class="col-lg-6 col-md-8 mx-auto">
+        <h1 class="fw-light">Your GPS-Tracks in 3D</h1>
+        <p class="lead text-muted">Topography is what makes Skiing, Hiking, Trailrunning and Mountainbiking so exciting.</p>
+        <p class="lead text-muted">You conquer those Vertical Distances with a lot of sweat and effort, but your Tracking Software only shows a
+          boring 2D Map.</p>
+        <p class="lead text-muted">That's where <strong>CubeTrek</strong> comes in.
+        </p>
+        <p>
+          <a href="#examples" class="btn btn-primary my-2">See Examples</a>
+          <a href="#upload" class="btn btn-secondary my-2">Upload your own Track</a>
+          <a href="#news" class="btn btn-secondary my-2">Receive News</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div id="examples" class="album py-5 bg-light">
+    <div class="container">
+      <h2 class="fw-light text-center">Examples</h2>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+
+        <div class="col">
+          <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('unsplash-photo-1.jpg');">
+            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="google.com">Hike to Montalin</a>
+              <ul class="d-flex list-unstyled mt-auto">
+                <li class="d-flex align-content-end me-3">
+                  <small>Hike</small>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('unsplash-photo-1.jpg');">
+            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="google.com">Hike to Montalin</a>
+              <ul class="d-flex list-unstyled mt-auto">
+                <li class="d-flex align-content-end me-3">
+                  <small>Hike</small>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('unsplash-photo-1.jpg');">
+            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="google.com">Hike to Montalin</a>
+              <ul class="d-flex list-unstyled mt-auto">
+                <li class="d-flex align-content-end me-3">
+                  <small>Hike</small>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="upload" class="py-5">
+    <div class="container">
+      <h2 class="fw-light text-center">Upload and View your GPS-Track</h2>
+      <div class="row">
+        <div id="drop_zone" class="col-2 drop-area">
+          <input type="file" id="uploadfile">
+          <p>Click or drag file into this Box.<br>
+            Accepted file types: GPX and FIT.</p>
+        </div>
+        <div class="col-8">
+          <table class="table" id="table" style="display: none;">
+            <thead><tr>
+              <th>File name</th>
+              <th>Track Name</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Distance</th>
+              <th>Elevation Gain</th>
+              <th>Time</th>
+              <th> </th>
+            </tr></thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row pt-5">
+        <div class="col-6">
+          <span class="badge bg-warning text-dark">Privacy Disclaimer</span> <b>Read it, it's short</b> Although the upload occurs anonymously (i.e. no IP or Email Addresses are saved and correlated
+          to your upload, no ads and trackers are used), the GPS Track itself can contain data that might be sensitive (I mean, it shows when and where you have been).<br>
+          Be aware that anyone with the generated link will be able to view your track.<br>
+          The track data might be used to generate some aggregate statistics, but no evil shit, I promise.
+        </div>
+        <div class="col-6">
+          <span class="badge bg-warning text-dark">Experimental</span> The whole thing is still very experimental and
+          might blow up any minute.<br>
+          No guarantees on accuracy, no guarantees on how long the uploaded tracks will be available via the link.<br>
+          But if you encounter any problems, <a href="mailto:contact@cubetrek.com">please tell me via email</a> (include your GPS Track if possible).
+        </div>
+      </div>
+      <div class="row pt-4">
+        <div class="col-6">
+          <span class="badge bg-warning text-dark">Current Limitations</span> Only FIT and GPX files are supported (e.g. no TCX files) with the correct file suffix.<br>
+          Only activities that cover an area which is smaller than 100km x 100km (62x62 miles in medieval units).<br>
+          Max. file size is 5 MB (that's more than it sounds) <br>
+          The Track must contain time data.<br>
+          Elevation data is automatically added if not present (yes, that's actually not a limitation).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="news" class="py-5 bg-light">
+    <div class="container">
+      <h2 class="fw-light text-center">Get News</h2>
+
+      <div class="row pt-3">
+        <div class="col-4">
+          <div class="form-floating mb-3">
+            <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
+            <label for="floatingInput">Email address</label>
+          </div>
+          <button type="submit" class="btn btn-primary mb-3">Submit</button> Your address will not be shared.
+        </div>
+        <div class="col-7 offset-1 lead">
+          <p><b>CubeTrek</b>'s Vision is to become the home for all your Mountain related GPS Tracks.</p>
+          <p>It's where you will be able to store and view your Tracks, add Notes and Photos. Share your adventure with the world, your
+          friends or just relive them for yourself.</p>
+          <p>To receive updates, sign up for the mailing list. Or get in touch via <a href="mailto:contact@cubetrek.com">Email</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="text-muted py-5">
+  <div class="container">
+    <p class="float-end mb-1">
+      <a href="#">Back to top</a>
+    </p>
+    <p class="mb-1">&copy; CubeTrek 2022</p>
+  </div>
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+        crossorigin="anonymous"></script>
+
+<script>
+  const inputElement = document.getElementById("uploadfile");
+  const dropbox = document.getElementById("drop_zone");
+  const table = document.getElementById("table");
+
+  inputElement.addEventListener("change", changeFiles, false);
+  dropbox.addEventListener("dragenter", dragenter, false);
+  dropbox.addEventListener("dragleave", dragleave, false);
+  dropbox.addEventListener("dragover", dragover, false);
+  dropbox.addEventListener("drop", drop, false);
+  dropbox.addEventListener("click", clickdropbox, false);
+
+  function changeFiles() {
+    handleFiles(this.files)
+  }
+  function handleFiles(fileList) {
+    for (let i = 0, numFiles = fileList.length; i < numFiles; i++) {
+      const file = fileList[i];
+      sendFile(file);
+      return;
+    }
+  }
+
+  var tableStore = {key1: "empty"};
+  var concurrentuploads = 0;
+
+  function sendFile(file) {
+    table.style.display = 'block';
+    const uri = "/upload_anonymous";
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+
+    tableStore[file.name+file.lastModified] = table.insertRow(-1);
+    tableStore[file.name+file.lastModified].insertCell(0).appendChild(document.createTextNode(file.name));
+    tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<div class=\"progress\"><div class=\"progress-bar progress-bar-striped progress-bar-animated\" role=\"progressbar\" style=\"width: 0%\" id='progress"+file.name+file.lastModified+"'></div></div>";
+    tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "<div class=\"spinner-border spinner-border-sm text-info\" role=\"status\" />";
+
+
+    xhr.open("POST", uri, true);
+    xhr.upload.onprogress = function(evt)
+    {
+      var percentComplete = evt.loaded / file.size * 100;
+      document.getElementById("progress"+file.name+file.lastModified).setAttribute("style","width: "+percentComplete+"%");
+    };
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        tableStore[file.name+file.lastModified].deleteCell(2);
+        tableStore[file.name+file.lastModified].deleteCell(1);
+        var responsejson = JSON.parse(xhr.responseText);
+        tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.title+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.activitytype+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(3).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+(new Date(Date.parse(responsejson.date))).toLocaleString()+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(4).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+(parseFloat(responsejson.trackSummary.distance)/1000).toFixed(1) + " km"+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(5).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.trackSummary.elevationUp + " m"+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(6).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+minToString(parseInt(responsejson.trackSummary.duration))+ " h"+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(7).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank'>View</a>";
+      }
+      else if (xhr.readyState === 4 && xhr.status === 400) {
+        tableStore[file.name+file.lastModified].deleteCell(2);
+        tableStore[file.name+file.lastModified].deleteCell(1);
+        var responsejson = JSON.parse(xhr.responseText);
+        tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
+        tableStore[file.name+file.lastModified].insertCell(2).innerHTML = responsejson.response;
+      } else if (xhr.readyState === 4 && xhr.status === 0) {
+        tableStore[file.name+file.lastModified].deleteCell(2);
+        tableStore[file.name+file.lastModified].deleteCell(1);
+        tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
+        tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "No response from server";
+      } else if (xhr.readyState === 4) {
+        tableStore[file.name+file.lastModified].deleteCell(2);
+        tableStore[file.name+file.lastModified].deleteCell(1);
+        tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
+        tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "Error "+xhr.status;
+      }
+    };
+    fd.append('file', file);
+    // Initiate a multipart/form-data upload
+    concurrentuploads++;
+    setTimeout(function() {
+      xhr.send(fd);
+    }, Math.max(concurrentuploads-5,0)*10); //TODO: longer timeouts for production
+  }
+
+  function minToString(minutes) {
+    var m = minutes % 60;
+    var h = (minutes-m)/60;
+    return h.toString() + ":" + (m<10?"0":"") + m.toString();
+  }
+
+  function dragenter(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    dropbox.classList.add('dragging');
+  }
+
+  function dragleave(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    dropbox.classList.remove('dragging');
+  }
+
+  function dragover(e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  function drop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    handleFiles(files);
+  }
+
+  function clickdropbox(e) {
+    inputElement.click();
+  }
+</script>
+
+      
+  </body>
 </html>

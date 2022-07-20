@@ -15,6 +15,7 @@ import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Date;
@@ -45,19 +47,33 @@ public class StorageService {
     private TrackDataRepository trackDataRepository;
 
     @Autowired
+    private UsersRepository usersRepository;
+
+    @Autowired
     private GeographyService geographyService;
 
-    HGTFileLoader_LocalStorage hgtFileLoader_3DEM = new HGTFileLoader_LocalStorage("/home/rainer/Software_Dev/HGT/");
-    HGTFileLoader_LocalStorage hgtFileLoader_1DEM = new HGTFileLoader_LocalStorage("/home/rainer/Software_Dev/HGT_1DEM/");
+    @Value("${cubetrek.hgt.1dem}")
+    private String hgt_1dem_files;
 
+    @Value("${cubetrek.hgt.3dem}")
+    private String hgt_3dem_files;
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss");
 
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
 
-    public UploadResponse store(Users user, MultipartFile file) {
-        System.out.println("Store file");
+    HGTFileLoader_LocalStorage hgtFileLoader_3DEM;
+    HGTFileLoader_LocalStorage hgtFileLoader_1DEM;
 
+    @PostConstruct
+    public void init() {
+        //akrobatik needed to use @values in construtor
+        hgtFileLoader_3DEM = new HGTFileLoader_LocalStorage(hgt_3dem_files);
+        hgtFileLoader_1DEM = new HGTFileLoader_LocalStorage(hgt_1dem_files);
+    }
+
+    public UploadResponse store(Users user, MultipartFile file) {
+        //user can be null, will be saved under anonymous user (id = 1)
         Track track = null;
         TrackMetadata trackMetadata = new TrackMetadata();
         TrackData trackdata = new TrackData();
@@ -65,6 +81,8 @@ public class StorageService {
 
         GPXWorker.ConversionOutput conversionOutput = null;
         try {
+            if (file.getSize()>5_000_000)
+                throw new ExceptionHandling.FileNotAccepted("File is too large.");
             if (file.getOriginalFilename().toLowerCase(Locale.ROOT).endsWith("gpx"))
                 conversionOutput = GPXWorker.loadGPXTracks(file.getInputStream());
             else if (file.getOriginalFilename().toLowerCase().endsWith("fit"))
@@ -92,12 +110,21 @@ public class StorageService {
             throw new ExceptionHandling.FileNotAccepted("GPX file is too small");
         }
 
+        if (reduced.getSegments().get(0).getPoints().size() > 10000) {
+            throw new ExceptionHandling.FileNotAccepted("GPX file is too large");
+        }
+
 
         trackMetadata.setBBox(GPXWorker.getTrueTrackBoundingBox(reduced));
 
 
         if (trackMetadata.getBBox().getWidthLatMeters() > 100000 || trackMetadata.getBBox().getWidthLonMeters() > 100000) {
             throw new ExceptionHandling.FileNotAccepted("Currently only Tracks covering less than 100km x 100km are supported.");
+        }
+
+        //check if elevation data is provided
+        if (reduced.getSegments().get(0).getPoints().get(0).getTime().isEmpty()) {
+            throw new ExceptionHandling.FileNotAccepted("Track does not contain Timing data.");
         }
 
         //check if elevation data is provided
@@ -164,6 +191,10 @@ public class StorageService {
         trackMetadata.setSharing(TrackMetadata.Sharing.PUBLIC);
         trackMetadata.setHeightSource(TrackMetadata.Heightsource.ORIGINAL);
 
+        if (user == null) {
+            user = usersRepository.getReferenceById(1L);
+        }
+
         trackMetadata.setOwner(user);
         trackMetadata.setUploadDate(new Date(System.currentTimeMillis()));
         trackMetadata.setSegments(track.getSegments().size());
@@ -184,7 +215,17 @@ public class StorageService {
 
         //Check if duplicate
         if (trackMetadataRepository.existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackMetadata.getDateTrack(), trackMetadata.getCenter(), trackMetadata.getDistance(), trackMetadata.getDuration())) {
-            throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
+
+            TrackMetadata trackMetadata_duplicate = trackMetadataRepository.findByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackMetadata.getDateTrack(), trackMetadata.getCenter(), trackMetadata.getDistance(), trackMetadata.getDuration()).get(0);
+            UploadResponse ur = new UploadResponse();
+            ur.setTrackID(trackMetadata_duplicate.getId());
+            ur.setTitle(trackMetadata_duplicate.getTitle() + " [Duplicate]");
+            ur.setDate(trackMetadata_duplicate.getDateTrack());
+            ur.setActivitytype(trackMetadata_duplicate.getActivitytype());
+            ur.setTrackSummary(trackSummary);
+
+            return ur;
+            //throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
         }
 
         trackMetadataRepository.save(trackMetadata);
@@ -238,7 +279,7 @@ public class StorageService {
     private String reverseGeocode(LatLon coord) {
         String geoFeatureText = "-";
         try {
-            JsonNode rootNode = (new ObjectMapper()).readTree(new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=j2l5mrAxnWdu6xX99JQp", coord.getLongitude(), coord.getLatitude())).openStream());
+            JsonNode rootNode = (new ObjectMapper()).readTree(new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=Nq5vDCKAnSrurDLNgtSI", coord.getLongitude(), coord.getLatitude())).openStream());
             geoFeatureText = rootNode.path("features").get(0).path("text").asText("-");
         } catch (Exception e) {
             logger.error("Error reverse Geocode", e);
@@ -261,7 +302,7 @@ public class StorageService {
         isWriteAccessAllowed(authentication, editTrackmetadataDto.getIndex());
 
         trackMetadataRepository.updateTrackMetadata(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), editTrackmetadataDto.getNote(), editTrackmetadataDto.getActivitytype());
-
+        logger.info("Modify ID '"+editTrackmetadataDto.getIndex()+"'");
         return new UpdateTrackmetadataResponse(true);
     }
 

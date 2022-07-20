@@ -7,8 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>[[${trackmetadata.title}]] - CubeTrek</title>
     <link rel="icon" type="image/svg" href="../assets/logo.svg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+            crossorigin="anonymous"></script>
 
     <link href="../css/dashboard.css" rel="stylesheet">
 
@@ -19,7 +22,7 @@
     <script src="../js/d3.js"></script>
 
     <script src='../js/maplibre-gl.js'></script>
-    <link href='../css/maplibre-gl.css' rel='stylesheet' />
+    <link href='../css/maplibre-gl.css' rel='stylesheet'/>
 
 </head>
 <body>
@@ -28,7 +31,7 @@
         display: block;
         border: none;
         border-radius: 50%;
-        background-color: rgba(68,146,220,0.42);
+        background-color: rgba(68, 146, 220, 0.42);
         width: 20px;
         height: 20px;
         cursor: pointer;
@@ -36,7 +39,7 @@
     }
 </style>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="../dashboard">← CubeTrek</a>
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="../">← CubeTrek</a>
     <div class="navbar-brand col-auto me-0 px-3 lead">
         [[${trackmetadata.title}]]
     </div>
@@ -47,22 +50,27 @@
 </header>
 
 <div class="progress" id="progressdiv">
-    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar" style="width: 5%"></div>
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar"
+         style="width: 5%"></div>
 </div>
 <div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
-    A simple danger alert—check it out!
+    Error Message
 </div>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
-            <canvas class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;" id="renderCanvas" touch-action="none"></canvas>
+            <canvas class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;"
+                    id="renderCanvas" touch-action="none"></canvas>
             <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked onchange="mapstyle('summer')">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked
+                       onchange="mapstyle('summer')">
                 <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" onchange="mapstyle('winter')">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off"
+                       onchange="mapstyle('winter')">
                 <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off" onchange="mapstyle('satellite')">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off"
+                       onchange="mapstyle('satellite')">
                 <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
             </div>
         </div>
@@ -72,25 +80,34 @@
                 <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%"></div>
                 <div class="d-flex flex-row justify-content-end p-0 pb-1 me-2 m-0">
                     <div class="dropdown">
-                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                             ...
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal Speed</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical Speed</a></li>
+                            <li><a class="dropdown-item" href="#"
+                                   onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
+                            <li><a class="dropdown-item" href="#"
+                                   onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal
+                                Speed</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical
+                                Speed</a></li>
                         </ul>
                     </div>
                     <div class="p-1">versus</div>
                     <div class="dropdown">
-                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                             ...
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed Time</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving Time</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed
+                                Time</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving
+                                Time</a></li>
+                            <li><a class="dropdown-item" href="#"
+                                   onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
                         </ul>
                     </div>
                 </div>
@@ -106,59 +123,112 @@
     <div class="row">
         <div class="col-lg-5">
             <div class="card p-0 mt-3">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col">
-                        <a href="#" title="Click to Favorite/Unfavorite" onclick="clickfavorite()"><img id="favoritestar" th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'" height="20px"></a>
-                        <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
-                        <button type="button" class="btn btn-outline-primary btn-sm ms-3 align-middle" onclick="clickshare()"><img id="publicicon" th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:inline' : 'display:none'}" src="../assets/icon_public.svg" height="15px"> Share</button>
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col">
+                            <a th:if="${writeAccess}" href="#" title="Click to Favorite/Unfavorite" onclick="clickfavorite()"><img
+                                    id="favoritestar"
+                                    th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'"
+                                    height="20px"></a>
+                            <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
+                            <button type="button" class="btn btn-outline-primary btn-sm ms-3 align-middle"
+                                    onclick="clickshare()"><img id="publicicon"
+                                                                th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:inline' : 'display:none'}"
+                                                                src="../assets/icon_public.svg" height="15px"> Share
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="card-body">
-                <div class="row pb-2">
-                    <div class="figure-caption">[[${dateCreatedString}]]</div>
-                    <div class="display-6" data-bs-toggle="modal" data-bs-target="#editModal" onmouseover="document.getElementById('edittitle').style.visibility = 'visible';" onmouseout="document.getElementById('edittitle').style.visibility = 'hidden';">
-                        <img height="50px" th:src="${'../assets/'+trackmetadata.activitytype.getIconName()}" th:title="${trackmetadata.activitytype.getDisplayValue()}">[[${trackmetadata.title}]]
-                        <img style="visibility:hidden" id="edittitle" height="20px" src="../assets/cubetrek_modify.svg">
-                    </div>
-                </div>
+                <div class="card-body">
+                    <div class="row pb-2">
+                        <div class="figure-caption">[[${dateCreatedString}]]</div>
+                        <div class="display-6"
+                             th:attr="data-bs-toggle=${writeAccess?'modal':''}, data-bs-target=${writeAccess?'#editModal':''}"
+                             th:attrappend="onmouseout=${writeAccess?'document.getElementById(''edittitle'').style.visibility = ''hidden'';':''}, onmouseover=${writeAccess?'document.getElementById(''edittitle'').style.visibility = ''visible'';':''}"
 
-                <div class="row">
-                    <h4 class="h4 col"><small class="text-muted fw-light">Distance</small> <div id="value_distance">[[${trackmetadata.distance}]] m</div></h4>
-                    <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small> <div id="value_elevation_up">[[${trackmetadata.elevationUp}]] km</div></h4>
-                </div>
-                <div class="row">
-                    <h4 class="h4 col"><small class="text-muted fw-light">Elapsed/Moving Time</small> <div id="value_time">[[${timeString}]] h / <span id="movingtime">---</span> h</div></h4>
-                    <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small> <div id="value_elevation_down">[[${trackmetadata.elevationDown}]]</div></h4>
-                </div>
-                <div class="row pb-2">
-                    <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small> <div id="value_highest_point">[[${trackmetadata.highestpointEle}]]</div></h4>
-                    <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small> <div id="value_lowest_point">[[${trackmetadata.lowestpointEle}]]</div></h4>
-                </div>
-                <div class="row">
-                    <h4 class="h4 col"><small class="text-muted fw-light">Average Speed</small></h4>
-                </div>
-                <div class="row">
-                    <h5 class="h5 col"><small class="text-muted fw-light">Horizontal→</small> <div id="value_horizontal_average">...</div></h5>
-                    <h5 class="h5 col"><small class="text-muted fw-light">Vertical↑</small> <div id="value_vertical_up_average">...</div></h5>
-                    <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small> <div id="value_vertical_down_average">...</div></h5>
+                        >
+                            <img height="50px" th:src="${'../assets/'+trackmetadata.activitytype.getIconName()}"
+                                 th:title="${trackmetadata.activitytype.getDisplayValue()}">[[${trackmetadata.title}]]
+                            <img th:if="${writeAccess}" style="visibility:hidden" id="edittitle" height="20px"
+                                 src="../assets/cubetrek_modify.svg">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <h4 class="h4 col"><small class="text-muted fw-light">Distance</small>
+                            <div id="value_distance">[[${trackmetadata.distance}]] m</div>
+                        </h4>
+                        <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small>
+                            <div id="value_elevation_up">[[${trackmetadata.elevationUp}]] km</div>
+                        </h4>
+                    </div>
+                    <div class="row">
+                        <h4 class="h4 col"><small class="text-muted fw-light">Elapsed/Moving Time</small>
+                            <div id="value_time">[[${timeString}]] h / <span id="movingtime">---</span> h</div>
+                        </h4>
+                        <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small>
+                            <div id="value_elevation_down">[[${trackmetadata.elevationDown}]]</div>
+                        </h4>
+                    </div>
+                    <div class="row pb-2">
+                        <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small>
+                            <div id="value_highest_point">[[${trackmetadata.highestpointEle}]]</div>
+                        </h4>
+                        <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small>
+                            <div id="value_lowest_point">[[${trackmetadata.lowestpointEle}]]</div>
+                        </h4>
+                    </div>
+                    <div class="row">
+                        <h4 class="h4 col"><small class="text-muted fw-light">Average Speed</small></h4>
+                    </div>
+                    <div class="row">
+                        <h5 class="h5 col"><small class="text-muted fw-light">Horizontal→</small>
+                            <div id="value_horizontal_average">...</div>
+                        </h5>
+                        <h5 class="h5 col"><small class="text-muted fw-light">Vertical↑</small>
+                            <div id="value_vertical_up_average">...</div>
+                        </h5>
+                        <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small>
+                            <div id="value_vertical_down_average">...</div>
+                        </h5>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
         <div class="col-lg-7">
-            <div class="card p-0 mt-3" onmouseover="document.getElementById('editnote').style.visibility = 'visible';" onmouseout="document.getElementById('editnote').style.visibility = 'hidden';">
-        <div class="card-header">
-            Notes <img style="visibility:hidden" id="editnote" height="15px" src="../assets/cubetrek_modify.svg">
-        </div>
-        <div class="card-body" data-bs-toggle="modal" data-bs-target="#editNoteModal" th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes, click to add</i>' : formattedNote}">
-
-        </div>
-    </div>
+            <div class="card p-0 mt-3" th:attr="onmouseover=${writeAccess?'document.getElementById(''editnote'').style.visibility = ''visible'';':''}"
+                 th:attrappend="onmouseout=${writeAccess?'document.getElementById(''editnote'').style.visibility = ''hidden'';':''}">
+                <div class="card-header">
+                    Notes <img th:if="${writeAccess}" style="visibility:hidden" id="editnote" height="15px"
+                               src="../assets/cubetrek_modify.svg">
+                </div>
+                <div th:if="${writeAccess}" class="card-body" data-bs-toggle="modal" data-bs-target="#editNoteModal"
+                     th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes, click to Add</i>' : formattedNote}">
+                </div>
+                <div th:unless="${writeAccess}" class="card-body"
+                     th:utext="${#strings.isEmpty(trackmetadata.comment) ? '<i>No Notes</i>' : formattedNote}">
+                </div>
+            </div>
         </div>
     </div>
 </div>
+<div class="container">
+    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+        <div class="col-md-4 d-flex align-items-center">
+            <a href="/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <img width="30" src="../assets/logo.svg">
+            </a>
+            <span class="text-muted">© 2022 CubeTrek.com</span>
+        </div>
+
+        <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+            <span class="text-muted">Map Data Courtesy of © MapTiler © OpenStreetMap contributors<br>
+            Elevation Data Courtesy of &copy;  NASA SRTM V003</span>
+        </ul>
+    </footer>
+</div>
+
+
 
 
 <!-- Modal -->
@@ -166,34 +236,48 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Settings</h5>
+                <h5 class="modal-title">Settings</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h5>View Settings</h5>
+                <h5 th:if="${writeAccess}">View Settings</h5>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
                     <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
                 </div>
-                <hr>
-                <h5>Track Settings</h5>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="favoriteChecked" th:checked="${trackmetadata.favorite}" onclick="clickfavorite()">
-                    <label class="form-check-label" for="favoriteChecked">Favorite</label>
+                <div th:if="${writeAccess}">
+                    <hr>
+                    <h5>Track Settings</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="favoriteChecked"
+                               th:checked="${trackmetadata.favorite}" onclick="clickfavorite()">
+                        <label class="form-check-label" for="favoriteChecked">Favorite</label>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
+                        Edit Track
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
+                        Edit Notes
+                    </button>
+                    <h6 class="mt-3">Privacy</h6>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="publicChecked"
+                               th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC}"
+                               onclick="setTrackShare()">
+                        <label class="form-check-label" for="publicChecked" id="publicCheckedLabel"
+                               th:text="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'Public, anyone with the link can view this track' : 'Private, only you can view this track'}">Public</label>
+                    </div>
+                    <h6 class="mt-3">Hide or Delete Track</h6>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="hiddenChecked"
+                               th:checked="${trackmetadata.hidden}" onclick="clickhide(false)">
+                        <label class="form-check-label" for="hiddenChecked">Hide Track</label>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="clickdelete(false)">Delete Track
+                    </button>
                 </div>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Track</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">Edit Notes</button>
-                <h6 class="mt-3">Privacy</h6>
-                <div class="form-check form-switch mt-3">
-                    <input class="form-check-input" type="checkbox" id="publicChecked" th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC}" onclick="setTrackShare()">
-                    <label class="form-check-label" for="publicChecked" id="publicCheckedLabel" th:text="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'Public, anyone with the link can view this track' : 'Private, only you can view this track'}">Public</label>
-                </div>
-                <h6 class="mt-3">Hide or Delete Track</h6>
-                <div class="form-check form-switch mt-3">
-                    <input class="form-check-input" type="checkbox" id="hiddenChecked" th:checked="${trackmetadata.hidden}" onclick="clickhide(false)">
-                    <label class="form-check-label" for="hiddenChecked">Hide Track</label>
-                </div>
-                <button type="button" class="btn btn-danger btn-sm" onclick="clickdelete(false)">Delete Track</button>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -202,7 +286,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="editModal" tabindex="-1">
+<div th:if=${writeAccess} class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -219,7 +303,8 @@
                 <form>
                     <div class="mb-3">
                         <label for="inputTitle" class="form-label">Track Title</label>
-                        <input type="text" class="form-control" id="inputTitle" th:value="${trackmetadata.title}" maxlength="250">
+                        <input type="text" class="form-control" id="inputTitle" th:value="${trackmetadata.title}"
+                               maxlength="250">
                     </div>
                     <div class="mb-3">
                         <label for="inputType" class="form-label">Track Type</label>
@@ -229,7 +314,7 @@
                                     th:value="${activityOpt}"
                                     th:text="${activityOpt.displayValue}"
                                     th:selected="${activityOpt==trackmetadata.activitytype}"
-                                    ></option>
+                            ></option>
                         </select>
                     </div>
                 </form>
@@ -242,7 +327,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="editNoteModal" tabindex="-1">
+<div th:if=${writeAccess} class="modal fade" id="editNoteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -255,7 +340,8 @@
                 </div>
                 <form>
                     <div class="mb-3">
-                        <textarea class="form-control" id="inputComment" rows="10" th:text="${trackmetadata.comment}"></textarea>
+                        <textarea class="form-control" id="inputComment" rows="10"
+                                  th:text="${trackmetadata.comment}"></textarea>
                     </div>
                 </form>
             </div>
@@ -268,7 +354,7 @@
     </div>
 </div>
 
-<div class="modal" id="confirmhidden" tabindex="-1">
+<div th:if=${writeAccess} class="modal" id="confirmhidden" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -279,14 +365,17 @@
                 <p>The only way to view hidden tracks later on is through the designated link on the dashboard.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">
+                    Cancel
+                </button>
                 <button type="button" class="btn btn-primary" onclick="clickhide(true)">Hide Track</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal" id="confirmdelete" tabindex="-1">
+<div th:if=${writeAccess} class="modal" id="confirmdelete" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -297,7 +386,10 @@
                 <p>This cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">
+                    Cancel
+                </button>
                 <button type="button" class="btn btn-primary" onclick="clickdelete(true)">Delete Track</button>
             </div>
         </div>
@@ -311,7 +403,8 @@
                 <h5 class="modal-title">Share Track</h5>
             </div>
             <div class="modal-body">
-                <div th:style="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}" id="publicSet">
+                <div th:style="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
+                     id="publicSet">
                     <p>Anyone with the link can view this track.</p>
                     <input type="text" class="form-control" id="sharelink" readonly>
                     <button type="button" class="btn btn-primary m-2" onclick="copylinktoclipboard()">Copy</button>
@@ -320,9 +413,12 @@
                     </div>
 
                 </div>
-                <div th:style="${trackmetadata.sharing != T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}"  id="privateSet">
+                <div th:style="${trackmetadata.sharing != T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
+                     id="privateSet">
                     <p>If you share this track, anyone with the link can view it.</p>
-                    <button type="button" class="btn btn-primary m-2" onclick="setTrackShare('PUBLIC')">Set Track to Public</button>
+                    <button type="button" class="btn btn-primary m-2" onclick="setTrackShare('PUBLIC')">Set Track to
+                        Public
+                    </button>
                 </div>
             </div>
             <div class="modal-footer">
@@ -331,7 +427,6 @@
         </div>
     </div>
 </div>
-
 
 
 <script>

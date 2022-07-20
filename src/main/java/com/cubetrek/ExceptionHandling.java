@@ -1,16 +1,23 @@
 package com.cubetrek;
 
+import com.cubetrek.viewer.TrackViewerService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
+import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @ControllerAdvice
 public class ExceptionHandling {
+
+    Logger logger = LoggerFactory.getLogger(ExceptionHandling.class);
 
     @ExceptionHandler({FileNotAccepted.class})
     public final ResponseEntity<Object> handleWrongFileException(FileNotAccepted ex) {
@@ -20,7 +27,7 @@ public class ExceptionHandling {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({FileSizeLimitExceededException.class})
+    @ExceptionHandler({MaxUploadSizeExceededException.class, SizeLimitExceededException.class, FileSizeLimitExceededException.class})
     public final ResponseEntity<Object> handleTooLargeFileException(FileSizeLimitExceededException ex) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setResponse("File is too large");
@@ -42,6 +49,12 @@ public class ExceptionHandling {
         errorResponse.setResponse(ex.msg);
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({TrackAccessException.class})
+    public final String handleTrackViewerAccess(TrackAccessException ex) {
+        logger.info("- Track Access Exception");
+        return "trackAccessError";
     }
 
     @ExceptionHandler({EditTrackmetadataException.class})
@@ -71,11 +84,16 @@ public class ExceptionHandling {
     }
 
     @AllArgsConstructor
+    public static class TrackAccessException extends RuntimeException {
+        public String msg ="";
+    }
+
+    @AllArgsConstructor
     public static class EditTrackmetadataException extends RuntimeException {
         public String msg ="";
     }
 
-    public class ErrorResponse{
+    public static class ErrorResponse{
         @Getter
         @Setter
         boolean error=true;

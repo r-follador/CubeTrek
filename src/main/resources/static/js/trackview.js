@@ -32,7 +32,7 @@ var delayCreateScene = function() {
             }
             document.getElementById("progressbar").setAttribute("style","width: "+loadedPercent+"%")
         }),
-        getJSON(root + "simplifiedtrack/"+trackid+".geojson")
+        getJSON(root + "geojson/"+trackid+".geojson")
     ]).catch(error => {
         document.getElementById("errormessage").innerText = "Error Loading Assets; Try again.";
         document.getElementById("errormessage").style.display = "block";
@@ -234,7 +234,7 @@ var marker;
 function prepareMap2d(jsonData) {
     var map = new maplibregl.Map({
         container: 'map2d',
-        style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=j2l5mrAxnWdu6xX99JQp', // stylesheet location
+        style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI', // stylesheet location
         bounds: [[jsonData.properties.bbox.boundingBoxW-0.005,jsonData.properties.bbox.boundingBoxS-0.005],[jsonData.properties.bbox.boundingBoxE+0.005,jsonData.properties.bbox.boundingBoxN+0.005]],
         touchPitch: false,
         maxPitch: 0,
