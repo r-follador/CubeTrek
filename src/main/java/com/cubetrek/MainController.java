@@ -1,6 +1,7 @@
 package com.cubetrek;
 
 import com.cubetrek.database.*;
+import com.cubetrek.newsletter.NewsletterService;
 import com.cubetrek.registration.UserDto;
 import com.cubetrek.upload.*;
 import com.cubetrek.registration.UserRegistrationService;
@@ -10,6 +11,7 @@ import com.sunlocator.topolibrary.LatLonBoundingBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +49,10 @@ public class MainController {
     private UsersRepository usersRepository;
 
     @Autowired
-    private TrackMetadataRepository trackMetadataRepository;
+    private NewsletterService newsletterService;
+
+    @Autowired
+    private TrackDataRepository trackDataRepository;
 
     @Autowired
     private OsmPeaksRepository osmPeaksRepository;
@@ -79,16 +84,10 @@ public class MainController {
 
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index(Model model, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication instanceof AnonymousAuthenticationToken)
-            return "index";
-        else {
-            Users user = (Users)authentication.getPrincipal();
-            model.addAttribute("user", user);
-            model.addAttribute("tracks", trackMetadataRepository.findByOwner(user));
-            return "dashboard";
-        }
+        response.addHeader("Cache-Control", "max-age=600, public");
+        return "index";
     }
 
     @GetMapping("/login")
@@ -111,7 +110,7 @@ public class MainController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("user", user);
-        model.addAttribute("tracks", trackMetadataRepository.findByOwner(user));
+        model.addAttribute("tracks", trackDataRepository.findMetadataByOwner(user));
 
         return "dashboard";
     }
@@ -149,15 +148,17 @@ public class MainController {
 
     @ResponseBody
     @GetMapping(value = "/api/geojson/{itemid}.geojson", produces = "application/json")
-    public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, Model model) {
+    public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        response.addHeader("Cache-Control", "max-age=86400, public");
         return trackViewerService.getTrackGeojson(authentication, trackid);
     }
 
     @ResponseBody
     @GetMapping(value = "/api/gltf/{itemid}.gltf", produces = "text/plain")
-    public String getGLTF(@PathVariable("itemid") long trackid, Model model) {
+    public String getGLTF(@PathVariable("itemid") long trackid, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        response.addHeader("Cache-Control", "max-age=86400, public");
         return trackViewerService.getGLTF(authentication, trackid);
     }
 
@@ -210,14 +211,17 @@ public class MainController {
         };
 
         response.setHeader("Location", mapaccession);
+        response.addHeader("Cache-Control", "max-age=864000, public");
         response.setStatus(302);
     }
 
+    @Cacheable("peaks")
     @ResponseBody
     @GetMapping(value = "/api/peaks/nbound={nbound}&sbound={sbound}&wbound={wbound}&ebound={ebound}", produces = "application/json")
     //@JsonSerialize(using = OsmPeaks.OsmPeaksListSerializer.class)
-    public GeographyService.OsmPeakList getPeaksWithinBBox(@PathVariable("nbound") double nbound, @PathVariable("sbound") double sbound, @PathVariable("wbound") double wbound, @PathVariable("ebound") double ebound) {
+    public GeographyService.OsmPeakList getPeaksWithinBBox(@PathVariable("nbound") double nbound, @PathVariable("sbound") double sbound, @PathVariable("wbound") double wbound, @PathVariable("ebound") double ebound, HttpServletResponse response) {
         LatLonBoundingBox bbox = new LatLonBoundingBox(nbound, sbound, wbound, ebound);
+        response.addHeader("Cache-Control", "max-age=864000, public");
         return geographyService.findPeaksWithinBBox(bbox);
     }
 
@@ -233,9 +237,9 @@ public class MainController {
     @GetMapping(value="/api/modify/id={id}&favorite={favorite}")
     public UpdateTrackmetadataResponse updateTrackFavorite(@PathVariable("id") long id, @PathVariable("favorite") boolean favorite) {
         isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
-        trackMetadataRepository.updateTrackFavorite(id, favorite);
+        trackDataRepository.updateTrackFavorite(id, favorite);
         if (favorite)
-            trackMetadataRepository.updateTrackHidden(id, false);
+            trackDataRepository.updateTrackHidden(id, false);
         return new UpdateTrackmetadataResponse(true);
     }
 
@@ -244,18 +248,18 @@ public class MainController {
     @GetMapping(value="/api/modify/id={id}&hidden={hidden}")
     public UpdateTrackmetadataResponse updateTrackHidden(@PathVariable("id") long id, @PathVariable("hidden") boolean hidden) {
         isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
-        trackMetadataRepository.updateTrackHidden(id, hidden);
+        trackDataRepository.updateTrackHidden(id, hidden);
         if (hidden) //if hidden, it can't be favorited
-            trackMetadataRepository.updateTrackFavorite(id, false);
+            trackDataRepository.updateTrackFavorite(id, false);
         return new UpdateTrackmetadataResponse(true);
     }
 
     @Transactional
     @ResponseBody
     @GetMapping(value="/api/modify/id={id}&sharing={sharing}")
-    public UpdateTrackmetadataResponse modifySharing(@PathVariable("id") long id, @PathVariable("sharing") TrackMetadata.Sharing sharing) {
+    public UpdateTrackmetadataResponse modifySharing(@PathVariable("id") long id, @PathVariable("sharing") TrackData.Sharing sharing) {
         isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
-        trackMetadataRepository.updateTrackSharing(id, sharing);
+        trackDataRepository.updateTrackSharing(id, sharing);
         return new UpdateTrackmetadataResponse(true);
     }
 
@@ -264,9 +268,15 @@ public class MainController {
     @DeleteMapping(value="/api/modify/id={id}")
     public UpdateTrackmetadataResponse deleteTrack(@PathVariable("id") long id) {
         isWriteAccessAllowed(SecurityContextHolder.getContext().getAuthentication(), id);
-        trackMetadataRepository.deleteById(id);
+        trackDataRepository.deleteById(id);
         logger.info("Delete ID '"+id+"'");
         return new UpdateTrackmetadataResponse(true);
+    }
+
+    @ResponseBody
+    @GetMapping(value = "/newslettersignup/{email}")
+    public UpdateTrackmetadataResponse saveEmail(@PathVariable("email") String email) {
+        return newsletterService.store(email);
     }
 
     private void isWriteAccessAllowed(Authentication authentication, long trackId) {
@@ -275,7 +285,7 @@ public class MainController {
             writeAccess = false;
         else {
             Users user = (Users) authentication.getPrincipal();
-            long ownerid = trackMetadataRepository.getOwnerId(trackId);
+            long ownerid = trackDataRepository.getOwnerId(trackId);
             writeAccess = ownerid == user.getId();
         }
         if (!writeAccess)

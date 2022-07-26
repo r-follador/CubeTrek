@@ -1,9 +1,9 @@
 package com.cubetrek.viewer;
 
-import com.cubetrek.database.TrackMetadata;
+import com.cubetrek.database.TrackData;
 import com.cubetrek.database.Users;
 import com.cubetrek.ExceptionHandling;
-import com.cubetrek.database.TrackMetadataRepository;
+import com.cubetrek.database.TrackDataRepository;
 import com.sunlocator.topolibrary.GLTFDatafile;
 import com.sunlocator.topolibrary.HGTFileLoader_LocalStorage;
 import com.sunlocator.topolibrary.HGTWorker;
@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ import java.time.format.DateTimeFormatter;
 public class TrackViewerService {
 
     @Autowired
-    private TrackMetadataRepository trackMetadataRepository;
+    private TrackDataRepository trackDataRepository;
 
     @Value("${cubetrek.hgt.1dem}")
     private String hgt_1dem_files;
@@ -51,22 +52,27 @@ public class TrackViewerService {
     Logger logger = LoggerFactory.getLogger(TrackViewerService.class);
 
     public String getGLTF(Authentication authentication, long trackid) {
-        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
+        TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
         LatLonBoundingBox boundingBox = addPadding(track.getBBox());
-        GLTFDatafile gltfFile = null;
+        String output;
         try {
-
-            System.out.println("@@@@@@@@@@@@@@@@@@ "+ hgt_3dem_files);
-            gltfFile = HGTWorker.getTileGLTF_3DEM(boundingBox, calculateZoomlevel(boundingBox), true, hgtFileLoader_3DEM, "map/standard/%d/%d/%d.png");
+            output = getGLTFString_cacheable(trackid, boundingBox);
         } catch (IOException e) {
             logger.error("",e);
             e.printStackTrace(System.err);
             throw new ExceptionHandling.TrackViewerException("IOException: "+e.getMessage());
         }
-        return  gltfFile.getString();
+        return output;
+    }
+
+    //make this function cacheable end using the id as key
+    @Cacheable(cacheNames = "gltf", key = "#id")
+    public String getGLTFString_cacheable(long id, LatLonBoundingBox boundingBox) throws IOException {
+        GLTFDatafile gltfDatafile = HGTWorker.getTileGLTF_3DEM(boundingBox, calculateZoomlevel(boundingBox), true, hgtFileLoader_3DEM, "map/standard/%d/%d/%d.png");
+        return gltfDatafile.getString();
     }
 
     public static int calculateZoomlevel(LatLonBoundingBox boundingBox) {
@@ -83,7 +89,7 @@ public class TrackViewerService {
 
     @Transactional
     public TrackGeojson getTrackGeojson(Authentication authentication, long trackid) {
-        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
+        TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
@@ -95,7 +101,7 @@ public class TrackViewerService {
     @Transactional
     public String mapView3D(Authentication authentication, long trackid, Model model) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
-        TrackMetadata track = trackMetadataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
+        TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
@@ -117,10 +123,10 @@ public class TrackViewerService {
         return markdownRenderer.render(document);
     }
 
-    private boolean isReadAccessAllowed(Authentication authentication, TrackMetadata track) {
+    private boolean isReadAccessAllowed(Authentication authentication, TrackData track) {
         //throw new ExceptionHandling.TrackViewerException("Track ID cannot be accessed");
         boolean accessAllowed;
-        if (track.getSharing() == TrackMetadata.Sharing.PUBLIC) //open for anyone
+        if (track.getSharing() == TrackData.Sharing.PUBLIC) //open for anyone
             accessAllowed = true;
         else if (authentication instanceof AnonymousAuthenticationToken) //not logged in
             accessAllowed = false;
@@ -131,7 +137,7 @@ public class TrackViewerService {
         return accessAllowed;
     }
 
-    private boolean isWriteAccessAllowed(Authentication authentication, TrackMetadata track) {
+    private boolean isWriteAccessAllowed(Authentication authentication, TrackData track) {
         if (authentication instanceof AnonymousAuthenticationToken) //not logged in
             return false;
         else {

@@ -1,7 +1,7 @@
 package com.cubetrek.viewer;
 
+import com.cubetrek.database.TrackGeodata;
 import com.cubetrek.database.TrackData;
-import com.cubetrek.database.TrackMetadata;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -27,11 +27,11 @@ public class TrackGeojson implements Serializable{
     @Serial
     private static final long serialVersionUID = 2135L;
 
-    TrackMetadata metadata;
-    TrackData data;
+    TrackData metadata;
+    TrackGeodata data;
 
 
-    public TrackGeojson(TrackMetadata metadata) {
+    public TrackGeojson(TrackData metadata) {
         this.metadata = metadata;
         data =metadata.getTrackdata();
     }

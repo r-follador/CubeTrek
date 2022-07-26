@@ -1,6 +1,6 @@
 package com.cubetrek.upload;
 
-import com.cubetrek.database.TrackMetadata;
+import com.cubetrek.database.TrackData;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +16,7 @@ public class EditTrackmetadataDto {
 
     @Getter
     @Setter
-    private TrackMetadata.Activitytype activitytype;
+    private TrackData.Activitytype activitytype;
 
     @Getter
     @Setter

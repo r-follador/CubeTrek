@@ -66,6 +66,7 @@
         border: 2px dashed #ccc;
         border-radius: 20px;
         padding: 5px;
+        background-color: #dfe7ff;
       }
 
       .dragging {
@@ -187,12 +188,14 @@
     <div class="container">
       <h2 class="fw-light text-center">Upload and View your GPS-Track</h2>
       <div class="row">
-        <div id="drop_zone" class="col-2 drop-area">
+        <div id="drop_zone" class="col-4 offset-4 drop-area">
           <input type="file" id="uploadfile">
-          <p>Click or drag file into this Box.<br>
+          <p>Click here or drag your file into this Box.<br>
             Accepted file types: GPX and FIT.</p>
         </div>
-        <div class="col-8">
+      </div>
+      <div class="row">
+        <div class="col">
           <table class="table" id="table" style="display: none;">
             <thead><tr>
               <th>File name</th>
@@ -240,12 +243,12 @@
       <h2 class="fw-light text-center">Get News</h2>
 
       <div class="row pt-3">
-        <div class="col-4">
+        <div class="col-4" id="newsletter">
           <div class="form-floating mb-3">
-            <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
-            <label for="floatingInput">Email address</label>
+            <input type="email" class="form-control" id="emailinput" placeholder="name@example.com">
+            <label for="emailinput">Email address</label>
           </div>
-          <button type="submit" class="btn btn-primary mb-3">Submit</button> Your address will not be shared.
+          <button type="submit" class="btn btn-primary mb-3" onclick="newsletter(document.getElementById('emailinput').value)" id="submitemail">Submit</button> <span id="newslettermessage">Your address will not be shared.</span>
         </div>
         <div class="col-7 offset-1 lead">
           <p><b>CubeTrek</b>'s Vision is to become the home for all your Mountain related GPS Tracks.</p>
@@ -390,6 +393,37 @@
 
   function clickdropbox(e) {
     inputElement.click();
+  }
+
+
+
+  function newsletter(email) {
+    if (!email) {
+      document.getElementById("newslettermessage").innerText = "Empty Email address :("
+      return;
+    }
+    const uri = "/newslettersignup/"+email;
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+
+    xhr.open("GET", uri, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) { //all good
+        document.getElementById("newsletter").innerHTML = "✅ Your Email has been saved.<p>Thank you for subscribing " +
+                "to &laquo;Daily Penguin Facts&raquo;</p><p>First Fun Fact is Free:<br><small>The largest Penguin (<i>Palaeeudyptes klekowskii</i>) lived " +
+                "40 million years ago and was 2 meters high and weighed 115 kg (6.5 feet and 250 lbs).</small></p>" +
+                "Just kidding, your email address will be treated with utmost care and respect.";
+      }
+      else if (xhr.readyState === 4 && xhr.status === 400) { //some error
+        var responsejson = JSON.parse(xhr.responseText);
+        document.getElementById("newslettermessage").innerText = responsejson.response;
+      } else if (xhr.readyState === 4 && xhr.status === 0) { //no response
+        console.log("no response");
+      } else if (xhr.readyState === 4) { //other error
+        document.getElementById("newslettermessage").innerText = "Error "+xhr.status;
+      }
+    };
+    xhr.send(fd);
   }
 </script>
 

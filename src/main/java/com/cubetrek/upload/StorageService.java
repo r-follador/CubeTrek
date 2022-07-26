@@ -38,13 +38,13 @@ public class StorageService {
     Logger logger = LoggerFactory.getLogger(StorageService.class);
 
     @Autowired
-    private TrackMetadataRepository trackMetadataRepository;
+    private TrackDataRepository trackDataRepository;
 
     @Autowired
     private TrackRawfileRepository trackRawfileRepository;
 
     @Autowired
-    private TrackDataRepository trackDataRepository;
+    private TrackGeodataRepository trackGeodataRepository;
 
     @Autowired
     private UsersRepository usersRepository;
@@ -75,8 +75,8 @@ public class StorageService {
     public UploadResponse store(Users user, MultipartFile file) {
         //user can be null, will be saved under anonymous user (id = 1)
         Track track = null;
-        TrackMetadata trackMetadata = new TrackMetadata();
-        TrackData trackdata = new TrackData();
+        TrackData trackData = new TrackData();
+        TrackGeodata trackdata = new TrackGeodata();
         TrackRawfile trackRawfile = new TrackRawfile();
 
         GPXWorker.ConversionOutput conversionOutput = null;
@@ -93,7 +93,7 @@ public class StorageService {
 
             trackRawfile.setOriginalgpx(file.getBytes());
             trackRawfile.setOriginalfilename(file.getOriginalFilename());
-            trackMetadata.setTrackrawfile(trackRawfile);
+            trackData.setTrackrawfile(trackRawfile);
         } catch (IOException e) {
             e.printStackTrace();
             throw new ExceptionHandling.FileNotAccepted("File is corrupted");
@@ -115,10 +115,10 @@ public class StorageService {
         }
 
 
-        trackMetadata.setBBox(GPXWorker.getTrueTrackBoundingBox(reduced));
+        trackData.setBBox(GPXWorker.getTrueTrackBoundingBox(reduced));
 
 
-        if (trackMetadata.getBBox().getWidthLatMeters() > 100000 || trackMetadata.getBBox().getWidthLonMeters() > 100000) {
+        if (trackData.getBBox().getWidthLatMeters() > 100000 || trackData.getBBox().getWidthLonMeters() > 100000) {
             throw new ExceptionHandling.FileNotAccepted("Currently only Tracks covering less than 100km x 100km are supported.");
         }
 
@@ -131,7 +131,7 @@ public class StorageService {
         if (reduced.getSegments().get(0).getPoints().get(0).getElevation().isEmpty()) {
             try {
                 reduced = GPXWorker.replaceElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
-                trackMetadata.setHeightSource(TrackMetadata.Heightsource.CALCULATED);
+                trackData.setHeightSource(TrackData.Heightsource.CALCULATED);
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new ExceptionHandling.FileNotAccepted("Internal server error reading elevation data.");
@@ -139,7 +139,7 @@ public class StorageService {
         } else {
             try {
                 reduced = GPXWorker.normalizeElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
-                trackMetadata.setHeightSource(TrackMetadata.Heightsource.NORMALIZED);
+                trackData.setHeightSource(TrackData.Heightsource.NORMALIZED);
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new ExceptionHandling.FileNotAccepted("Internal server error reading elevation data.");
@@ -168,7 +168,6 @@ public class StorageService {
                     cs[j] = new Coordinate(segment.getPoints().get(j).getLongitude().doubleValue(), segment.getPoints().get(j).getLatitude().doubleValue());
                     altitude[j] = segment.getPoints().get(j).getElevation().get().intValue();
                     time[j] = segment.getPoints().get(j).getTime().get();
-
                     if (altitude[j] > highestPointEle) {
                         highestPointEle = altitude[j];
                         highestPoint = new LatLon(cs[j].y, cs[j].x);
@@ -187,84 +186,84 @@ public class StorageService {
         trackdata.setAltitudes(altitudes);
         trackdata.setTimes(times);
 
-        trackMetadata.setTrackdata(trackdata);
-        trackMetadata.setSharing(TrackMetadata.Sharing.PUBLIC);
-        trackMetadata.setHeightSource(TrackMetadata.Heightsource.ORIGINAL);
+        trackData.setTrackdata(trackdata);
+        trackData.setSharing(TrackData.Sharing.PUBLIC);
+        trackData.setHeightSource(TrackData.Heightsource.ORIGINAL);
 
         if (user == null) {
             user = usersRepository.getReferenceById(1L);
         }
 
-        trackMetadata.setOwner(user);
-        trackMetadata.setUploadDate(new Date(System.currentTimeMillis()));
-        trackMetadata.setSegments(track.getSegments().size());
-        trackMetadata.setDateTrack(track.getSegments().get(0).getPoints().get(0).getTime().orElse(ZonedDateTime.now()));
-        trackMetadata.setTimezone(trackMetadata.getDateTrack().getZone().getId());
+        trackData.setOwner(user);
+        trackData.setUploadDate(new Date(System.currentTimeMillis()));
+        trackData.setSegments(track.getSegments().size());
+        trackData.setDateTrack(track.getSegments().get(0).getPoints().get(0).getTime().orElse(ZonedDateTime.now()));
+        trackData.setTimezone(trackData.getDateTrack().getZone().getId());
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(reduced);
-        trackMetadata.setElevationUp(trackSummary.elevationUp);
-        trackMetadata.setElevationDown(trackSummary.elevationDown);
-        trackMetadata.setDuration(trackSummary.duration);
-        trackMetadata.setDistance(trackSummary.distance);
-        trackMetadata.setLowestpointEle(trackSummary.lowestpointEle);
-        trackMetadata.setHighestpointEle(trackSummary.highestpointEle);
-        trackMetadata.setComment("");
+        trackData.setElevationUp(trackSummary.elevationUp);
+        trackData.setElevationDown(trackSummary.elevationDown);
+        trackData.setDuration(trackSummary.duration);
+        trackData.setDistance(trackSummary.distance);
+        trackData.setLowestpointEle(trackSummary.lowestpointEle);
+        trackData.setHighestpointEle(trackSummary.highestpointEle);
+        trackData.setComment("");
 
-        trackMetadata.setTitle(createTitle(highestPoint, trackMetadata));
-        trackMetadata.setActivitytype(getActivitytype(conversionOutput));
+        trackData.setTitle(createTitle(highestPoint, trackData));
+        trackData.setActivitytype(getActivitytype(conversionOutput));
 
         //Check if duplicate
-        if (trackMetadataRepository.existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackMetadata.getDateTrack(), trackMetadata.getCenter(), trackMetadata.getDistance(), trackMetadata.getDuration())) {
+        if (trackDataRepository.existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration())) {
 
-            TrackMetadata trackMetadata_duplicate = trackMetadataRepository.findByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackMetadata.getDateTrack(), trackMetadata.getCenter(), trackMetadata.getDistance(), trackMetadata.getDuration()).get(0);
+            TrackData trackData_duplicate = trackDataRepository.findByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration()).get(0);
             UploadResponse ur = new UploadResponse();
-            ur.setTrackID(trackMetadata_duplicate.getId());
-            ur.setTitle(trackMetadata_duplicate.getTitle() + " [Duplicate]");
-            ur.setDate(trackMetadata_duplicate.getDateTrack());
-            ur.setActivitytype(trackMetadata_duplicate.getActivitytype());
+            ur.setTrackID(trackData_duplicate.getId());
+            ur.setTitle(trackData_duplicate.getTitle() + " [Duplicate]");
+            ur.setDate(trackData_duplicate.getDateTrack());
+            ur.setActivitytype(trackData_duplicate.getActivitytype());
             ur.setTrackSummary(trackSummary);
 
             return ur;
             //throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
         }
 
-        trackMetadataRepository.save(trackMetadata);
+        trackDataRepository.save(trackData);
 
 
         UploadResponse ur = new UploadResponse();
-        ur.setTrackID(trackMetadata.getId());
-        ur.setTitle(trackMetadata.getTitle());
-        ur.setDate(trackMetadata.getDateTrack());
-        ur.setActivitytype(trackMetadata.getActivitytype());
+        ur.setTrackID(trackData.getId());
+        ur.setTitle(trackData.getTitle());
+        ur.setDate(trackData.getDateTrack());
+        ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
 
         return ur;
     }
 
-    private TrackMetadata.Activitytype getActivitytype(GPXWorker.ConversionOutput conversionOutput) {
+    private TrackData.Activitytype getActivitytype(GPXWorker.ConversionOutput conversionOutput) {
         String sport = conversionOutput.sportString.trim().toLowerCase(Locale.ROOT);
 
         //See enum 22
         if (sport.isEmpty())
-            return TrackMetadata.Activitytype.Unknown;
+            return TrackData.Activitytype.Unknown;
         if (sport.contains("cross_country_ski"))
-            return TrackMetadata.Activitytype.Crosscountryski;
+            return TrackData.Activitytype.Crosscountryski;
         if (sport.contains("ski"))
-            return TrackMetadata.Activitytype.Skimountaineering;
+            return TrackData.Activitytype.Skimountaineering;
         if (sport.contains("mountaineering"))
-            return TrackMetadata.Activitytype.Mountaineering;
+            return TrackData.Activitytype.Mountaineering;
         if (sport.contains("running"))
-            return TrackMetadata.Activitytype.Run;
+            return TrackData.Activitytype.Run;
         if (sport.contains("hiking"))
-            return TrackMetadata.Activitytype.Hike;
+            return TrackData.Activitytype.Hike;
         if (sport.contains("cycling"))
-            return TrackMetadata.Activitytype.Biking;
+            return TrackData.Activitytype.Biking;
         if (sport.contains("snowshoeing"))
-            return TrackMetadata.Activitytype.Snowshoeing;
-        return TrackMetadata.Activitytype.Unknown;
+            return TrackData.Activitytype.Snowshoeing;
+        return TrackData.Activitytype.Unknown;
     }
 
-    private String createTitle(LatLon highestPoint, TrackMetadata trackMetadata) {
+    private String createTitle(LatLon highestPoint, TrackData trackData) {
         OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
         if (peak != null)
             return peak.getName();
@@ -273,7 +272,7 @@ public class StorageService {
         if (reverseGeoCode!=null)
             return reverseGeoCode;
 
-        return "Activity on "+ trackMetadata.getDateTrack().format(formatter);
+        return "Activity on "+ trackData.getDateTrack().format(formatter);
     }
 
     private String reverseGeocode(LatLon coord) {
@@ -301,7 +300,7 @@ public class StorageService {
 
         isWriteAccessAllowed(authentication, editTrackmetadataDto.getIndex());
 
-        trackMetadataRepository.updateTrackMetadata(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), editTrackmetadataDto.getNote(), editTrackmetadataDto.getActivitytype());
+        trackDataRepository.updateTrackMetadata(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), editTrackmetadataDto.getNote(), editTrackmetadataDto.getActivitytype());
         logger.info("Modify ID '"+editTrackmetadataDto.getIndex()+"'");
         return new UpdateTrackmetadataResponse(true);
     }
@@ -312,7 +311,7 @@ public class StorageService {
             writeAccess = false;
         else {
             Users user = (Users) authentication.getPrincipal();
-            long ownerid = trackMetadataRepository.getOwnerId(trackId);
+            long ownerid = trackDataRepository.getOwnerId(trackId);
             writeAccess = ownerid == user.getId();
         }
         if (!writeAccess)

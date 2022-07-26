@@ -1,6 +1,6 @@
 package com.cubetrek.upload;
 
-import com.cubetrek.database.TrackMetadata;
+import com.cubetrek.database.TrackData;
 import com.sunlocator.topolibrary.GPX.GPXWorker;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +23,7 @@ public class UploadResponse {
 
     @Getter
     @Setter
-    public TrackMetadata.Activitytype activitytype;
+    public TrackData.Activitytype activitytype;
 
     @Getter
     @Setter

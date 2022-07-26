@@ -23,6 +23,6 @@ public class TrackRawfile {
     private String originalfilename;
 
     @OneToOne(mappedBy = "trackrawfile")
-    private TrackMetadata trackMetadata;
+    private TrackData trackData;
 
 }

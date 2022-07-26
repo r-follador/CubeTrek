@@ -15,11 +15,11 @@
 
     <link href="../css/dashboard.css" rel="stylesheet">
 
-    <script src="../js/babylon.max.js"></script>
+    <script src="../js/babylon.js"></script>
     <script src="../js/babylonjs.loaders.js"></script>
 
     <script src="../js/d3-regression.min.js"></script>
-    <script src="../js/d3.js"></script>
+    <script src="../js/d3.min.js"></script>
 
     <script src='../js/maplibre-gl.js'></script>
     <link href='../css/maplibre-gl.css' rel='stylesheet'/>
@@ -39,7 +39,7 @@
     }
 </style>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="../">← CubeTrek</a>
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" th:href="${isLoggedIn} ? '../dashboard':'../'">← CubeTrek</a>
     <div class="navbar-brand col-auto me-0 px-3 lead">
         [[${trackmetadata.title}]]
     </div>
@@ -133,7 +133,7 @@
                             <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
                             <button type="button" class="btn btn-outline-primary btn-sm ms-3 align-middle"
                                     onclick="clickshare()"><img id="publicicon"
-                                                                th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:inline' : 'display:none'}"
+                                                                th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'display:inline' : 'display:none'}"
                                                                 src="../assets/icon_public.svg" height="15px"> Share
                             </button>
                         </div>
@@ -264,10 +264,10 @@
                     <h6 class="mt-3">Privacy</h6>
                     <div class="form-check form-switch mt-3">
                         <input class="form-check-input" type="checkbox" id="publicChecked"
-                               th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC}"
+                               th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackData.Sharing).PUBLIC}"
                                onclick="setTrackShare()">
                         <label class="form-check-label" for="publicChecked" id="publicCheckedLabel"
-                               th:text="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'Public, anyone with the link can view this track' : 'Private, only you can view this track'}">Public</label>
+                               th:text="${trackmetadata.sharing== T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'Public, anyone with the link can view this track' : 'Private, only you can view this track'}">Public</label>
                     </div>
                     <h6 class="mt-3">Hide or Delete Track</h6>
                     <div class="form-check form-switch mt-3">
@@ -310,7 +310,7 @@
                         <label for="inputType" class="form-label">Track Type</label>
 
                         <select class="form-select" id="inputType">
-                            <option th:each="activityOpt : ${T(com.cubetrek.database.TrackMetadata.Activitytype).values()}"
+                            <option th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"
                                     th:value="${activityOpt}"
                                     th:text="${activityOpt.displayValue}"
                                     th:selected="${activityOpt==trackmetadata.activitytype}"
@@ -403,7 +403,7 @@
                 <h5 class="modal-title">Share Track</h5>
             </div>
             <div class="modal-body">
-                <div th:style="${trackmetadata.sharing== T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
+                <div th:style="${trackmetadata.sharing== T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
                      id="publicSet">
                     <p>Anyone with the link can view this track.</p>
                     <input type="text" class="form-control" id="sharelink" readonly>
@@ -413,7 +413,7 @@
                     </div>
 
                 </div>
-                <div th:style="${trackmetadata.sharing != T(com.cubetrek.database.TrackMetadata.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
+                <div th:style="${trackmetadata.sharing != T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
                      id="privateSet">
                     <p>If you share this track, anyone with the link can view it.</p>
                     <button type="button" class="btn btn-primary m-2" onclick="setTrackShare('PUBLIC')">Set Track to
@@ -441,7 +441,7 @@
     var sharing = "[[${trackmetadata.sharing}]]";
 </script>
 <script src="../js/kd-tree.js"></script>
-<script src="../js/trackview.js"></script>
+<script src="../js/trackview_v1.js"></script>
 
 </body>
 </html>
