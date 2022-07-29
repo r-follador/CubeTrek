@@ -33,6 +33,9 @@ public class OsmPeaks implements Serializable {
     @Column(name = "ele")
     private String ele;
 
+    @Column(name = "ele_calculated")
+    private int ele_calculated;
+
 
     public Long getId() {
         return id;
@@ -64,6 +67,14 @@ public class OsmPeaks implements Serializable {
 
     public void setEle(String ele) {
         this.ele = ele;
+    }
+
+    public void setEle_calculated(int ele_calculated) {
+        this.ele_calculated = ele_calculated;
+    }
+
+    public int getEle_calculated() {
+        return ele_calculated;
     }
 
     public LatLon getLatLon() {

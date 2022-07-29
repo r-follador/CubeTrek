@@ -215,7 +215,7 @@ public class StorageService {
         //Check if duplicate
         if (trackDataRepository.existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration())) {
 
-            TrackData trackData_duplicate = trackDataRepository.findByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration()).get(0);
+            TrackData.TrackMetadata trackData_duplicate = trackDataRepository.findMetadataByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration()).get(0);
             UploadResponse ur = new UploadResponse();
             ur.setTrackID(trackData_duplicate.getId());
             ur.setTitle(trackData_duplicate.getTitle() + " [Duplicate]");

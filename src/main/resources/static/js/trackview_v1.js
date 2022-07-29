@@ -76,6 +76,9 @@ var delayCreateScene = function() {
         camera.wheelPrecision = 0.1; //Mouse wheel speed
         camera.zoomToMouseLocation = true;
         camera.panningSensibility = 2/Math.pow(2,14-zoomfactor);
+        camera.multiTouchPanAndZoom = true;
+        camera.useNaturalPinchZoom = true;
+
         camera.attachControl(canvas, true, true);
         camera.useAutoRotationBehavior = true;
         camera.autoRotationBehavior.idleRotationWaitTime = 60 * 1000;
@@ -806,6 +809,15 @@ function setMetric() {
     graph = new drawGraph(graphYAxis, graphXAxis);
 }
 
+document.getElementById("inputTitle").addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        event.stopPropagation()
+        event.stopImmediatePropagation();
+        saveEdit();
+    }
+});
+
 function saveEdit() {
     let editTitle = document.getElementById("inputTitle").value;
     let editType = document.getElementById("inputType").value;
@@ -953,7 +965,3 @@ function setTrackShare(state) {
         console.log(error);
     });
 }
-
-
-/////////////
-//K_D tree implementation; (C) by Rainer, 2022

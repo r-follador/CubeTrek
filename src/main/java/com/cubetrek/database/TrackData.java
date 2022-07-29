@@ -14,8 +14,8 @@ import java.time.ZonedDateTime;
 
 @Getter
 @Setter
-@Entity(name = "trackmetadata")
-@Table(name = "trackmetadata")
+@Entity(name = "trackdata")
+@Table(name = "trackdata")
 public class TrackData implements Serializable {
 
     public enum Sharing {
