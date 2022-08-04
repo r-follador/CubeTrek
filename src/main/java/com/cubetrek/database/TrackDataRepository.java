@@ -4,10 +4,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.time.ZonedDateTime;
@@ -22,6 +19,7 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     void deleteById(Long id);
 
     @Cacheable(value = "trackdata", key = "#id")
+    @EntityGraph(attributePaths="trackgeodata")
     Optional<TrackData> findById(Long id);
 
     Optional<TrackData.TrackMetadata> findTrackMetadataById(Long id);

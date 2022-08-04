@@ -33,6 +33,6 @@ public class TrackGeodata implements Serializable {
     @Column(name = "altitudes")
     private ArrayList<int[]> altitudes;
 
-    @OneToOne(mappedBy = "trackdata")
+    @OneToOne(mappedBy = "trackgeodata")
     private TrackData trackData;
 }

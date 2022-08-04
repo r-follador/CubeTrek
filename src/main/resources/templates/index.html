@@ -144,7 +144,7 @@
         <div class="col">
           <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/cima.jpg'); background-size: cover;">
             <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/view/4008">Cima di Fiorina</a>
+              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/view/6338">Cima di Fiorina</a>
               <ul class="d-flex list-unstyled mt-auto">
                 <li class="d-flex align-content-end me-3">
                   <small>Hike</small>
@@ -157,7 +157,7 @@
         <div class="col">
           <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/mat.jpg'); background-size: cover;">
             <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/view/2652">Mattjisch Horn</a>
+              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/view/4967">Mattjisch Horn</a>
               <ul class="d-flex list-unstyled mt-auto">
                 <li class="d-flex align-content-end me-3">
                   <small>Ski Mountaineering</small>
@@ -170,7 +170,7 @@
         <div class="col">
           <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/stmo.jpg'); background-size: cover;">
             <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/view/4302">St. Moritz Run</a>
+              <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/view/6638">St. Moritz Run</a>
               <ul class="d-flex list-unstyled mt-auto">
                 <li class="d-flex align-content-end me-3">
                   <small>Run</small>
@@ -215,9 +215,8 @@
       <div class="row pt-5">
         <div class="col-md-6">
           <span class="badge bg-warning text-dark">Privacy Disclaimer</span> Although the upload occurs anonymously (meaning no IP or email addresses are saved and correlated
-          to your upload, no ads and trackers are used), the GPS Track itself can contain data that might be sensitive (I mean, it shows when and where you have been).<br>
-          Be aware that anyone with the generated link will be able to view your track.<br>
-          The track data might be used to generate some aggregate statistics, but nothing evil, I promise.
+          to your upload, no ads and trackers are used), the GPS Track itself can contain data that might be sensitive (It shows when and where you have been, naturally).<br>
+          <strong>Be aware that anyone with the generated link will be able to view your track.</strong>
         </div>
         <div class="col-md-6">
           <span class="badge bg-warning text-dark">Experimental</span> The whole thing is still very experimental and
@@ -251,9 +250,8 @@
           <button type="submit" class="btn btn-primary mb-3" onclick="newsletter(document.getElementById('emailinput').value)" id="submitemail">Submit</button> <span id="newslettermessage">Your address will not be shared.</span>
         </div>
         <div class="col-md-7 offset-md-1 lead">
-          <p><b>CubeTrek</b>'s Vision is to become the home for all your Mountain related GPS Tracks.</p>
-          <p>It's where you will be able to store and view your Tracks, add Notes and Photos. Share your adventure with the world, your
-          friends or just relive them for yourself.</p>
+          <p><b>CubeTrek</b>'s still in an experimental stage.<br>
+            The Vision is to become the home for all your Mountain related GPS Tracks.</p>
           <p>To receive updates, sign up for the mailing list. Or get in touch via <a href="mailto:contact@cubetrek.com">Email</a>.</p>
         </div>
       </div>
@@ -266,25 +264,25 @@
         <div class="accordion-item">
           <h2 class="accordion-header" id="headingOne">
             <button class="accordion-button collapsed fw-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-              Tech Rundown for the Technical Interested
+              Tech Stack Rundown for the Interested
             </button>
           </h2>
           <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#exposition">
             <div class="accordion-body">
               <p>For the technically inclined people, here's a <strong>short summary of the underlying tech stack</strong> used by CubeTrek.</p>
               <p>The Back End is constructed with <a href="https://i.imgur.com/oCqmcnE.jpeg">Java</a> and <a href="https://spring.io/projects/spring-boot">Spring Boot</a> backed with <a href="https://www.postgresql.org/">Postgresql</a> (and <a href="https://postgis.net/">Postgis</a>), the Front End is based on <a href="https://getbootstrap.com/">Bootstrap</a>. <a href="http://vanilla-js.com/">Good old plain JavaScript</a> is used for interaction with the server.</p>
-              <p>The actual 3D magic is performed by the awesome <a href="https://www.babylonjs.com/">Babylon.js</a> library (check it out, if you've never heard of it), the graph is handled by <a href="https://d3js.org/">D3.js</a> (very versatile, but a steep learning curve), the 2D map is rendered with <a href="https://maplibre.org/">MapLibre GL JS</a> (which is very straightforward to use in my particular case).</p>
+              <p>The actual 3D magic is performed by the awesome <a href="https://www.babylonjs.com/">Babylon.js</a> library (check it out, if you've never heard of it), the graph is handled by <a href="https://d3js.org/">D3.js</a> (very versatile, but a steep learning curve), the 2D map is rendered with <a href="https://maplibre.org/">MapLibre GL JS</a> (which is very straightforward to use in this particular case).</p>
 
               <p><strong>So here's what happens when you upload a FIT or GPX file:</strong> the server reads the tracks, downsamples them to a reasonable resolution and calculates some descriptive values (such as the geographical bounding box, distance, time, etc.).<br>
               The elevation data is cross-checked with the elevation model on the server. This is done to check if the device's height sensors were propely calibrated and a simple correction is applied if necessary. If elevation data is completely absent in the file (because the recording device doesn't have a height sensor) the elevation data is interpolated completely from the model.<br>
                 The elevation model consists of <a href="https://wiki.openstreetmap.org/wiki/SRTM#Format">HGT files</a> retrieved from the <a href="https://lpdaac.usgs.gov/products/srtmgl1v003/">NASA SRTM</a> dataset.</p>
 
-              <p>To guess the activity name, we take the highest point in the track data (making the assumption that this is the most prominent point of the whole activity, e.g. the summit). This is cross-checked against a peak database on the server. The data comes from <a href="https://www.openstreetmap.org">OpenStreetMap</a> and contains all OSM features annotated as '<a href="https://wiki.openstreetmap.org/wiki/Tag:natural%3Dpeak">Peak</a>'.<br>
-                If no peak is detected, a reverse geocoding request is sent to <a href="https://www.maptiler.com/">Maptiler</a>.</p>
+              <p>To guess the activity name, we take the highest point in the track data (making the assumption that this is the most prominent point of the whole activity, e.g. the summit). This is cross-checked against a peak database on the server. The data comes from <a href="https://www.openstreetmap.org">OpenStreetMap</a> and contains all OSM features annotated as '<a href="https://wiki.openstreetmap.org/wiki/Tag:natural%3Dpeak">Peak</a>', and contains >520k entries.<br>
+                If there's no peak in the vicinity, a reverse geocoding request is sent to <a href="https://www.maptiler.com/">Maptiler</a>.</p>
 
-              <p>Once all the data is gathered, it's stored in a PostGIS extended PostgreSQL database and the activity is ready to put on the spotlight.</p>
+              <p>Once all the data is gathered, it's stored in a PostGIS extended PostgreSQL database and the activity is ready be to put on the spotlight.</p>
 
-              <p><strong>And once you view the activity in the 3D viewer:</strong> the server provides two key files for each activity. An extended <a href="https://en.wikipedia.org/wiki/GeoJSON">GeoJSON</a> file, describing the track latitude/longitude data, time, and elevation data. A <a href="https://kcoley.github.io/glTF/">gLTF</a> file which contains the 3D Model of the topography. Babylon.js is used to display the gLTF file and loads the texture (map tiles) from Maptiler.<br>
+              <p><strong>When you view the activity in the 3D viewer:</strong> the server provides two key files for each activity. An extended <a href="https://en.wikipedia.org/wiki/GeoJSON">GeoJSON</a> file, describing the track latitude/longitude data, time, and elevation data. A <a href="https://kcoley.github.io/glTF/">gLTF</a> file which contains the 3D Model of the topography. Babylon.js is used to display the gLTF file and loads the texture (map tiles) from Maptiler.<br>
               A custom script than draws the track on top of the texture of the 3D model.<br>
               The script also handles the D3.js graph data conversion from the GeoJSON file, the mouse interaction etc.<br>
                 The 2D map is very straightforward: just show the GeoJSON data in a MapLibre map (again using Maptiler as source for the map data).</p>

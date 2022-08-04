@@ -81,36 +81,42 @@ public class StorageService {
 
         GPXWorker.ConversionOutput conversionOutput = null;
         try {
-            if (file.getSize()>5_000_000)
+            if (file.getSize()>5_000_000) {
+                logger.info("File upload - Failed because too large file size - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
                 throw new ExceptionHandling.FileNotAccepted("File is too large.");
+            }
             if (file.getOriginalFilename().toLowerCase(Locale.ROOT).endsWith("gpx"))
                 conversionOutput = GPXWorker.loadGPXTracks(file.getInputStream());
             else if (file.getOriginalFilename().toLowerCase().endsWith("fit"))
                 conversionOutput = GPXWorker.loadFitTracks(file.getInputStream());
-            else
+            else {
+                logger.info("File upload - Failed because wrong file suffix - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
                 throw new ExceptionHandling.FileNotAccepted("File type (suffix) not recognized. Either GPX or FIT files accepted.");
+            }
             track = conversionOutput.trackList.get(0);
 
             trackRawfile.setOriginalgpx(file.getBytes());
             trackRawfile.setOriginalfilename(file.getOriginalFilename());
             trackData.setTrackrawfile(trackRawfile);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("File upload - Failed because IOException - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"), e);
             throw new ExceptionHandling.FileNotAccepted("File is corrupted");
         }
 
         if (track == null || track.isEmpty() || track.getSegments().isEmpty() || track.getSegments().get(0).getPoints().isEmpty() || track.getSegments().get(0).getPoints().size() < 3) {
+            logger.info("File upload - Failed because track is empty - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
             throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty");
         }
-
 
         Track reduced = GPXWorker.reduceTrackSegments(track, 2);
 
         if (reduced.getSegments().get(0).getPoints().size() < 5) {
+            logger.info("File upload - Failed because too small - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
             throw new ExceptionHandling.FileNotAccepted("GPX file is too small");
         }
 
         if (reduced.getSegments().get(0).getPoints().size() > 10000) {
+            logger.info("File upload - Failed because too many GPX points - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
             throw new ExceptionHandling.FileNotAccepted("GPX file is too large");
         }
 
@@ -119,11 +125,13 @@ public class StorageService {
 
 
         if (trackData.getBBox().getWidthLatMeters() > 100000 || trackData.getBBox().getWidthLonMeters() > 100000) {
+            logger.info("File upload - Failed because Area too large - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
             throw new ExceptionHandling.FileNotAccepted("Currently only Tracks covering less than 100km x 100km are supported.");
         }
 
         //check if elevation data is provided
         if (reduced.getSegments().get(0).getPoints().get(0).getTime().isEmpty()) {
+            logger.info("File upload - Failed because track does not contain timing data - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
             throw new ExceptionHandling.FileNotAccepted("Track does not contain Timing data.");
         }
 
@@ -133,7 +141,7 @@ public class StorageService {
                 reduced = GPXWorker.replaceElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
                 trackData.setHeightSource(TrackData.Heightsource.CALCULATED);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("File upload - Failed because reading Elevation Data IOException - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"), e);
                 throw new ExceptionHandling.FileNotAccepted("Internal server error reading elevation data.");
             }
         } else {
@@ -141,7 +149,7 @@ public class StorageService {
                 reduced = GPXWorker.normalizeElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
                 trackData.setHeightSource(TrackData.Heightsource.NORMALIZED);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("File upload - Failed because reading Elevation Data IOException - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"), e);
                 throw new ExceptionHandling.FileNotAccepted("Internal server error reading elevation data.");
             }
         }
@@ -179,6 +187,7 @@ public class StorageService {
                 times.add(time);
             }
         } catch (Exception e) {
+            logger.error("File upload - Failed because general exception in converson to LineString - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"), e);
             throw new ExceptionHandling.FileNotAccepted("File can't be read or is corrupted.");
         }
         MultiLineString multilinestring = new MultiLineString(lineStrings, gf);
@@ -186,7 +195,7 @@ public class StorageService {
         trackdata.setAltitudes(altitudes);
         trackdata.setTimes(times);
 
-        trackData.setTrackdata(trackdata);
+        trackData.setTrackgeodata(trackdata);
         trackData.setSharing(TrackData.Sharing.PUBLIC);
         trackData.setHeightSource(TrackData.Heightsource.ORIGINAL);
 
@@ -223,6 +232,7 @@ public class StorageService {
             ur.setActivitytype(trackData_duplicate.getActivitytype());
             ur.setTrackSummary(trackSummary);
 
+            logger.info("File upload - Upload of duplicate Track '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
             return ur;
             //throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
         }
@@ -236,7 +246,7 @@ public class StorageService {
         ur.setDate(trackData.getDateTrack());
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
-
+        logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
         return ur;
     }
 
@@ -281,7 +291,7 @@ public class StorageService {
             JsonNode rootNode = (new ObjectMapper()).readTree(new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=Nq5vDCKAnSrurDLNgtSI", coord.getLongitude(), coord.getLatitude())).openStream());
             geoFeatureText = rootNode.path("features").get(0).path("text").asText("-");
         } catch (Exception e) {
-            logger.error("Error reverse Geocode", e);
+            logger.error("Error reverse Geocode for "+coord.toString(), e);
             return null;
         }
         if (geoFeatureText.equals("-"))

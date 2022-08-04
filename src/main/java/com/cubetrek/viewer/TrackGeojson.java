@@ -33,7 +33,7 @@ public class TrackGeojson implements Serializable{
 
     public TrackGeojson(TrackData metadata) {
         this.metadata = metadata;
-        data =metadata.getTrackdata();
+        data =metadata.getTrackgeodata();
     }
 
     @Transactional

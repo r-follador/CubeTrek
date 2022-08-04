@@ -34,8 +34,7 @@ public class OsmPeaks implements Serializable {
     private String ele;
 
     @Column(name = "ele_calculated")
-    private int ele_calculated;
-
+    private Integer ele_calculated;
 
     public Long getId() {
         return id;

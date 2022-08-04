@@ -21,7 +21,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) throws Exception {
         //Websecurity takes precedence to HttpSecurity
         web.ignoring().requestMatchers(CorsUtils::isPreFlightRequest)
-                .antMatchers("/webjars/**", "/css/**", "/assets/**", "/js/**");
+                .antMatchers("/css/**", "/assets/**", "/js/**");
     }
 
     @Override

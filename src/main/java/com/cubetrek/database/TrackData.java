@@ -62,9 +62,9 @@ public class TrackData implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "trackdata_id", referencedColumnName = "id") //creates a foreign key column called trackdata_id
-    private TrackGeodata trackdata;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "trackgeodata_id", referencedColumnName = "id") //creates a foreign key column called trackdata_id
+    private TrackGeodata trackgeodata;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "trackrawfile_id", referencedColumnName = "id") //creates a foreign key column called trackrawfile_id
