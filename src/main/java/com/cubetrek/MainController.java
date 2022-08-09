@@ -7,7 +7,9 @@ import com.cubetrek.upload.*;
 import com.cubetrek.registration.UserRegistrationService;
 import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
+import com.sunlocator.topolibrary.LatLon;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
+import com.sunlocator.topolibrary.MapTile.MapTile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -195,8 +197,10 @@ public class MainController {
 
     **/
 
+
     @RequestMapping(value = "/api/gltf/map/{type}/{zoom}/{x}/{y}.png", produces = "image/png")
     public void getGLTF(@PathVariable("type") String type, @PathVariable("zoom") int zoom, @PathVariable("x") int x, @PathVariable("y") int y, HttpServletResponse response) {
+        //LatLonBoundingBox CHBox = new LatLonBoundingBox(47.9163, 45.6755, 5.7349, 10.6677);
         String mapaccession = switch (type) {
             case "winter" ->
                     String.format("https://api.maptiler.com/maps/winter/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
@@ -204,8 +208,17 @@ public class MainController {
                     String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
             case "satellite_ch" ->
                     String.format("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/%d/%d/%d.jpeg", zoom, x, y);
-            case "standard" ->
-                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+            case "standard" -> {
+                //LatLon bla = MapTile.convertPixelXYtoLatLong(new MapTile.XY(x,y),zoom);
+                //System.out.println(bla.toString());
+                //if (CHBox.isPositionWithinBbox(MapTile.convertPixelXYtoLatLong(new MapTile.XY(x,y),zoom))) {//within CH bbox
+                //    System.out.println("@@ within CH");
+                    yield String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+                //}else {
+                //    System.out.println("@@ outsie CH");
+                //    yield String.format("https://api.maptiler.com/maps/dae70481-0d42-4345-867d-216c14f6ead8/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+                //}
+            }
             default ->
                     String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
         };

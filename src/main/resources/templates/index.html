@@ -132,6 +132,9 @@
           <a href="#upload" class="btn btn-secondary my-2">Upload your own Track</a>
           <a href="#news" class="btn btn-secondary my-2">Receive News</a>
         </p>
+          <video autoplay muted loop class="col-8">
+            <source src="/assets/pics/rotating2.webm" type="video/webm">
+          </video>
       </div>
     </div>
   </section>
@@ -443,10 +446,7 @@
     xhr.open("GET", uri, true);
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4 && xhr.status === 200) { //all good
-        document.getElementById("newsletter").innerHTML = "✅ Your Email has been saved.<p>Thank you for subscribing " +
-                "to &laquo;Daily Penguin Facts&raquo;</p><p>First Fun Fact is Free:<br><small>The largest Penguin (<i>Palaeeudyptes klekowskii</i>) lived " +
-                "40 million years ago and was 2 meters high and weighed 115 kg (6.5 feet and 250 lbs).</small></p>" +
-                "Just kidding, your email address will be treated with utmost care and respect.";
+        document.getElementById("newsletter").innerHTML = "✅ Your Email has been saved.";
       }
       else if (xhr.readyState === 4 && xhr.status === 400) { //some error
         var responsejson = JSON.parse(xhr.responseText);
