@@ -17,6 +17,10 @@
                     "name": "name",
                     "key": "name"
                 },
+		{
+			"type": "mapping_value",
+			"name": "type"
+		},
                 {
                     "type": "string",
                     "name": "ele",
@@ -26,7 +30,7 @@
             "type": "point",
             "mapping": {
                 "natural": [
-                    "peak"
+                    "peak", "saddle"
                 ]
             }
         }

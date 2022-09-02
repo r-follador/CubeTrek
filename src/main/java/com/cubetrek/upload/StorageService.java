@@ -76,12 +76,12 @@ public class StorageService {
         //user can be null, will be saved under anonymous user (id = 1)
         Track track = null;
         TrackData trackData = new TrackData();
-        TrackGeodata trackdata = new TrackGeodata();
+        TrackGeodata trackgeodata = new TrackGeodata();
         TrackRawfile trackRawfile = new TrackRawfile();
 
         GPXWorker.ConversionOutput conversionOutput = null;
         try {
-            if (file.getSize()>5_000_000) {
+            if (file.getSize()>10_000_000) {
                 logger.info("File upload - Failed because too large file size - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
                 throw new ExceptionHandling.FileNotAccepted("File is too large.");
             }
@@ -191,11 +191,11 @@ public class StorageService {
             throw new ExceptionHandling.FileNotAccepted("File can't be read or is corrupted.");
         }
         MultiLineString multilinestring = new MultiLineString(lineStrings, gf);
-        trackdata.setMultiLineString(multilinestring);
-        trackdata.setAltitudes(altitudes);
-        trackdata.setTimes(times);
+        trackgeodata.setMultiLineString(multilinestring);
+        trackgeodata.setAltitudes(altitudes);
+        trackgeodata.setTimes(times);
 
-        trackData.setTrackgeodata(trackdata);
+        trackData.setTrackgeodata(trackgeodata);
         trackData.setSharing(TrackData.Sharing.PUBLIC);
         trackData.setHeightSource(TrackData.Heightsource.ORIGINAL);
 
@@ -218,7 +218,7 @@ public class StorageService {
         trackData.setHighestpointEle(trackSummary.highestpointEle);
         trackData.setComment("");
 
-        trackData.setTitle(createTitle(highestPoint, trackData));
+        trackData.setTitle(createTitle(highestPoint, trackgeodata.getMultiLineString(), trackData));
         trackData.setActivitytype(getActivitytype(conversionOutput));
 
         //Check if duplicate
@@ -273,10 +273,16 @@ public class StorageService {
         return TrackData.Activitytype.Unknown;
     }
 
-    private String createTitle(LatLon highestPoint, TrackData trackData) {
+    private String createTitle(LatLon highestPoint, MultiLineString lineString, TrackData trackData) {
         OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
         if (peak != null)
             return peak.getName();
+
+        GeographyService.OsmPeakList peak2 = geographyService.findPeaksAlongPath(lineString, 500);
+        if (peak2 != null && peak2.getLength()>0) {
+            System.out.println("---- new name: "+peak2.getList()[0].getName());
+            return peak2.getList()[0].getName();
+        }
 
         String reverseGeoCode = reverseGeocode(highestPoint);
         if (reverseGeoCode!=null)

@@ -24,6 +24,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-rest:2.7.0'
     implementation 'org.springframework.boot:spring-boot-starter-security:2.7.0'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-mail:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.hibernate:hibernate-spatial:5.6.3.Final'
     implementation 'net.postgis:postgis-jdbc:2021.1.0'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE'

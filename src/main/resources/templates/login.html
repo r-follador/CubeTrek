@@ -3,7 +3,7 @@
       xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
 
 <head>
-    <title>Log in</title>
+    <title>CubeTrek - Log in</title>
     <link rel="icon" type="image/svg" href="../assets/logo.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
@@ -30,12 +30,16 @@
 <body class="text-center">
 
 <main class="form-signin">
-    <div th:if="${param.error}" class="alert alert-primary" role="alert">
+    <div th:if="${param.error}" th:text="${session[SPRING_SECURITY_LAST_EXCEPTION]}" class="alert alert-primary" role="alert">
         Invalid username and password.
     </div>
 
     <div th:if="${param.logout}" class="alert alert-primary" role="alert">
         You have been logged out.
+    </div>
+
+    <div th:if="${param.registered}" class="alert alert-primary" role="alert">
+        You are successfully registered. You can log in now.
     </div>
 
     <form th:action="@{/login}" method="post">

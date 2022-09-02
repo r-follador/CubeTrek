@@ -25,24 +25,24 @@
     </header>
 
     <main>
-    <h1>Sign Up for a CubeTrek Account</h1>
+        <h1 class="fw-light text-center pb-5">Sign Up for a <strong>CubeTrek</strong> Account</h1>
     <form action="/registration" th:object="${user}" method="POST" enctype="utf8">
 
         <div class="row g-3">
             <div class="col-sm-6">
+
                 <label for="name" class="form-label">Name</label>
                 <input th:field="*{name}" type="text" class="form-control" id="name" placeholder="" value="" required="">
-                <p th:each="error: ${#fields.errors('name')}"
+                <p class="alert alert-warning" role="alert" th:each="error: ${#fields.errors('name')}"
                    th:text="${error}">Validation error</p>
                 <div class="invalid-feedback">
                     Valid first name is required.
                 </div>
             </div>
-
             <div class="col-6">
                 <label for="email" class="form-label">Email</label>
                 <input th:field="*{email}" type="email" class="form-control" id="email" placeholder="you@example.com">
-                <p th:each="error : ${#fields.errors('email')}"
+                <p class="alert alert-warning" role="alert" th:each="error : ${#fields.errors('email')}"
                    th:text="${error}">Validation error</p>
                 <div class="invalid-feedback">
                     Valid Email is required.
@@ -52,16 +52,16 @@
             <div class="col-6">
                 <label for="password" class="form-label">Password</label>
                 <input th:field="*{password}" type="password" class="form-control" id="password">
-                <p th:each="error : ${#fields.errors('password')}"
+                <p class="alert alert-warning" role="alert" th:each="error : ${#fields.errors('password')}"
                    th:text="${error}">Validation error</p>
-                <label for="matchingPassword" class="form-label">Confirm Password</label>
-                <input th:field="*{matchingPassword}" type="password" class="form-control" id="matchingPassword">
             </div>
-
         </div>
         <button class="col-6 btn btn-lg btn-primary mt-5" type="submit">submit</button>
     </form>
+        <div class="pt-3">
+        Already registered?    <a th:href="@{/login.html}">Login</a>
+        </div>
+
     </main>
-<a th:href="@{/login.html}">login</a>
 </body>
 </html>

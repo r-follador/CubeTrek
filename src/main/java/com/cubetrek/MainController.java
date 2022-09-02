@@ -35,14 +35,10 @@ import javax.servlet.http.HttpServletResponse;
 @Controller
 public class MainController {
     @Autowired
-    private UserRegistrationService userRegistrationService;
-
-    @Autowired
     private StorageService storageService;
 
     @Autowired
     private GeographyService geographyService;
-
 
     @Autowired
     private TrackViewerService trackViewerService;
@@ -60,30 +56,6 @@ public class MainController {
     private OsmPeaksRepository osmPeaksRepository;
 
     Logger logger = LoggerFactory.getLogger(MainController.class);
-
-
-    @GetMapping("/registration")
-    public String showRegistrationForm(WebRequest request, Model model) {
-        System.out.println("get registration");
-        UserDto userDto = new UserDto();
-        model.addAttribute("user", userDto);
-        return "registration";
-    }
-
-    @PostMapping("/registration")
-    public ModelAndView registerUserAccount(
-            @ModelAttribute("user") UserDto userDto,
-            HttpServletRequest request, Errors errors) {
-        Users registered = userRegistrationService.register(userDto);
-
-        return new ModelAndView("successRegister", "user", userDto);
-    }
-
-    @GetMapping("/successRegister")
-    public String successRegister() {
-        return "successRegister";
-    }
-
 
     @GetMapping("/")
     public String index(Model model, HttpServletResponse response) {
@@ -115,7 +87,7 @@ public class MainController {
         model.addAttribute("tracks", trackDataRepository.findMetadataByOwner(user));
 
         return "dashboard";
-    }
+    }Login
 
     @GetMapping("/upload")
     public String showUploadForm(WebRequest request, Model model) {

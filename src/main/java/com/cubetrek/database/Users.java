@@ -56,6 +56,11 @@ public class Users implements UserDetails {
     @Column(name = "userTier", nullable = false)
     private UserTier userTier = UserTier.FREE;
 
+    @Getter
+    @Setter
+    @Column(name = "enabled")
+    private boolean enabled;
+
     @Override
     public String getUsername() {
         return name;
@@ -76,10 +81,6 @@ public class Users implements UserDetails {
         return true;
     }
 
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
 
     public List<String> getUserRole() {
         return Arrays.asList(userRole.toString());
@@ -93,6 +94,11 @@ public class Users implements UserDetails {
 
     public UserDetails getUserdetails() {
         return User.withUsername(getName()).password(getPassword()).roles(userRole.toString()).disabled(!isEnabled()).accountExpired(!isAccountNonExpired()).credentialsExpired(!isCredentialsNonExpired()).accountLocked(!isAccountNonLocked()).build();
+    }
+
+    public Users() {
+        super();
+        this.enabled = false;
     }
 
     @Override

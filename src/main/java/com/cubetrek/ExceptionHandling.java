@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -57,6 +58,13 @@ public class ExceptionHandling {
         return "trackAccessError";
     }
 
+    @ExceptionHandler({UnnamedException.class})
+    public final String handlUnnamedException(UnnamedException ex, Model model) {
+        model.addAttribute("errormessage", ex.title);
+        model.addAttribute("errormessagedetail", ex.msg);
+        return "custom_error";
+    }
+
     @ExceptionHandler({EditTrackmetadataException.class})
     public final ResponseEntity<Object> handleEditTrackmetadaata(EditTrackmetadataException ex) {
 
@@ -70,6 +78,12 @@ public class ExceptionHandling {
 
     @AllArgsConstructor
     public static class FileNotAccepted extends RuntimeException {
+        public String msg ="";
+    }
+
+    @AllArgsConstructor
+    public static class UnnamedException extends RuntimeException {
+        public String title = "";
         public String msg ="";
     }
 

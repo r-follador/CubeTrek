@@ -11,10 +11,7 @@ import com.sunlocator.topolibrary.LatLon;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
 import lombok.Getter;
 import lombok.Setter;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,7 +24,7 @@ public class GeographyService {
     @Autowired
     private OsmPeaksRepository osmPeaksRepository;
 
-    private GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
+    private final GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
 
     public Point convertLatLon2Point(LatLon latLon) {
         Coordinate[] coordinate = {new Coordinate(latLon.getLongitude(), latLon.getLatitude())};
@@ -60,12 +57,22 @@ public class GeographyService {
         return out;
     }
 
+    public OsmPeakList findPeaksAlongPath(MultiLineString lineString, int maxDistanceMeters) {
+        OsmPeakList out = new OsmPeakList();
+        out.setList(osmPeaksRepository.findPeaksAroundLine((LineString) lineString.getGeometryN(0), (double) maxDistanceMeters).toArray(OsmPeaks[]::new));
+        return out;
+    }
+
 
     @JsonSerialize(using = OsmPeakList.OsmPeakListSerializer.class)
     public static class OsmPeakList {
         @Getter
         @Setter
         OsmPeaks[] list;
+
+        public int getLength() {
+            return list.length;
+        }
 
 
         public static class OsmPeakListSerializer extends JsonSerializer<OsmPeakList> {
