@@ -19,7 +19,7 @@ public class UploadResponse {
 
     @Getter
     @Setter
-    public ZonedDateTime date;
+    public String date;
 
     @Getter
     @Setter

@@ -74,11 +74,22 @@ public class RegistrationController {
         Users user = verificationToken.getUser();
         Calendar cal = Calendar.getInstance();
         if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0) {
+            if (!user.isEnabled())
+                userRegistrationService.deleteTokenAndUser(user);
+            else
+                userRegistrationService.deleteToken(user);
             throw new ExceptionHandling.UnnamedException("Message Expired", "Please try to sign up again.");
         }
 
         user.setEnabled(true);
         userRegistrationService.saveRegisteredUser(user);
-        return "redirect:/login?registered";
+        logger.info("User Email successfully validated: "+user.getEmail());
+        userRegistrationService.deleteToken(user);
+        return "redirect:/successRegisterValidation";
+    }
+
+    @GetMapping("/successRegisterValidation")
+    public String successRegistration() {
+        return "successRegisterValidation";
     }
 }

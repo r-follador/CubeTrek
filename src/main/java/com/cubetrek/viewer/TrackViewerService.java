@@ -26,6 +26,7 @@ import org.springframework.ui.Model;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 @Service
 public class TrackViewerService {
@@ -96,10 +97,10 @@ public class TrackViewerService {
         return new TrackGeojson(track);
     }
 
-    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm");
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");
 
     @Transactional
-    public String mapView3D(Authentication authentication, long trackid, Model model) {
+    public String mapView3D(Authentication authentication, long trackid, Model model, TimeZone timeZone) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
@@ -109,7 +110,7 @@ public class TrackViewerService {
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
-        model.addAttribute("dateCreatedString", track.getDateTrack().format(formatter));
+        model.addAttribute("dateCreatedString", track.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));

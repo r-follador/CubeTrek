@@ -5,6 +5,7 @@ import com.cubetrek.newsletter.NewsletterService;
 import com.cubetrek.registration.UserDto;
 import com.cubetrek.upload.*;
 import com.cubetrek.registration.UserRegistrationService;
+import com.cubetrek.viewer.ActivitityService;
 import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
 import com.sunlocator.topolibrary.LatLon;
@@ -30,6 +31,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.sql.Time;
+import java.util.TimeZone;
 
 
 @Controller
@@ -54,6 +57,9 @@ public class MainController {
 
     @Autowired
     private OsmPeaksRepository osmPeaksRepository;
+
+    @Autowired
+    private ActivitityService activitityService;
 
     Logger logger = LoggerFactory.getLogger(MainController.class);
 
@@ -84,10 +90,10 @@ public class MainController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("user", user);
-        model.addAttribute("tracks", trackDataRepository.findMetadataByOwner(user));
-
+        model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user));
+        model.addAttribute("topTracks", activitityService.getTopActivities(user));
         return "dashboard";
-    }Login
+    }
 
     @GetMapping("/upload")
     public String showUploadForm(WebRequest request, Model model) {
@@ -101,23 +107,23 @@ public class MainController {
 
     @ResponseBody
     @PostMapping(value = "/upload", produces = "application/json")
-    public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
+    public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, TimeZone timeZone) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        return storageService.store(user, file);
+        return storageService.store(user, file, timeZone);
     }
 
     @ResponseBody
     @PostMapping(value = "/upload_anonymous", produces = "application/json")
-    public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
-        return storageService.store(null, file);
+    public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, TimeZone timeZone) {
+        return storageService.store(null, file, timeZone);
     }
 
     @GetMapping(value="/view/{itemid}")
-    public String viewTrack(@PathVariable("itemid") long trackid, Model model)
+    public String viewTrack(@PathVariable("itemid") long trackid, Model model, TimeZone timeZone)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return trackViewerService.mapView3D(authentication, trackid, model);
+        return trackViewerService.mapView3D(authentication, trackid, model, timeZone);
     }
 
     @ResponseBody

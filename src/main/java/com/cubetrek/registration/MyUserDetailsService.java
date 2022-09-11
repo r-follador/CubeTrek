@@ -25,11 +25,11 @@ public class MyUserDetailsService implements UserDetailsService {
     private UsersRepository usersRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String name) throws UsernameNotFoundException {
-        Optional<Users> user = usersRepository.findByName(name);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Optional<Users> user = usersRepository.findByEmail(email.toLowerCase());
         if (user.isEmpty()) {
             throw new UsernameNotFoundException(
-                    "No user found with username: "+ name);
+                    "No user found with email: "+ email);
         }
         //UserDetails userDetails1 = User.withUsername("rainer").password("rainer").roles("USER").disabled(false).accountExpired(false).credentialsExpired(false).accountLocked(false).build();
 

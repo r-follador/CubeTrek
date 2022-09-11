@@ -31,6 +31,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.TimeZone;
 
 
 @Service
@@ -58,7 +59,7 @@ public class StorageService {
     @Value("${cubetrek.hgt.3dem}")
     private String hgt_3dem_files;
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
 
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
 
@@ -72,7 +73,7 @@ public class StorageService {
         hgtFileLoader_1DEM = new HGTFileLoader_LocalStorage(hgt_1dem_files);
     }
 
-    public UploadResponse store(Users user, MultipartFile file) {
+    public UploadResponse store(Users user, MultipartFile file, TimeZone timeZone) {
         //user can be null, will be saved under anonymous user (id = 1)
         Track track = null;
         TrackData trackData = new TrackData();
@@ -120,9 +121,7 @@ public class StorageService {
             throw new ExceptionHandling.FileNotAccepted("GPX file is too large");
         }
 
-
         trackData.setBBox(GPXWorker.getTrueTrackBoundingBox(reduced));
-
 
         if (trackData.getBBox().getWidthLatMeters() > 100000 || trackData.getBBox().getWidthLonMeters() > 100000) {
             logger.info("File upload - Failed because Area too large - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
@@ -206,8 +205,8 @@ public class StorageService {
         trackData.setOwner(user);
         trackData.setUploadDate(new Date(System.currentTimeMillis()));
         trackData.setSegments(track.getSegments().size());
-        trackData.setDateTrack(track.getSegments().get(0).getPoints().get(0).getTime().orElse(ZonedDateTime.now()));
-        trackData.setTimezone(trackData.getDateTrack().getZone().getId());
+        trackData.setDatetrack(track.getSegments().get(0).getPoints().get(0).getTime().orElse(ZonedDateTime.now()));
+        trackData.setTimezone(timeZone.getID());
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(reduced);
         trackData.setElevationUp(trackSummary.elevationUp);
@@ -218,17 +217,17 @@ public class StorageService {
         trackData.setHighestpointEle(trackSummary.highestpointEle);
         trackData.setComment("");
 
-        trackData.setTitle(createTitle(highestPoint, trackgeodata.getMultiLineString(), trackData));
+        trackData.setTitle(createTitle(highestPoint, trackgeodata.getMultiLineString(), trackData, timeZone));
         trackData.setActivitytype(getActivitytype(conversionOutput));
 
         //Check if duplicate
-        if (trackDataRepository.existsByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration())) {
+        if (trackDataRepository.existsByOwnerAndDatetrackAndCenterAndDistanceAndDuration(user, trackData.getDatetrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration())) {
 
-            TrackData.TrackMetadata trackData_duplicate = trackDataRepository.findMetadataByOwnerAndDateTrackAndCenterAndDistanceAndDuration(user, trackData.getDateTrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration()).get(0);
+            TrackData.TrackMetadata trackData_duplicate = trackDataRepository.findMetadataByOwnerAndDatetrackAndCenterAndDistanceAndDuration(user, trackData.getDatetrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration()).get(0);
             UploadResponse ur = new UploadResponse();
             ur.setTrackID(trackData_duplicate.getId());
             ur.setTitle(trackData_duplicate.getTitle() + " [Duplicate]");
-            ur.setDate(trackData_duplicate.getDateTrack());
+            ur.setDate(trackData_duplicate.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter));
             ur.setActivitytype(trackData_duplicate.getActivitytype());
             ur.setTrackSummary(trackSummary);
 
@@ -243,7 +242,7 @@ public class StorageService {
         UploadResponse ur = new UploadResponse();
         ur.setTrackID(trackData.getId());
         ur.setTitle(trackData.getTitle());
-        ur.setDate(trackData.getDateTrack());
+        ur.setDate(trackData.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter));
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
         logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
@@ -273,7 +272,7 @@ public class StorageService {
         return TrackData.Activitytype.Unknown;
     }
 
-    private String createTitle(LatLon highestPoint, MultiLineString lineString, TrackData trackData) {
+    private String createTitle(LatLon highestPoint, MultiLineString lineString, TrackData trackData, TimeZone timeZone) {
         OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
         if (peak != null)
             return peak.getName();
@@ -288,7 +287,7 @@ public class StorageService {
         if (reverseGeoCode!=null)
             return reverseGeoCode;
 
-        return "Activity on "+ trackData.getDateTrack().format(formatter);
+        return "Activity on "+ trackData.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter);
     }
 
     private String reverseGeocode(LatLon coord) {

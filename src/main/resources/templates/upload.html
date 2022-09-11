@@ -207,7 +207,7 @@
                 var responsejson = JSON.parse(xhr.responseText);
                 tableStore[file.name+file.lastModified].insertCell(1).innerHTML = responsejson.title;
                 tableStore[file.name+file.lastModified].insertCell(2).innerHTML = responsejson.activitytype;
-                tableStore[file.name+file.lastModified].insertCell(3).innerHTML = (new Date(Date.parse(responsejson.date))).toLocaleString();
+                tableStore[file.name+file.lastModified].insertCell(3).innerHTML = responsejson.date;
                 tableStore[file.name+file.lastModified].insertCell(4).innerHTML = (parseFloat(responsejson.trackSummary.distance)/1000).toFixed(1) + " km";
                 tableStore[file.name+file.lastModified].insertCell(5).innerHTML = responsejson.trackSummary.elevationUp + " m";
                 tableStore[file.name+file.lastModified].insertCell(6).innerHTML = minToString(parseInt(responsejson.trackSummary.duration))+ " h";

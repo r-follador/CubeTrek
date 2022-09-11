@@ -1,31 +1,31 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
-
-<head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <link rel="icon" type="image/svg" href="/assets/logo.svg">
-    <title>CubeTrek</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
-            crossorigin="anonymous"></script>
+    <title>CubeTrek - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
     <link href="../css/dashboard.css" rel="stylesheet">
 </head>
 <body>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"><img class="me-2" width="30" src="/assets/logo.svg">CubeTrek</a>
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"><img class="me-2" src="/assets/logo.svg" width="30">CubeTrek</a>
     <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
+    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
     <ul class="navbar-nav px-3">
-        <li class="nav-item text-nowrap">
-            <a class="nav-link" href="#" th:href="@{/logout}">Sign out</a>
-        </li>
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            <img src="../assets/cubetrek_settings.svg" height="20px"></a>
     </ul>
+    <div class="navbar-nav">
+        <div class="nav-item text-nowrap">
+            <a class="nav-link px-3" href="#">Sign out</a>
+        </div>
+    </div>
 </header>
 
 <div class="container-fluid">
@@ -40,7 +40,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../upload">
+                        <a class="nav-link" href="http://localhost:8080/upload">
                             <span data-feather="file"></span>
                             Upload
                         </a>
@@ -107,14 +107,27 @@
         </nav>
 
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Dashboard</h1>
-
             </div>
 
-            <table>
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                <h4 class="h4">Activity Heatmap</h4>
+            </div>
+            <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%">
+            </div>
+
+
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                <h4 class="h4">Recent Activities</h4>
+            </div>
+
+            <table class="table">
                 <thead>
                 <tr>
+                    <th> Date </th>
                     <th> Title </th>
                     <th> Duration </th>
                     <th> ID</th>
@@ -123,151 +136,368 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${tracks.empty}">
-                    <td colspan="2"> No Tracks Available </td>
+
+                <tr>
+                    <td>June, 2nd 2022</td>
+                    <td><a href="http://localhost:8080/view/14053">Waidberg</a></td>
+                    <td><span>36 min</span></td>
+                    <td><span>14053</span></td>
+                    <td><span>129/129</span></td>
+                    <td><span>6945</span></td>
                 </tr>
-                <tr th:each="track : ${tracks}">
-                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
-                    <td><span th:text="${track.getDuration()} + ' min'"> Duration </span></td>
-                    <td><span th:text="${track.getId()}"> ID </span></td>
-                    <td><span th:text="${track.getElevationUp()} + '/'+ ${track.getElevationDown()}"> Elevation Up/Down </span></td>
-                    <td><span th:text="${track.getDistance()}"> Distance </span></td>
+                <tr>
+                    <td>June, 2nd 2022</td>
+                    <td><a href="http://localhost:8080/view/14052">Waidberg</a></td>
+                    <td><span>36 min</span></td>
+                    <td><span>14052</span></td>
+                    <td><span>125/123</span></td>
+                    <td><span>6960</span></td>
+                </tr>
+                <tr>
+                    <td>June, 2nd 2022</td>
+                    <td><a href="http://localhost:8080/view/14064">Zürichberg</a></td>
+                    <td><span>56 min</span></td>
+                    <td><span>14064</span></td>
+                    <td><span>253/247</span></td>
+                    <td><span>10521</span></td>
                 </tr>
                 </tbody>
             </table>
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+                    <li class="page-item"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                </ul>
+            </nav>
 
-            <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
-
-            <h2>Section title</h2>
-            <div class="table-responsive">
-                <table class="table table-striped table-sm">
-                    <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Header</th>
-                        <th>Header</th>
-                        <th>Header</th>
-                        <th>Header</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>1,001</td>
-                        <td>Lorem</td>
-                        <td>ipsum</td>
-                        <td>dolor</td>
-                        <td>sit</td>
-                    </tr>
-                    <tr>
-                        <td>1,002</td>
-                        <td>amet</td>
-                        <td>consectetur</td>
-                        <td>adipiscing</td>
-                        <td>elit</td>
-                    </tr>
-                    <tr>
-                        <td>1,003</td>
-                        <td>Integer</td>
-                        <td>nec</td>
-                        <td>odio</td>
-                        <td>Praesent</td>
-                    </tr>
-                    <tr>
-                        <td>1,003</td>
-                        <td>libero</td>
-                        <td>Sed</td>
-                        <td>cursus</td>
-                        <td>ante</td>
-                    </tr>
-                    <tr>
-                        <td>1,004</td>
-                        <td>dapibus</td>
-                        <td>diam</td>
-                        <td>Sed</td>
-                        <td>nisi</td>
-                    </tr>
-                    <tr>
-                        <td>1,005</td>
-                        <td>Nulla</td>
-                        <td>quis</td>
-                        <td>sem</td>
-                        <td>at</td>
-                    </tr>
-                    <tr>
-                        <td>1,006</td>
-                        <td>nibh</td>
-                        <td>elementum</td>
-                        <td>imperdiet</td>
-                        <td>Duis</td>
-                    </tr>
-                    <tr>
-                        <td>1,007</td>
-                        <td>sagittis</td>
-                        <td>ipsum</td>
-                        <td>Praesent</td>
-                        <td>mauris</td>
-                    </tr>
-                    <tr>
-                        <td>1,008</td>
-                        <td>Fusce</td>
-                        <td>nec</td>
-                        <td>tellus</td>
-                        <td>sed</td>
-                    </tr>
-                    <tr>
-                        <td>1,009</td>
-                        <td>augue</td>
-                        <td>semper</td>
-                        <td>porta</td>
-                        <td>Mauris</td>
-                    </tr>
-                    <tr>
-                        <td>1,010</td>
-                        <td>massa</td>
-                        <td>Vestibulum</td>
-                        <td>lacinia</td>
-                        <td>arcu</td>
-                    </tr>
-                    <tr>
-                        <td>1,011</td>
-                        <td>eget</td>
-                        <td>nulla</td>
-                        <td>Class</td>
-                        <td>aptent</td>
-                    </tr>
-                    <tr>
-                        <td>1,012</td>
-                        <td>taciti</td>
-                        <td>sociosqu</td>
-                        <td>ad</td>
-                        <td>litora</td>
-                    </tr>
-                    <tr>
-                        <td>1,013</td>
-                        <td>torquent</td>
-                        <td>per</td>
-                        <td>conubia</td>
-                        <td>nostra</td>
-                    </tr>
-                    <tr>
-                        <td>1,014</td>
-                        <td>per</td>
-                        <td>inceptos</td>
-                        <td>himenaeos</td>
-                        <td>Curabitur</td>
-                    </tr>
-                    <tr>
-                        <td>1,015</td>
-                        <td>sodales</td>
-                        <td>ligula</td>
-                        <td>in</td>
-                        <td>libero</td>
-                    </tr>
-                    </tbody>
-                </table>
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                <h4 class="h4">Best Of</h4>
             </div>
+
+            <div class="row">
+
+                <div class="col-4">
+                    <h6 class="h6">Furthest Distances</h6>
+                    <ul class="nav nav-tabs" id="TabFurthest" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="furthest-recent-tab" data-bs-toggle="tab" data-bs-target="#furthest-recent-pane" type="button" role="tab" aria-controls="furthest-recent-pane" aria-selected="true">Last 3 Month</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="furthest-alltime-tab" data-bs-toggle="tab" data-bs-target="#furthest-alltime-pane" type="button" role="tab" aria-controls="furthest-alltime-pane" aria-selected="false">All-Time</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="TabFurthestContent">
+                        <div class="tab-pane fade" id="furthest-recent-pane" role="tabpanel" aria-labelledby="furthest-recent-tab" tabindex="0">
+                            <table class="table">
+                                <thead class="table-header">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Distance</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${topTracks.empty}">
+                                    <td colspan="2"><i>No Activities</i></td>
+                                </tr>
+                                <tr th:each="track : ${topTracks}">
+                                    <td><span th:text="${track.getDateTrack}"> Date </span></td>
+                                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                                    <td><span th:text="${track.getDistance()}"> Distance </span></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade show active" id="furthest-alltime-pane" role="tabpanel" aria-labelledby="furthest-alltime-tab" tabindex="0">
+                            Alltime Furthest Activity
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-4">
+                    <h6 class="h6">Furthest Ascents</h6>
+                    <ul class="nav nav-tabs" id="TabAscent" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ascent-recent-tab" data-bs-toggle="tab" data-bs-target="#ascent-recent-pane" type="button" role="tab" aria-controls="ascent-recent-pane" aria-selected="true">Last 3 Month</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="ascent-alltime-tab" data-bs-toggle="tab" data-bs-target="#ascent-alltime-pane" type="button" role="tab" aria-controls="ascent-alltime-pane" aria-selected="false">All-Time</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="TabAscentContent">
+                        <div class="tab-pane fade" id="ascent-recent-pane" role="tabpanel" aria-labelledby="ascent-recent-tab" tabindex="0">
+                            Recent ascent Activity
+                        </div>
+                        <div class="tab-pane fade  show active" id="ascent-alltime-pane" role="tabpanel" aria-labelledby="ascent-alltime-tab" tabindex="0">
+                            Alltime Ascent Activity
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-4">
+                    <h6 class="h6">Highest Peaks</h6>
+                    <ul class="nav nav-tabs" id="TabPeaks" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="peaks-recent-tab" data-bs-toggle="tab" data-bs-target="#peaks-recent-pane" type="button" role="tab" aria-controls="peaks-recent-pane" aria-selected="true">Last 3 Month</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="peaks-alltime-tab" data-bs-toggle="tab" data-bs-target="#peaks-alltime-pane" type="button" role="tab" aria-controls="peaks-alltime-pane" aria-selected="false">All-Time</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="TabPeaksContent">
+                        <div class="tab-pane fade" id="peaks-recent-pane" role="tabpanel" aria-labelledby="peaks-recent-tab" tabindex="0">
+                            Recent peaks Activity
+                        </div>
+                        <div class="tab-pane fade  show active" id="peaks-alltime-pane" role="tabpanel" aria-labelledby="peaks-alltime-tab" tabindex="0">
+                            Alltime peaks Activity
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
         </main>
     </div>
 </div>
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
+
+<script src="../js/d3.min.js"></script>
+<script>
+
+    var dataHeatmap = [(${activityHeatmapJSON})];
+
+    var parseDate = d3.utcParse("%Y-%m-%dT%H:%M:%S");
+    let metric = true;
+    const miles_per_km = 0.621371;
+    const feet_per_m = 3.28084;
+    const datas = [];
+
+    function prepareHeatmapdata() {
+        for (var i=0; i<dataHeatmap.length; i++) {
+            let date = parseDate(dataHeatmap[i].trackdata_day);
+            date.setHours(12,0,0,0);
+            let day_dist = (dataHeatmap[i].day_dist/1000);
+            let day_elevationup = dataHeatmap[i].day_elevationup*(metric?1:feet_per_m);
+            datas.push({'date' : date, 'day_dist' : day_dist, 'day_elevationup' : day_elevationup});
+        }
+
+        var minDate = new Date(d3.min(datas, d => d.date));
+        minDate.setMonth(0);
+        minDate.setDate(1);
+        var today = new Date();
+
+        while (minDate <= today) {
+            const found = datas.some(d => d.date.getTime() === minDate.getTime());
+            if (!found) {
+                datas.push({'date' : new Date(minDate)});
+            }
+            minDate.setDate(minDate.getDate() + 1);
+        }
+    }
+
+    function drawHeatmap() {
+        this.width = document.getElementById('graph').clientWidth*0.8;
+
+        this.width = Math.max(500, this.width);
+
+        d3.select("#graph").select("svg").remove(); //clear if exists already
+        this.svg = d3.select("#graph").append("svg");
+
+        Calendar(this.svg, datas, {
+            x: d => d.date,
+            y: d => d.day_dist,
+            width: this.width,
+            cellSize: (this.width/60),
+            weekday: "monday"
+        })
+    }
+
+    prepareHeatmapdata();
+    settings();
+
+
+    // Copyright 2021 Observable, Inc.
+    // Released under the ISC license.
+    // https://observablehq.com/@d3/calendar-view
+    function Calendar(svg, data, {
+        x = ([x]) => x, // given d in data, returns the (temporal) x-value
+        y = ([, y]) => y, // given d in data, returns the (quantitative) y-value
+        width = 1100, // width of the chart, in pixels
+        cellSize = 20, // width and height of an individual day, in pixels
+        weekday = "monday", // either: weekday, sunday, or monday
+        formatDay = i => "SMTWTFS"[i], // given a day number in [0, 6], the day-of-week label
+        formatMonth = "%b", // format specifier string for months (above the chart)
+        colors = d3.interpolateYlOrRd
+    } = {}) {
+        // Compute values.
+        const X = d3.map(data, x);
+        const Y = d3.map(data, y);
+        const I = d3.range(X.length);
+
+        const countDay = weekday === "sunday" ? i => i : i => (i + 6) % 7;
+        const timeWeek = weekday === "sunday" ? d3.utcSunday : d3.utcMonday;
+        const weekDays = weekday === "weekday" ? 5 : 7;
+        const height = cellSize * (weekDays + 2);
+
+        // Compute a color scale. This assumes a diverging color scheme where the pivot
+        // is zero, and we want symmetric difference around zero.
+        const max = d3.quantile(Y, 0.9975, Math.abs);
+        const color = d3.scaleSequential([0, max], colors).unknown("#eee");
+
+        // Construct formats.
+        formatMonth = d3.utcFormat(formatMonth);
+
+        // Group the index by year, in reverse input order. (Assuming that the input is
+        // chronological, this will show years in reverse chronological order.)
+        const years = d3.groups(I, i => X[i].getUTCFullYear()).reverse();
+
+        function pathMonth(t) {
+            const d = Math.max(0, Math.min(weekDays, countDay(t.getUTCDay())));
+            const w = timeWeek.count(d3.utcYear(t), t);
+            return `${d === 0 ? `M${w * cellSize},0`
+                : d === weekDays ? `M${(w + 1) * cellSize},0`
+                    : `M${(w + 1) * cellSize},0V${d * cellSize}H${w * cellSize}`}V${weekDays * cellSize}`;
+        }
+
+        svg
+            .attr("width", width)
+            .attr("height", height * years.length)
+            .attr("viewBox", [0, 0, width, height * years.length])
+            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+            .attr("font-family", "var(--bs-body-font-family)")
+            .attr("font-size", "0.7rem");
+
+        const year = svg.selectAll("g")
+            .data(years)
+            .join("g")
+            .attr("transform", (d, i) => `translate(40.5,${height * i + cellSize * 1.5})`);
+
+        year.append("text")
+            .attr("x", -5)
+            .attr("y", -5)
+            .attr("font-weight", "bold")
+            .attr("text-anchor", "end")
+            .text(([key]) => key);
+
+        year.append("g")
+            .attr("text-anchor", "end")
+            .selectAll("text")
+            .data(weekday === "weekday" ? d3.range(1, 6) : d3.range(7))
+            .join("text")
+            .attr("x", -5)
+            .attr("y", i => (countDay(i) + 0.5) * cellSize)
+            .attr("dy", "0.31em")
+            .text(formatDay);
+
+
+        var tooltip = d3.select("body")
+            .append("div")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden")
+            .style("background", "rgba(245, 245, 255, 0.6)");
+
+        const formatDate = d3.utcFormat("%B %-d, %Y");
+        const formatValue = color.tickFormat(100, "1f");
+
+
+        const cell = year.append("g")
+            .selectAll("rect")
+            .data(weekday === "weekday"
+                ? ([, I]) => I.filter(i => ![0, 6].includes(X[i].getUTCDay()))
+                : ([, I]) => I)
+            .join("rect")
+            .attr("width", cellSize - 1)
+            .attr("height", cellSize - 1)
+            .attr("x", i => timeWeek.count(d3.utcYear(X[i]), X[i]) * cellSize + 0.5)
+            .attr("y", i => countDay(X[i].getUTCDay()) * cellSize + 0.5)
+            .attr("fill", i => color(Y[i]))
+            .on("mouseover", function(e, i) {
+                tooltip.style("visibility", "visible");
+                tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
+                tooltip.html(formatDate(X[i])+"<br>"+(Y[i] === undefined?"<i>No Activity</i>":formatValue(Y[i]*(metric?1:miles_per_km))+(metric?" km":" mi")));
+            })
+            .on("mouseout", function(e, i) {
+                tooltip.style("visibility", "hidden");
+            });
+
+        const month = year.append("g")
+            .selectAll("g")
+            .data(([, I]) => d3.utcMonths(d3.utcMonth(X[I[0]]), X[I[I.length - 1]]))
+            .join("g");
+
+        month.filter((d, i) => i).append("path")
+            .attr("fill", "none")
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 3)
+            .attr("d", pathMonth);
+
+        month.append("text")
+            .attr("x", d => timeWeek.count(d3.utcYear(d), timeWeek.ceil(d)) * cellSize + 2)
+            .attr("y", -5)
+            .text(formatMonth);
+
+        return Object.assign(svg.node(), {scales: {color}});
+    }
+
+
+    function settings() {
+        if (localStorage.getItem("metric") === null) {
+            localStorage.setItem("metric", true);
+        } else {
+            metric = (localStorage.getItem("metric")==="true");
+        }
+
+        if (metric) {
+            document.getElementById("metricChecked").checked = true;
+            setMetric();
+        } else {
+            document.getElementById("metricChecked").checked = false;
+            setMetric();
+        }
+    }
+
+    function clickSettingsMetric() {
+        metric = document.getElementById("metricChecked").checked;
+        localStorage.setItem("metric",metric);
+        setMetric();
+    }
+
+    function setMetric() {
+        document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        drawHeatmap();
+    }
+
+    window.addEventListener("resize", function () {
+        drawHeatmap();
+    });
+
+
+</script>
+
 </html>

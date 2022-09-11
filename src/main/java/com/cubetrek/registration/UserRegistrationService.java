@@ -74,4 +74,15 @@ public class UserRegistrationService {
     public PasswordEncoder getEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    public boolean deleteTokenAndUser(Users users) {
+        tokenRepository.deleteByUser(users);
+        usersRepository.delete(users);
+        return true;
+    }
+
+    public boolean deleteToken(Users users) {
+        tokenRepository.deleteByUser(users);
+        return true;
+    }
 }

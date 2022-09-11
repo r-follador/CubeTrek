@@ -10,6 +10,7 @@ import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 
 @Getter
@@ -115,8 +116,16 @@ public class TrackData implements Serializable {
     @Column(name = "lowestpoint")
     private Integer lowestpointEle;
 
-    @Column(name = "date_track")
-    private ZonedDateTime dateTrack;
+    @Column(name = "datetrack", columnDefinition= "TIMESTAMPTZ")
+    private java.sql.Timestamp datetrack; //datetrack normalized to UTC
+
+    public void setDatetrack(ZonedDateTime datetrack) {
+        this.datetrack = Timestamp.valueOf(datetrack.toLocalDateTime());
+    }
+
+    public void setDatetrack(java.sql.Timestamp datetrack) {
+        this.datetrack = datetrack;
+    }
 
     @Column(name = "duration")
     private Integer duration;
@@ -139,7 +148,7 @@ public class TrackData implements Serializable {
     private String comment;
 
     @Column(name = "timezone")
-    private String timezone;
+    private String timezone; //TimeZone of uploader
 
     @Column(name = "hidden", columnDefinition = "boolean default false")
     private boolean hidden;
@@ -177,7 +186,7 @@ public class TrackData implements Serializable {
                 "center=" + center.toString() + '\'' +
                 "elevationUp=" + elevationUp + '\'' +
                 "elevationDown=" + elevationDown + '\'' +
-                "dateTrack=" + dateTrack + '\'' +
+                "datetrack=" + datetrack + '\'' +
                 "duration=" + duration + '\'' +
                 "source=" + source + '\'' +
                 "heightSource=" + heightSource + '\'' +
@@ -197,7 +206,7 @@ public class TrackData implements Serializable {
         Integer getDistance();
         Integer getHighestpointEle();
         Integer getLowestpointEle();
-        java.time.ZonedDateTime getDateTrack();
+        java.sql.Timestamp getDatetrack();
         Integer getDuration();
         TrackData.Activitytype getActivitytype();
         boolean isHidden();

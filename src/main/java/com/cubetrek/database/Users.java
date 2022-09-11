@@ -38,9 +38,12 @@ public class Users implements UserDetails {
     private String name;
 
     @Getter
-    @Setter
     @Column(name = "email", nullable = false, unique = true)
     private String email;
+
+    public void setEmail(String email) {
+        this.email = email.toLowerCase();
+    }
 
     @Getter
     @Setter

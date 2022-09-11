@@ -30,7 +30,7 @@
 <body class="text-center">
 
 <main class="form-signin">
-    <div th:if="${param.error}" th:text="${session[SPRING_SECURITY_LAST_EXCEPTION]}" class="alert alert-primary" role="alert">
+    <div th:if="${param.error}" th:text="${session[SPRING_SECURITY_LAST_EXCEPTION].message}" class="alert alert-primary" role="alert">
         Invalid username and password.
     </div>
 
@@ -45,11 +45,14 @@
     <form th:action="@{/login}" method="post">
         <a href="../"><img class="mb-4" src="../assets/logo.svg" alt="" width="200" height="200"></a>
         <h1 class="h3 mb-3 fw-normal">Sign in</h1>
-        <label for="username" class="visually-hidden">Username</label>
-        <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
+        <label for="email" class="visually-hidden">Email</label>
+        <input type="text" id="email" name="email" class="form-control" placeholder="Email" required autofocus>
         <label for="password" class="visually-hidden">Password</label>
         <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
         <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+        <div class="mt-5">
+            Or <a href="/registration">register</a> for a new account.
+        </div>
         <p class="mt-5 mb-3 text-muted">&copy; 2022</p>
     </form>
 </main>
