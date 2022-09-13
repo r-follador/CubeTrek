@@ -159,7 +159,7 @@
                             <div id="value_distance">[[${trackmetadata.distance}]] m</div>
                         </h4>
                         <h4 class="h4 col"><small class="text-muted fw-light">Elevation↑</small>
-                            <div id="value_elevation_up">[[${trackmetadata.elevationUp}]] km</div>
+                            <div id="value_elevation_up">[[${trackmetadata.elevationup}]] km</div>
                         </h4>
                     </div>
                     <div class="row">
@@ -167,15 +167,15 @@
                             <div id="value_time">[[${timeString}]] h / <span id="movingtime">---</span> h</div>
                         </h4>
                         <h4 class="h4 col"><small class="text-muted fw-light">Elevation↓</small>
-                            <div id="value_elevation_down">[[${trackmetadata.elevationDown}]]</div>
+                            <div id="value_elevation_down">[[${trackmetadata.elevationdown}]]</div>
                         </h4>
                     </div>
                     <div class="row pb-2">
                         <h4 class="h4 col"><small class="text-muted fw-light">Highest Point</small>
-                            <div id="value_highest_point">[[${trackmetadata.highestpointEle}]]</div>
+                            <div id="value_highest_point">[[${trackmetadata.highestpoint}]]</div>
                         </h4>
                         <h4 class="h4 col"><small class="text-muted fw-light">Lowest Point</small>
-                            <div id="value_lowest_point">[[${trackmetadata.lowestpointEle}]]</div>
+                            <div id="value_lowest_point">[[${trackmetadata.lowestpoint}]]</div>
                         </h4>
                     </div>
                     <div class="row">
@@ -430,16 +430,16 @@
 <script>
     var trackid = [[${trackmetadata.id}]];
     var distance = [[${trackmetadata.distance}]];
-    var elevationUp = [[${trackmetadata.elevationUp}]];
-    var elevationDown = [[${trackmetadata.elevationDown}]];
-    var highestElevationPoint = [[${trackmetadata.highestpointEle}]];
-    var lowestElevationPoint = [[${trackmetadata.lowestpointEle}]];
+    var elevationUp = [[${trackmetadata.elevationup}]];
+    var elevationDown = [[${trackmetadata.elevationdown}]];
+    var highestElevationPoint = [[${trackmetadata.highestpoint}]];
+    var lowestElevationPoint = [[${trackmetadata.lowestpoint}]];
     var favorite = [[${trackmetadata.favorite}]];
     var hidden = [[${trackmetadata.hidden}]];
     var sharing = "[[${trackmetadata.sharing}]]";
 </script>
 <script src="../js/kd-tree.js"></script>
-<script src="../js/trackview_v1.js"></script>
+<script src="../js/trackview_v2.js"></script>
 
 </body>
 </html>

@@ -101,20 +101,20 @@ public class TrackData implements Serializable {
     @Column(name = "bbox_E")
     private Float bbox_E;
 
-    @Column(name = "elevation_up")
-    private Integer elevationUp;
+    @Column(name = "elevationup")
+    private Integer elevationup;
 
-    @Column(name = "elevation_down")
-    private Integer elevationDown;
+    @Column(name = "elevationdown")
+    private Integer elevationdown;
 
     @Column(name = "distance")
     private Integer distance;
 
     @Column(name = "highestpoint")
-    private Integer highestpointEle;
+    private Integer highestpoint;
 
     @Column(name = "lowestpoint")
-    private Integer lowestpointEle;
+    private Integer lowestpoint;
 
     @Column(name = "datetrack", columnDefinition= "TIMESTAMPTZ")
     private java.sql.Timestamp datetrack; //datetrack normalized to UTC
@@ -184,8 +184,8 @@ public class TrackData implements Serializable {
                 "uploadDate=" + uploadDate + '\'' +
                 "N/E/S/W=" + bbox_N +", "+ bbox_E +", "+ bbox_S +", "+ bbox_W +", " + '\'' +
                 "center=" + center.toString() + '\'' +
-                "elevationUp=" + elevationUp + '\'' +
-                "elevationDown=" + elevationDown + '\'' +
+                "elevationUp=" + elevationup + '\'' +
+                "elevationDown=" + elevationdown + '\'' +
                 "datetrack=" + datetrack + '\'' +
                 "duration=" + duration + '\'' +
                 "source=" + source + '\'' +
@@ -201,11 +201,11 @@ public class TrackData implements Serializable {
         Users getOwner();
         String getTitle();
         TrackData.Sharing getSharing();
-        Integer getElevationUp();
-        Integer getElevationDown();
+        Integer getElevationup();
+        Integer getElevationdown();
         Integer getDistance();
-        Integer getHighestpointEle();
-        Integer getLowestpointEle();
+        Integer getHighestpoint();
+        Integer getLowestpoint();
         java.sql.Timestamp getDatetrack();
         Integer getDuration();
         TrackData.Activitytype getActivitytype();

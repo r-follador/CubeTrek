@@ -4,6 +4,8 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
@@ -58,17 +60,48 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     void updateTrackSharing(@Param(value = "id") long id, @Param(value = "sharing") TrackData.Sharing sharing);
 
     @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
-            "SELECT date_trunc('day', trackdata.datetrack) AS trackdata_day, sum(trackdata.distance) as day_dist, sum(trackdata.elevation_up) as day_elevationup " +
+            "SELECT date_trunc('day', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_day, sum(trackdata.distance) as day_dist, sum(trackdata.elevationup) as day_elevationup " +
             "FROM trackdata " +
             "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND (date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 1) " +
             "GROUP BY trackdata_day " +
             "ORDER BY trackdata_day) AS t;", nativeQuery = true)
-    String getAggregatedStatsAsJSON(@Param(value= "user_id") long user_id);
+    String getAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone);
 
     @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance FROM trackdata " +
-            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '12 months' " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '3 months' " +
             "ORDER BY trackdata.distance DESC " +
             "LIMIT :limit", nativeQuery = true)
     List<TrackData.TrackMetadata> findTopDistanceLast3Month(long user_id, int limit);
 
+    @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.elevationup FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '3 months' " +
+            "ORDER BY trackdata.elevationup DESC " +
+            "LIMIT :limit", nativeQuery = true)
+    List<TrackData.TrackMetadata> findTopAscentLast3Month(long user_id, int limit);
+
+    @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.highestpoint FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '3 months' " +
+            "ORDER BY trackdata.highestpoint DESC " +
+            "LIMIT :limit", nativeQuery = true)
+    List<TrackData.TrackMetadata> findTopPeakLast3Month(long user_id, int limit);
+
+    @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false " +
+            "ORDER BY trackdata.distance DESC " +
+            "LIMIT :limit", nativeQuery = true)
+    List<TrackData.TrackMetadata> findTopDistanceAlltime(long user_id, int limit);
+
+    @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.elevationup FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false " +
+            "ORDER BY trackdata.elevationup DESC " +
+            "LIMIT :limit", nativeQuery = true)
+    List<TrackData.TrackMetadata> findTopAscentAlltime(long user_id, int limit);
+
+    @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.highestpoint FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false " +
+            "ORDER BY trackdata.highestpoint DESC " +
+            "LIMIT :limit", nativeQuery = true)
+    List<TrackData.TrackMetadata> findTopPeakAlltime(long user_id, int limit);
+
+    Page<TrackData.TrackMetadata> findByOwnerAndHidden(Users owner, boolean hidden, Pageable pageable);
 }

@@ -59,7 +59,7 @@ public class StorageService {
     @Value("${cubetrek.hgt.3dem}")
     private String hgt_3dem_files;
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy - HH:mm:ss z");
 
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
 
@@ -209,12 +209,12 @@ public class StorageService {
         trackData.setTimezone(timeZone.getID());
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(reduced);
-        trackData.setElevationUp(trackSummary.elevationUp);
-        trackData.setElevationDown(trackSummary.elevationDown);
+        trackData.setElevationup(trackSummary.elevationUp);
+        trackData.setElevationdown(trackSummary.elevationDown);
         trackData.setDuration(trackSummary.duration);
         trackData.setDistance(trackSummary.distance);
-        trackData.setLowestpointEle(trackSummary.lowestpointEle);
-        trackData.setHighestpointEle(trackSummary.highestpointEle);
+        trackData.setLowestpoint(trackSummary.lowestpointEle);
+        trackData.setHighestpoint(trackSummary.highestpointEle);
         trackData.setComment("");
 
         trackData.setTitle(createTitle(highestPoint, trackgeodata.getMultiLineString(), trackData, timeZone));

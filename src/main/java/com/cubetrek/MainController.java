@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -85,13 +86,17 @@ public class MainController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(Model model, TimeZone timeZone) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("user", user);
-        model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user));
+        model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, timeZone));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
+        Page<TrackData.TrackMetadata> out = activitityService.getPaginatedList(user, 0);
+        model.addAttribute("pageTracks", out);
+        model.addAttribute("totalActivities", out.getTotalElements());
+        System.out.println("@@@@@ "+out.getTotalElements());
         return "dashboard";
     }
 

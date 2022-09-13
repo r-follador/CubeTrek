@@ -900,7 +900,7 @@ function clickdelete(confirmed) {
         bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide();
         return;
     }
-    fetch(root + "delete/id=" + trackid, {
+    fetch(root + "modify/id=" + trackid, {
         method: "DELETE"
     }).then(res => {
         res.json().then(response => {

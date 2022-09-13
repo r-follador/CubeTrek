@@ -127,51 +127,31 @@
             <table class="table">
                 <thead>
                 <tr>
+                    <th></th>
                     <th> Date </th>
                     <th> Title </th>
                     <th> Duration </th>
-                    <th> ID</th>
-                    <th> Elevation Up/Down</th>
+                    <th> Ascent</th>
                     <th> Distance</th>
                 </tr>
                 </thead>
                 <tbody>
-
-                <tr>
-                    <td>June, 2nd 2022</td>
-                    <td><a href="http://localhost:8080/view/14053">Waidberg</a></td>
-                    <td><span>36 min</span></td>
-                    <td><span>14053</span></td>
-                    <td><span>129/129</span></td>
-                    <td><span>6945</span></td>
+                <tr th:if="${pageTracks.empty}">
+                    <td colspan="2"><i>No Activities</i></td>
                 </tr>
-                <tr>
-                    <td>June, 2nd 2022</td>
-                    <td><a href="http://localhost:8080/view/14052">Waidberg</a></td>
-                    <td><span>36 min</span></td>
-                    <td><span>14052</span></td>
-                    <td><span>125/123</span></td>
-                    <td><span>6960</span></td>
-                </tr>
-                <tr>
-                    <td>June, 2nd 2022</td>
-                    <td><a href="http://localhost:8080/view/14064">Zürichberg</a></td>
-                    <td><span>56 min</span></td>
-                    <td><span>14064</span></td>
-                    <td><span>253/247</span></td>
-                    <td><span>10521</span></td>
+                <tr th:each="track : ${pageTracks}">
+                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy HH:mm z')}"> Date </span></td>
+                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                    <td><span th:text="${track.getDuration()}"> Duration </span></td>
+                    <td><span th:text="${track.getElevationup()}"> Ascent </span></td>
+                    <td><span th:text="${track.getDistance()}"> Distance </span></td>
                 </tr>
                 </tbody>
             </table>
-            <nav aria-label="Page navigation example">
-                <ul class="pagination">
-                    <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-                    <li class="page-item"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                </ul>
-            </nav>
+
+            <button th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</button>
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Best Of</h4>
@@ -179,7 +159,7 @@
 
             <div class="row">
 
-                <div class="col-4">
+                <div class="col-lg-4">
                     <h6 class="h6">Furthest Distances</h6>
                     <ul class="nav nav-tabs" id="TabFurthest" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -194,17 +174,20 @@
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
+                                    <th></th>
                                     <th>Date</th>
                                     <th>Title</th>
                                     <th>Distance</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr th:if="${topTracks.empty}">
+                                <tr th:if="${topTracks.recentDistance.empty}">
                                     <td colspan="2"><i>No Activities</i></td>
                                 </tr>
-                                <tr th:each="track : ${topTracks}">
-                                    <td><span th:text="${track.getDateTrack}"> Date </span></td>
+                                <tr th:each="track : ${topTracks.recentDistance}">
+                                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy z')}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:text="${track.getDistance()}"> Distance </span></td>
                                 </tr>
@@ -212,13 +195,34 @@
                             </table>
                         </div>
                         <div class="tab-pane fade show active" id="furthest-alltime-pane" role="tabpanel" aria-labelledby="furthest-alltime-tab" tabindex="0">
-                            Alltime Furthest Activity
+                            <table class="table">
+                                <thead class="table-header">
+                                <tr>
+                                    <th></th>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Distance</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${topTracks.alltimeDistance.empty}">
+                                    <td colspan="2"><i>No Activities</i></td>
+                                </tr>
+                                <tr th:each="track : ${topTracks.alltimeDistance}">
+                                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy z')}"> Date </span></td>
+                                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                                    <td><span th:text="${track.getDistance()}"> Distance </span></td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-4">
-                    <h6 class="h6">Furthest Ascents</h6>
+                <div class="col-lg-4">
+                    <h6 class="h6">Furthest Climbs</h6>
                     <ul class="nav nav-tabs" id="TabAscent" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="ascent-recent-tab" data-bs-toggle="tab" data-bs-target="#ascent-recent-pane" type="button" role="tab" aria-controls="ascent-recent-pane" aria-selected="true">Last 3 Month</button>
@@ -229,15 +233,57 @@
                     </ul>
                     <div class="tab-content" id="TabAscentContent">
                         <div class="tab-pane fade" id="ascent-recent-pane" role="tabpanel" aria-labelledby="ascent-recent-tab" tabindex="0">
-                            Recent ascent Activity
+                            <table class="table">
+                                <thead class="table-header">
+                                <tr>
+                                    <th></th>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Ascent</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${topTracks.recentAscent.empty}">
+                                    <td colspan="2"><i>No Activities</i></td>
+                                </tr>
+                                <tr th:each="track : ${topTracks.recentAscent}">
+                                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy z')}"> Date </span></td>
+                                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                                    <td><span th:text="${track.getElevationup()}"> Ascent </span></td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                         <div class="tab-pane fade  show active" id="ascent-alltime-pane" role="tabpanel" aria-labelledby="ascent-alltime-tab" tabindex="0">
-                            Alltime Ascent Activity
+                            <table class="table">
+                                <thead class="table-header">
+                                <tr>
+                                    <th></th>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Ascent</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${topTracks.alltimeAscent.empty}">
+                                    <td colspan="2"><i>No Activities</i></td>
+                                </tr>
+                                <tr th:each="track : ${topTracks.alltimeAscent}">
+                                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy z')}"> Date </span></td>
+                                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                                    <td><span th:text="${track.getElevationup()}"> Ascent </span></td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-4">
+                <div class="col-lg-4">
                     <h6 class="h6">Highest Peaks</h6>
                     <ul class="nav nav-tabs" id="TabPeaks" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -249,10 +295,52 @@
                     </ul>
                     <div class="tab-content" id="TabPeaksContent">
                         <div class="tab-pane fade" id="peaks-recent-pane" role="tabpanel" aria-labelledby="peaks-recent-tab" tabindex="0">
-                            Recent peaks Activity
+                            <table class="table">
+                                <thead class="table-header">
+                                <tr>
+                                    <th></th>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Highest Point</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${topTracks.recentPeak.empty}">
+                                    <td colspan="2"><i>No Activities</i></td>
+                                </tr>
+                                <tr th:each="track : ${topTracks.recentPeak}">
+                                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy z')}"> Date </span></td>
+                                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                                    <td><span th:text="${track.getHighestpoint()}"> Highest Point </span></td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                         <div class="tab-pane fade  show active" id="peaks-alltime-pane" role="tabpanel" aria-labelledby="peaks-alltime-tab" tabindex="0">
-                            Alltime peaks Activity
+                            <table class="table">
+                                <thead class="table-header">
+                                <tr>
+                                    <th></th>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Highest Point</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${topTracks.alltimePeak.empty}">
+                                    <td colspan="2"><i>No Activities</i></td>
+                                </tr>
+                                <tr th:each="track : ${topTracks.alltimePeak}">
+                                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy z')}"> Date </span></td>
+                                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                                    <td><span th:text="${track.getHighestpoint()}"> Highest Point </span></td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -291,7 +379,7 @@
 
     var dataHeatmap = [(${activityHeatmapJSON})];
 
-    var parseDate = d3.utcParse("%Y-%m-%dT%H:%M:%S");
+    var parseDate = d3.utcParse("%Y-%m-%dT%H:%M:%S%Z");
     let metric = true;
     const miles_per_km = 0.621371;
     const feet_per_m = 3.28084;
