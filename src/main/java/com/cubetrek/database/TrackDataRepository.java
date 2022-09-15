@@ -104,4 +104,8 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     List<TrackData.TrackMetadata> findTopPeakAlltime(long user_id, int limit);
 
     Page<TrackData.TrackMetadata> findByOwnerAndHidden(Users owner, boolean hidden, Pageable pageable);
+
+    List<TrackData.TrackMetadata> findByOwnerAndHiddenAndActivitytype(Users owner, boolean hidden, TrackData.Activitytype activitytype, Pageable pageable);
+
+    long countByOwnerAndHidden(Users users, boolean hidden);
 }

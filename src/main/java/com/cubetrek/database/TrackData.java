@@ -198,7 +198,6 @@ public class TrackData implements Serializable {
 
     public interface TrackMetadata {
         Long getId();
-        Users getOwner();
         String getTitle();
         TrackData.Sharing getSharing();
         Integer getElevationup();

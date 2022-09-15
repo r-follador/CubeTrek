@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - Activity List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"><img class="me-2" src="/assets/logo.svg" width="30">CubeTrek</a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <ul class="navbar-nav px-3">
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            <img src="../assets/cubetrek_settings.svg" height="20px"></a>
+    </ul>
+    <div class="navbar-nav">
+        <div class="nav-item text-nowrap">
+            <a class="nav-link px-3" href="#">Sign out</a>
+        </div>
+    </div>
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">
+                            <span data-feather="home"></span>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://localhost:8080/upload">
+                            <span data-feather="file"></span>
+                            Upload
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="shopping-cart"></span>
+                            Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="users"></span>
+                            Customers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="bar-chart-2"></span>
+                            Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="layers"></span>
+                            Integrations
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Saved reports</span>
+                    <a class="link-secondary" href="#" aria-label="Add a new report">
+                        <span data-feather="plus-circle"></span>
+                    </a>
+                </h6>
+                <ul class="nav flex-column mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Current month
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Last quarter
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Social engagement
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span data-feather="file-text"></span>
+                            Year-end sale
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Activities</h1>
+            </div>
+
+            <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
+                Error fetching data
+            </div>
+
+            Number of Activities: [(${numberEntries})]
+            <table class="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th> Date ↓</th>
+                    <th> Title </th>
+                    <th> Duration </th>
+                    <th> Ascent</th>
+                    <th> Distance</th>
+                </tr>
+                </thead>
+                <tbody id="tbody">
+                </tbody>
+            </table>
+
+            <div class="spinner-border text-primary" role="status" id="spinner">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+
+        </main>
+    </div>
+</div>
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    const tablebody = document.getElementById("tbody");
+    const numberEntries = [(${numberEntries})];
+    const entriesPerFetch = 50;
+    var shownEntries = 0;
+    var lastPage = -1;
+
+    var sortby = "datetrack";
+    var descending = true;
+
+    const spinnerFunction = function () {
+        const rect = scrollEndSpinner.getBoundingClientRect();
+        if (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+
+        ) {
+            clientViewsEnd();
+        }
+    };
+
+    init();
+
+    function init() { //clear everything and start downloading data
+        while (tablebody.firstChild) {
+            tablebody.removeChild(tablebody.firstChild);
+        }
+        shownEntries = 0;
+        lastPage = -1;
+        fetchData();
+
+        document.addEventListener('scroll', spinnerFunction, {
+            passive: true
+        });
+    }
+
+    function finish() { //all data downloaded
+        scrollEndSpinner.style.display = "none";
+        document.removeEventListener('scroll', spinnerFunction);
+    }
+
+    function fetchData() {
+        lastPage++;
+        console.log("fetch page "+lastPage);
+        fetch("/activities_ajax?page="+lastPage+"&size="+entriesPerFetch+"&sortby="+sortby+"&descending="+true)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    document.getElementById("errorbox").style.display = 'block';
+                }
+            })
+            .then(data => listData(data));
+    }
+
+    function clientViewsEnd() {
+        fetchData();
+    }
+
+
+    function listData(data) {
+        //console.log(data);
+        for (var entry of data) {
+            var newRow = tablebody.insertRow();
+            newRow.insertCell().innerHTML = entry.activitytype;
+            newRow.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
+            newRow.insertCell().innerHTML = "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
+            newRow.insertCell().innerHTML = minToString(parseInt(entry.duration));
+            newRow.insertCell().innerHTML = entry.elevationup + " m";
+            newRow.insertCell().innerHTML = (parseFloat(entry.distance)/1000).toFixed(1) + " km";
+            shownEntries++;
+        }
+
+        if (shownEntries >= numberEntries) {
+            finish();
+        }
+        console.log(shownEntries);
+    }
+
+
+    function minToString(minutes) {
+        var m = minutes % 60;
+        var h = (minutes-m)/60;
+        return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+    const scrollEndSpinner = document.getElementById("spinner");
+
+</script>
+
+</html>

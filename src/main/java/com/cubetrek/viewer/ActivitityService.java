@@ -9,7 +9,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.Pageable;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.TimeZone;
@@ -45,9 +44,24 @@ public class ActivitityService {
     }
 
 
-    public Page<TrackData.TrackMetadata> getPaginatedList(Users user, Integer pageNo) {
+    public Page<TrackData.TrackMetadata> getTenRecentActivities(Users user, Integer pageNo) {
         PageRequest paging = PageRequest.of(pageNo, 10, Sort.by("datetrack").descending());
         return trackDataRepository.findByOwnerAndHidden(user, false, paging);
+    }
+
+
+    public List<TrackData.TrackMetadata> getActivitiesList(Users user, Integer size, Integer pageNo, String sort, boolean descending, TrackData.Activitytype activitytype) {
+        Sort sorter;
+        sorter = descending ? Sort.by(sort).descending() : Sort.by(sort).ascending();
+        PageRequest paging = PageRequest.of(pageNo, size, sorter);
+        if (activitytype == null)
+            return trackDataRepository.findByOwnerAndHidden(user, false, paging).stream().toList();
+        else
+            return trackDataRepository.findByOwnerAndHiddenAndActivitytype(user, false, activitytype, paging);
+    }
+
+    public long countNumberOfEntries(Users user) {
+        return trackDataRepository.countByOwnerAndHidden(user, false);
     }
 
 

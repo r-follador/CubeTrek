@@ -2,15 +2,11 @@ package com.cubetrek;
 
 import com.cubetrek.database.*;
 import com.cubetrek.newsletter.NewsletterService;
-import com.cubetrek.registration.UserDto;
 import com.cubetrek.upload.*;
-import com.cubetrek.registration.UserRegistrationService;
 import com.cubetrek.viewer.ActivitityService;
 import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
-import com.sunlocator.topolibrary.LatLon;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
-import com.sunlocator.topolibrary.MapTile.MapTile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,16 +19,15 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Time;
+import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 
@@ -93,11 +88,31 @@ public class MainController {
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, timeZone));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
-        Page<TrackData.TrackMetadata> out = activitityService.getPaginatedList(user, 0);
+        Page<TrackData.TrackMetadata> out = activitityService.getTenRecentActivities(user, 0);
         model.addAttribute("pageTracks", out);
         model.addAttribute("totalActivities", out.getTotalElements());
-        System.out.println("@@@@@ "+out.getTotalElements());
         return "dashboard";
+    }
+
+    @GetMapping("/activities")
+    public String getActivitiesList(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        model.addAttribute("numberEntries", activitityService.countNumberOfEntries(user));
+        return "activity_list";
+    }
+
+    @ResponseBody
+    @GetMapping(value="/activities_ajax", produces = "application/json")
+    public List<TrackData.TrackMetadata> getActivitiesAjax(@RequestParam("size") int size, @RequestParam("page") int page, @RequestParam("sortby") String sort, @RequestParam("descending") boolean descending, @RequestParam(value = "filterby", required = false) Optional<String> activitytype) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        TrackData.Activitytype at;
+        if (activitytype.isEmpty())
+                at = null;
+        else
+            at = TrackData.Activitytype.valueOf(activitytype.get());
+        return activitityService.getActivitiesList(user, size, page, sort, descending, at);
     }
 
     @GetMapping("/upload")
