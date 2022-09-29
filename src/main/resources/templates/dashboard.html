@@ -40,7 +40,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="http://localhost:8080/upload">
+                        <a class="nav-link" href="/upload">
                             <span data-feather="file"></span>
                             Upload
                         </a>
@@ -154,7 +154,7 @@
                 </tbody>
             </table>
 
-            <button th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</button>
+            <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Best Of</h4>

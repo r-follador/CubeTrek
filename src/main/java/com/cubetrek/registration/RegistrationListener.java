@@ -5,6 +5,7 @@ import com.cubetrek.database.Users;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.MessageSource;
 import org.springframework.mail.SimpleMailMessage;
@@ -21,6 +22,10 @@ import java.util.UUID;
 
 @Component
 public class RegistrationListener implements ApplicationListener<OnRegistrationCompleteEvent> {
+
+    @Value("${cubetrek.address}")
+    private String httpAddress;
+
     @Autowired
     private UserRegistrationService userRegistrationService;
 
@@ -47,7 +52,7 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
 
         String recipientAddress = user.getEmail();
         String subject = "CubeTrek Registration Confirmation";
-        String confirmationUrl = "/registrationConfirm?token=" + token;
+        String confirmationUrl = httpAddress + "/registrationConfirm?token=" + token;
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -56,7 +61,7 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
             messageHelper.setFrom("registration@mail.cubetrek.com", "CubeTrek Registration");
             messageHelper.setTo(recipientAddress);
             messageHelper.setSubject(subject);
-            messageHelper.setText("Thank you for registering to CubeTrek!<br>click to confirm your email:" + "<br>" + "http://localhost:8080" + confirmationUrl, true);
+            messageHelper.setText("Thank you for registering to CubeTrek!<br>click to confirm your email:" + "<br>" + confirmationUrl, true);
             mailSender.send(message);
         } catch (MessagingException | UnsupportedEncodingException messagingException) {
             logger.error("Error sending Email", messagingException);

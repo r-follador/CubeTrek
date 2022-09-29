@@ -220,7 +220,7 @@
         <div class="col-md-6">
           <span class="badge bg-warning text-dark">Privacy Disclaimer</span> Although the upload occurs anonymously (meaning no IP or email addresses are saved and correlated
           to your upload, no ads and trackers are used), the GPS Track itself can contain data that might be sensitive (It shows when and where you have been, naturally).<br>
-          <strong>Be aware that anyone with the generated link will be able to view your track.</strong>
+          <strong>All uploaded tracks will be publicly visible.</strong>
         </div>
         <div class="col-md-6">
           <span class="badge bg-warning text-dark">Experimental</span> The whole thing is still very experimental and
@@ -351,7 +351,6 @@
     tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<div class=\"progress\"><div class=\"progress-bar progress-bar-striped progress-bar-animated\" role=\"progressbar\" style=\"width: 0%\" id='progress"+file.name+file.lastModified+"'></div></div>";
     tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "<div class=\"spinner-border spinner-border-sm text-info\" role=\"status\" />";
 
-
     xhr.open("POST", uri, true);
     xhr.upload.onprogress = function(evt)
     {
@@ -365,7 +364,7 @@
         var responsejson = JSON.parse(xhr.responseText);
         tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.title+"</a>";
         tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.activitytype+"</a>";
-        tableStore[file.name+file.lastModified].insertCell(3).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+(new Date(Date.parse(responsejson.date))).toLocaleString()+"</a>";
+        tableStore[file.name+file.lastModified].insertCell(3).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.date+"</a>";
         tableStore[file.name+file.lastModified].insertCell(4).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+(parseFloat(responsejson.trackSummary.distance)/1000).toFixed(1) + " km"+"</a>";
         tableStore[file.name+file.lastModified].insertCell(5).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+responsejson.trackSummary.elevationUp + " m"+"</a>";
         tableStore[file.name+file.lastModified].insertCell(6).innerHTML = "<a href='view/"+responsejson.trackID+"' target='_blank' class='text-decoration-none'>"+minToString(parseInt(responsejson.trackSummary.duration))+ " h"+"</a>";

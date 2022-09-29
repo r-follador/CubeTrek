@@ -40,7 +40,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="http://localhost:8080/upload">
+                        <a class="nav-link" href="/upload">
                             <span data-feather="file"></span>
                             Upload
                         </a>
@@ -112,36 +112,35 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Activities</h1>
+                <h1 class="h2">Activity List</h1>
             </div>
 
             <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
                 Error fetching data
             </div>
 
-            Number of Activities: [(${numberEntries})]
-            <table class="table">
+            Total Activities: [(${numberEntries})]
+
+            <table class="table table-hover">
                 <thead>
                 <tr>
                     <th></th>
-                    <th> Date ↓</th>
+                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('datetrack')">Date <span id="sort_datetrack"></span></a></th>
                     <th> Title </th>
-                    <th> Duration </th>
-                    <th> Ascent</th>
-                    <th> Distance</th>
+                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('duration')">Duration <span id="sort_duration"></span></a></th>
+                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('elevationup')">Ascent <span id="sort_elevationup"></span></a></th>
+                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('distance')">Distance <span id="sort_distance"></span></a></th>
                 </tr>
                 </thead>
                 <tbody id="tbody">
                 </tbody>
             </table>
 
-            <div class="spinner-border text-primary" role="status" id="spinner">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-
+            <button id="buttonMore" type="button" class="btn btn-primary btn-lg pt-3" onclick="clientViewsEnd()">Load more (<span id="remaining">x</span> remaining)</button>
         </main>
     </div>
 </div>
+
 <div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -163,7 +162,114 @@
         </div>
     </div>
 </div>
+
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Track</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" style="display: none;" id="errormessageedit" role="alert">
+                </div>
+                <div class="alert alert-success" style="display: none;" id="successmessageedit" role="alert">
+                </div>
+                <form>
+                    <div class="mb-3">
+                        <label for="inputTitle" class="form-label">Track Title</label>
+                        <input type="text" class="form-control" id="inputTitle"
+                               maxlength="250">
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputType" class="form-label">Track Type</label>
+
+                        <select class="form-select" id="inputType">
+                            <option th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"
+                                    th:value="${activityOpt}"
+                                    th:text="${activityOpt.displayValue}"
+                            ></option>
+                        </select>
+                    </div>
+                    <h5>Track Settings</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="favoriteChecked"
+                               onclick="setFavorite()">
+                        <label class="form-check-label" for="favoriteChecked" id="favoriteCheckedLabel">Favorite</label>
+                    </div>
+                    <h6 class="mt-3">Privacy</h6>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="publicChecked"
+                               onclick="setTrackShare()">
+                        <label class="form-check-label" for="publicChecked" id="publicCheckedLabel">Public</label>
+                    </div>
+                    <h6 class="mt-3">Hide or Delete Track</h6>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="clickhide(false)">Hide Track
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="clickdelete(false)">Delete Track
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" id="confirmhidden" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hide Track</h5>
+            </div>
+            <div class="modal-body">
+                <p>Hiding a track will exclude it from the Dashboard and your totals.</p>
+                <p>The only way to view hidden tracks later on is through the designated link on the dashboard.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="clickhide(true)">Hide Track</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="confirmdelete" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Track</h5>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this Track?</p>
+                <p>This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="clickdelete(true)">Delete Track</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
+
+<script th:inline="javascript">
+    var icons = {key1: "empty"};
+    /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
+    icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
+    /*[/]*/
+</script>
 
 <script>
     const tablebody = document.getElementById("tbody");
@@ -171,47 +277,43 @@
     const entriesPerFetch = 50;
     var shownEntries = 0;
     var lastPage = -1;
+    let metric = true;
+    const miles_per_km = 0.621371;
+    const feet_per_m = 3.28084;
+
+    var entries = {};
+
 
     var sortby = "datetrack";
     var descending = true;
 
-    const spinnerFunction = function () {
-        const rect = scrollEndSpinner.getBoundingClientRect();
-        if (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-
-        ) {
-            clientViewsEnd();
-        }
-    };
-
+    settings();
     init();
 
     function init() { //clear everything and start downloading data
         while (tablebody.firstChild) {
             tablebody.removeChild(tablebody.firstChild);
         }
+        entries = {};
         shownEntries = 0;
         lastPage = -1;
+        document.getElementById("sort_datetrack").innerText = "";
+        document.getElementById("sort_duration").innerText = "";
+        document.getElementById("sort_distance").innerText = "";
+        document.getElementById("sort_elevationup").innerText = "";
+        document.getElementById("sort_"+sortby).innerText = descending ? "↓":"↑";
         fetchData();
 
-        document.addEventListener('scroll', spinnerFunction, {
-            passive: true
-        });
+        document.getElementById("buttonMore").style.display = "block";
     }
 
     function finish() { //all data downloaded
-        scrollEndSpinner.style.display = "none";
-        document.removeEventListener('scroll', spinnerFunction);
+        document.getElementById("buttonMore").style.display = "none";
     }
 
     function fetchData() {
         lastPage++;
-        console.log("fetch page "+lastPage);
-        fetch("/activities_ajax?page="+lastPage+"&size="+entriesPerFetch+"&sortby="+sortby+"&descending="+true)
+        fetch("/activities_ajax?page="+lastPage+"&size="+entriesPerFetch+"&sortby="+sortby+"&descending="+descending)
             .then(response => {
                 if (response.status === 200) {
                     return response.json();
@@ -226,24 +328,59 @@
         fetchData();
     }
 
+    function sortBy(attribute) {
+        if (sortby === attribute)
+            descending = !descending;
+        else {
+            sortby = attribute;
+            descending = true;
+        }
+        init();
+    }
+
+    var selectedtrackid = null;
+
+    var menu = function(id) {
+        console.log(id);
+        selectedtrackid = id;
+        var entry = entries[id.toString()];
+        console.log(entry);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
+        document.getElementById("inputTitle").value = entry.title;
+        document.getElementById("inputType").value = entry.activitytype;
+        document.getElementById("favoriteChecked").checked = entry.favorite;
+
+        if (entry.favorite) {
+            document.getElementById("favoriteChecked").checked = true;
+            document.getElementById("favoriteCheckedLabel").innerText = "Favorite";
+        } else {
+            document.getElementById("favoriteChecked").checked = false;
+            document.getElementById("favoriteCheckedLabel").innerText = "Not in your Favorites List";
+        }
+
+        if (entry.sharing === "PUBLIC") {
+            document.getElementById("publicChecked").checked = true;
+            document.getElementById("publicCheckedLabel").innerText = "Public, anyone with the link can view this track";
+        } else {
+            document.getElementById("publicChecked").checked = false;
+            document.getElementById("publicCheckedLabel").innerText = "Private, only you can view this track";
+        }
+    }
 
     function listData(data) {
-        //console.log(data);
         for (var entry of data) {
+            entries[entry.id] = entry;
             var newRow = tablebody.insertRow();
-            newRow.insertCell().innerHTML = entry.activitytype;
-            newRow.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
-            newRow.insertCell().innerHTML = "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
-            newRow.insertCell().innerHTML = minToString(parseInt(entry.duration));
-            newRow.insertCell().innerHTML = entry.elevationup + " m";
-            newRow.insertCell().innerHTML = (parseFloat(entry.distance)/1000).toFixed(1) + " km";
+            newRow.id="r"+entry.id;
+            addRowInfo(newRow, entry);
             shownEntries++;
         }
 
         if (shownEntries >= numberEntries) {
             finish();
+        } else {
+            document.getElementById("remaining").innerText = (numberEntries-shownEntries);
         }
-        console.log(shownEntries);
     }
 
 
@@ -253,7 +390,195 @@
         return h.toString() + ":" + (m<10?"0":"") + m.toString();
     }
 
-    const scrollEndSpinner = document.getElementById("spinner");
+    function settings() {
+        if (localStorage.getItem("metric") === null) {
+            localStorage.setItem("metric", true);
+        } else {
+            metric = (localStorage.getItem("metric")==="true");
+        }
+
+        if (metric) {
+            document.getElementById("metricChecked").checked = true;
+            setMetric();
+        } else {
+            document.getElementById("metricChecked").checked = false;
+            setMetric();
+        }
+    }
+
+    function clickSettingsMetric() {
+        metric = document.getElementById("metricChecked").checked;
+        localStorage.setItem("metric",metric);
+        setMetric();
+    }
+
+    function setMetric() {
+        document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        init();
+    }
+
+    const root = "../api/";
+
+    function clickdelete(confirmed) {
+        if (!confirmed) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmdelete')).show();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).hide();
+            return;
+        }
+        fetch(root + "modify/id=" + selectedtrackid, {
+            method: "DELETE"
+        }).then(res => {
+            res.json().then(response => {
+                if (res.ok) {
+                    deleteRow(selectedtrackid);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmdelete')).hide();
+                } else {
+                    //not good
+                }
+            });
+        }).catch(error => {
+            console.log("--error");
+            console.log(error);
+        });
+    }
+
+    function clickhide(confirmed) {
+        if (!confirmed) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmhidden')).show();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).hide();
+            document.getElementById("hiddenChecked").checked = false;
+            return;
+        }
+        fetch(root+"modify/id="+selectedtrackid+"&hidden=true", {
+            method: "GET"
+        }).then(res => {
+            res.json().then(response => {
+                if (res.ok) {
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmhidden')).hide();
+                    deleteRow(selectedtrackid);
+                } else {
+                    //not good
+                }
+            });
+        }).catch(error => {
+            console.log("--error");
+            console.log(error);
+        });
+    }
+
+    function setFavorite() {
+        document.getElementById("favoriteChecked")
+
+        if (document.getElementById("favoriteChecked").checked) {
+            document.getElementById("favoriteCheckedLabel").innerText = "Favorite";
+        } else {
+            document.getElementById("favoriteCheckedLabel").innerText = "Not in your Favorites List";
+        }
+    }
+
+    function setTrackShare() {
+        document.getElementById("publicChecked")
+
+        if (!document.getElementById("publicChecked").checked) {
+            document.getElementById("publicCheckedLabel").innerText = "Private, only you can view this track";
+        } else {
+            document.getElementById("publicCheckedLabel").innerText = "Public, anyone with the link can view this track";
+        }
+    }
+
+    function saveEdit() {
+        let currentEntry = entries[selectedtrackid];
+        let editTitle = document.getElementById("inputTitle").value;
+        let editType = document.getElementById("inputType").value;
+        let editFavorite = document.getElementById("favoriteChecked").checked;
+        let editShared = (document.getElementById("publicChecked").checked ? "PUBLIC" : "PRIVATE");
+
+        if (editTitle !== currentEntry.title || editType !== currentEntry.activitytype ) {
+            let data = {index: selectedtrackid, title: editTitle, activitytype: editType};
+
+            fetch(root+"modify", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(res => {
+                res.json().then(response => {
+                    if (res.ok) {
+                        document.getElementById("successmessageedit").innerText = "Changes saved";
+                        document.getElementById("successmessageedit").style.display = "block";
+                    } else {
+                        document.getElementById("errormessageedit").innerText = response.response;
+                        document.getElementById("errormessageedit").style.display = "block";
+                    }
+                });
+            }).catch(error => {
+                console.log("--error");
+                console.log(error);
+            });
+        }
+
+        if (editFavorite !== currentEntry.favorite) {
+            fetch(root+"modify/id="+selectedtrackid+"&favorite="+(editFavorite), {
+                method: "GET"
+            }).then(res => {
+                res.json().then(response => {
+                    if (res.ok) {
+
+                    } else {
+                        //not good
+                    }
+                });
+            }).catch(error => {
+                console.log("--error");
+                console.log(error);
+            });
+        }
+
+        if (editShared !== currentEntry.sharing) {
+            fetch(root+"modify/id="+selectedtrackid+"&sharing="+editShared, {
+                method: "GET"
+            }).then(res => {
+                res.json().then(response => {
+                    if (res.ok) {
+
+                    } else {
+                        //not good
+                    }
+                });
+            }).catch(error => {
+                console.log("--error");
+                console.log(error);
+            });
+        }
+
+        entries[selectedtrackid].title = editTitle;
+        entries[selectedtrackid].activitytype = editType;
+        entries[selectedtrackid].favorite = editFavorite;
+        entries[selectedtrackid].sharing = editShared;
+        //TODO change row and update entries
+
+        var row = document.getElementById("r"+selectedtrackid);
+        row.innerHTML="";
+        addRowInfo(row, entries[selectedtrackid]);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).hide();
+    }
+
+    function addRowInfo(row, entry) {
+        row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
+        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
+        row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
+        row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
+        row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
+        row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
+        row.insertCell().innerHTML = "<div onclick='menu("+entry.id+")' style='cursor:pointer' id='c"+entry.id+"'>...</div>"
+    }
+    async function deleteRow(rowid)
+    {
+        var row = document.getElementById("r"+rowid);
+        row.style.transition = '0.8s';
+        row.style.opacity = 0;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        row.parentNode.removeChild(row);
+    }
 
 </script>
 
