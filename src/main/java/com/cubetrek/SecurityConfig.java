@@ -29,7 +29,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/", "/home", "/registration*", "registrationConfirm*", "/successRegister*","/successRegisterValidation*", "/upload_anonymous", "/newslettersignup/**", "/api/**", "/view/**").permitAll()
+                .antMatchers("/", "/home", "/registration*", "registrationConfirm*", "/successRegister*","/successRegisterValidation*", "/upload_anonymous", "/newslettersignup/**", "/api/**", "/view/**", "/garminconnect").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()

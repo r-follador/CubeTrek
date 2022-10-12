@@ -59,6 +59,19 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     @Query("update trackdata u set u.sharing = :sharing where u.id = :id")
     void updateTrackSharing(@Param(value = "id") long id, @Param(value = "sharing") TrackData.Sharing sharing);
 
+    @Query(value =
+            "SELECT trackdata.activitytype as activitytype, COUNT(*) as count " +
+            "FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false " +
+            "GROUP BY trackdata.activitytype " +
+            "ORDER BY count DESC;", nativeQuery = true)
+    List<ActivityCountInterface> getActivityCounts(@Param(value= "user_id") long user_id);
+
+    public interface ActivityCountInterface {
+        int getActivitytype();
+        int getCount();
+    }
+
     @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
             "SELECT date_trunc('day', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_day, sum(trackdata.distance) as day_dist, sum(trackdata.elevationup) as day_elevationup " +
             "FROM trackdata " +

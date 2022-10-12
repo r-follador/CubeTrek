@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivitityService {
@@ -22,6 +23,23 @@ public class ActivitityService {
     public String getActivityHeatmapAsJSON(Users user, TimeZone timeZone) {
         return trackDataRepository.getAggregatedStatsAsJSON(user.getId(), timeZone.getID());
     }
+
+    public List<ActivityCount> getActivityTypeCount(Users user) {
+        //convert List of ActivityCountInterface to list of ActivityCount
+        return trackDataRepository.getActivityCounts(user.getId()).stream()
+                .map(ActivityCount::new)
+                .collect(Collectors.toList());
+    }
+
+    public static class ActivityCount {
+        public TrackData.Activitytype activitytype;
+        public int count;
+        public ActivityCount(TrackDataRepository.ActivityCountInterface act) {
+            activitytype = TrackData.Activitytype.values()[act.getActivitytype()];
+            count = act.getCount();
+        }
+    }
+
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm");
     public TopActivities getTopActivities(Users user) {
         TopActivities out = new TopActivities();

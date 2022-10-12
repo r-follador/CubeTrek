@@ -119,7 +119,15 @@
                 Error fetching data
             </div>
 
-            Total Activities: [(${numberEntries})]
+            <div class="btn-group mb-4" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" onclick="filter('none')"checked>
+                <label class="btn btn-outline-dark " for="btnradio1">All Activities: [(${numberEntries})]</label>
+
+                <th:block th:each="act : ${activityCounts}">
+                    <input type="radio" class="btn-check" name="btnradio" th:id="|radio${act.activitytype}|" autocomplete="off" th:onclick="|filter(${act.activitytype.ordinal()})|">
+                    <label class="btn btn-outline-primary" th:for   ="|radio${act.activitytype}|" th:text="|${act.activitytype.displayValue}: ${act.count}|">Radio</label>
+                </th:block>
+            </div>
 
             <table class="table table-hover">
                 <thead>
@@ -136,7 +144,7 @@
                 </tbody>
             </table>
 
-            <button id="buttonMore" type="button" class="btn btn-primary btn-lg pt-3" onclick="clientViewsEnd()">Load more (<span id="remaining">x</span> remaining)</button>
+            <button id="buttonMore" type="button" class="btn btn-primary pt-3" onclick="loadMoreEntries()">Load more (<span id="remaining">x</span> remaining)</button>
         </main>
     </div>
 </div>
@@ -265,16 +273,22 @@
 </body>
 
 <script th:inline="javascript">
-    var icons = {key1: "empty"};
+    var icons = {};
     /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
     icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
     /*[/]*/
+
+    var numberActivityEntries = {};
+    /*[# th:each="act : ${activityCounts}"]*/
+    numberActivityEntries[ /*[[${act.activitytype}]]*/ ] =[ /*[[${act.count}]]*/];
+    /*[/]*/
+
 </script>
 
 <script>
     const tablebody = document.getElementById("tbody");
-    const numberEntries = [(${numberEntries})];
-    const entriesPerFetch = 50;
+    const totalEntries = [(${numberEntries})];
+    const entriesPerFetch = 100;
     var shownEntries = 0;
     var lastPage = -1;
     let metric = true;
@@ -282,13 +296,16 @@
     const feet_per_m = 3.28084;
 
     var entries = {};
+    var numberEntries;
 
 
     var sortby = "datetrack";
     var descending = true;
+    var filterBy = "none";
 
     settings();
     init();
+
 
     function init() { //clear everything and start downloading data
         while (tablebody.firstChild) {
@@ -302,9 +319,17 @@
         document.getElementById("sort_distance").innerText = "";
         document.getElementById("sort_elevationup").innerText = "";
         document.getElementById("sort_"+sortby).innerText = descending ? "↓":"↑";
+        document.getElementById("buttonMore").style.display = "block";
+
+        if (filterBy === "none")
+            numberEntries = totalEntries;
+        else {
+            numberEntries = numberActivityEntries[filterBy][0]
+        }
+
         fetchData();
 
-        document.getElementById("buttonMore").style.display = "block";
+
     }
 
     function finish() { //all data downloaded
@@ -313,7 +338,13 @@
 
     function fetchData() {
         lastPage++;
-        fetch("/activities_ajax?page="+lastPage+"&size="+entriesPerFetch+"&sortby="+sortby+"&descending="+descending)
+
+        var url = "/activities_ajax?page="+lastPage+"&size="+entriesPerFetch+"&sortby="+sortby+"&descending="+descending;
+
+        if (filterBy!=="none")
+            url+="&filterby="+filterBy;
+
+        fetch(url)
             .then(response => {
                 if (response.status === 200) {
                     return response.json();
@@ -324,7 +355,7 @@
             .then(data => listData(data));
     }
 
-    function clientViewsEnd() {
+    function loadMoreEntries() {
         fetchData();
     }
 
@@ -414,6 +445,12 @@
 
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        init();
+    }
+
+    function filter(value) {
+        if (value!=="none")
+            filterBy = Object.keys(icons)[value];
         init();
     }
 

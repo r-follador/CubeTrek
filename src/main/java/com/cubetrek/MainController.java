@@ -99,6 +99,7 @@ public class MainController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("numberEntries", activitityService.countNumberOfEntries(user));
+        model.addAttribute("activityCounts", activitityService.getActivityTypeCount(user));
         return "activity_list";
     }
 
