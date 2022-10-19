@@ -24,7 +24,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.sql.Date;
 import java.time.ZonedDateTime;
@@ -73,7 +75,18 @@ public class StorageService {
         hgtFileLoader_1DEM = new HGTFileLoader_LocalStorage(hgt_1dem_files);
     }
 
-    public UploadResponse store(Users user, MultipartFile file, TimeZone timeZone) {
+    public UploadResponse store(Users user, MultipartFile file, TimeZone timeZone, TrackData.Sharing sharing) {
+        String filename = file.getOriginalFilename();
+
+        try {
+            return store(user, file.getBytes(), filename, timeZone, sharing);
+        } catch (IOException e) {
+            logger.error("File upload - Failed because IOException - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"), e);
+            throw new ExceptionHandling.FileNotAccepted("File is corrupted");
+        }
+    }
+
+    public UploadResponse store(Users user, byte[] filedata, String filename, TimeZone timeZone, TrackData.Sharing sharing) {
         //user can be null, will be saved under anonymous user (id = 1)
         Track track = null;
         TrackData trackData = new TrackData();
@@ -82,22 +95,22 @@ public class StorageService {
 
         GPXWorker.ConversionOutput conversionOutput = null;
         try {
-            if (file.getSize()>10_000_000) {
+            if (filedata.length>1_000_000) {
                 logger.info("File upload - Failed because too large file size - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
                 throw new ExceptionHandling.FileNotAccepted("File is too large.");
             }
-            if (file.getOriginalFilename().toLowerCase(Locale.ROOT).endsWith("gpx"))
-                conversionOutput = GPXWorker.loadGPXTracks(file.getInputStream());
-            else if (file.getOriginalFilename().toLowerCase().endsWith("fit"))
-                conversionOutput = GPXWorker.loadFitTracks(file.getInputStream());
+            if (filename.toLowerCase(Locale.ROOT).endsWith("gpx"))
+                conversionOutput = GPXWorker.loadGPXTracks(new ByteArrayInputStream(filedata));
+            else if (filename.toLowerCase().endsWith("fit"))
+                conversionOutput = GPXWorker.loadFitTracks(new ByteArrayInputStream(filedata));
             else {
                 logger.info("File upload - Failed because wrong file suffix - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
                 throw new ExceptionHandling.FileNotAccepted("File type (suffix) not recognized. Either GPX or FIT files accepted.");
             }
             track = conversionOutput.trackList.get(0);
 
-            trackRawfile.setOriginalgpx(file.getBytes());
-            trackRawfile.setOriginalfilename(file.getOriginalFilename());
+            trackRawfile.setOriginalgpx(filedata);
+            trackRawfile.setOriginalfilename(filename);
             trackData.setTrackrawfile(trackRawfile);
         } catch (IOException e) {
             logger.error("File upload - Failed because IOException - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"), e);
@@ -123,6 +136,7 @@ public class StorageService {
 
         trackData.setBBox(GPXWorker.getTrueTrackBoundingBox(reduced));
 
+        //Todo: remove this one and just show 2D
         if (trackData.getBBox().getWidthLatMeters() > 100000 || trackData.getBBox().getWidthLonMeters() > 100000) {
             logger.info("File upload - Failed because Area too large - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
             throw new ExceptionHandling.FileNotAccepted("Currently only Tracks covering less than 100km x 100km are supported.");
@@ -195,7 +209,7 @@ public class StorageService {
         trackgeodata.setTimes(times);
 
         trackData.setTrackgeodata(trackgeodata);
-        trackData.setSharing(TrackData.Sharing.PUBLIC);
+        trackData.setSharing(sharing);
         trackData.setHeightSource(TrackData.Heightsource.ORIGINAL);
 
         if (user == null) {

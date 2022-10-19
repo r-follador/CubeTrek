@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Setter
 public class OnNewGarminFileEvent extends ApplicationEvent {
 
-    String userid;
+    String activityId;
     String userAccessToken;
     String callbackURL;
     String fileType;
 
-    public OnNewGarminFileEvent(String userId, String userAccessToken, String callbackURL, String fileType) {
+    public OnNewGarminFileEvent(String activityId, String userAccessToken, String callbackURL, String fileType) {
         super(userAccessToken);
-        this.userid = userId;
+        this.activityId = activityId;
         this.userAccessToken = userAccessToken;
         this.callbackURL = callbackURL;
         this.fileType = fileType;

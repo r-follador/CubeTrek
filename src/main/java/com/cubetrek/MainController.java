@@ -131,13 +131,13 @@ public class MainController {
     public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, TimeZone timeZone) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        return storageService.store(user, file, timeZone);
+        return storageService.store(user, file, timeZone, TrackData.Sharing.PRIVATE);
     }
 
     @ResponseBody
     @PostMapping(value = "/upload_anonymous", produces = "application/json")
     public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, TimeZone timeZone) {
-        return storageService.store(null, file, timeZone);
+        return storageService.store(null, file, timeZone, TrackData.Sharing.PUBLIC);
     }
 
     @GetMapping(value="/view/{itemid}")

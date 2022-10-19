@@ -33,7 +33,7 @@ dependencies {
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.1'
     implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.0-SNAPSHOT.jar')
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
+    implementation 'oauth.signpost:signpost-core:2.1.1'
 
     compileOnly 'org.projectlombok:lombok:1.18.24'
     developmentOnly 'org.springframework.boot:spring-boot-devtools:2.7.0'
