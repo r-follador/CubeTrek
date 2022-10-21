@@ -33,11 +33,11 @@ public class GarminpingController {
     //Ping from Garmin
     @PostMapping(value = "/garminconnect")
     public ResponseEntity uploadFile(@RequestBody String payload) {
-        logger.info("GarminConnect Hook called: "+payload);
+        logger.info("GarminConnect Ping received: "+payload);
         try {
             JsonNode activities = (new ObjectMapper()).readTree(payload).get("activityFiles");
             if (activities == null || activities.isNull() || activities.isEmpty()) {
-                logger.info("GarminConnect: cannot parse");
+                logger.info("GarminConnect Ping: cannot parse");
                 return ResponseEntity.ok().build() ;
             }
             if (activities.isArray()) {
@@ -48,7 +48,7 @@ public class GarminpingController {
                     String fileType = acitivityNode.path("fileType").asText("blarg");
 
                     if (activityId.equals("blarg") || userAccessToken.equals("blarg") || callbackURL.equals("blarg") || fileType.equals("blarg")) {
-                        logger.warn("GarminConnect: malformed Ping");
+                        logger.warn("GarminConnect Ping: malformed Ping");
                         return ResponseEntity.badRequest().build();
                     }
                     eventPublisher.publishEvent(new OnNewGarminFileEvent(activityId, userAccessToken, callbackURL, fileType));
@@ -57,6 +57,7 @@ public class GarminpingController {
 
 
         } catch (JsonProcessingException e) {
+            logger.error("GarminConnect Ping: JsonProcessingException", e);
             throw new RuntimeException(e);
         }
         logger.warn("GarminConnect: error processing ping");

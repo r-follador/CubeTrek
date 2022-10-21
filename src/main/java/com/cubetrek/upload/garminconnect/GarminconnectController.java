@@ -1,11 +1,9 @@
 package com.cubetrek.upload.garminconnect;
 
+import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
 import oauth.signpost.basic.DefaultOAuthConsumer;
@@ -18,14 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
@@ -53,28 +47,30 @@ public class GarminconnectController {
     final String authorizeWebsiteUrl = "https://connect.garmin.com/oauthConfirm";
 
 
-    final String callbackUrl = httpAddress+"/profile/connectGarmin-step2";
 
     @GetMapping(value="/profile/connectGarmin-step1")
     public String connectToGarmin() {
+        final String callbackUrl = httpAddress+"/profile/connectGarmin-step2";
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-
+        logger.info("GarminConnect User tries to Link Garmin Account: User id '"+user.getId()+"'");
         OAuthConsumer consumer = new DefaultOAuthConsumer(garminConsumerKey, garminConsumerSecret);
         OAuthProvider provider = new DefaultOAuthProvider(requestTokenEndpointUrl, accessTokenEndpointUrl, authorizeWebsiteUrl);
         garminconnectAuthSession.setOAuthConsumer(consumer);
         garminconnectAuthSession.setOAuthProvider(provider); //store provider for this session to be reused on step2
         try {
             String url = provider.retrieveRequestToken(consumer, callbackUrl);
+            url += "&oauth_callback="+callbackUrl; // no clue why this is not automatically added
             return "redirect:"+url;
         } catch (OAuthMessageSignerException | OAuthNotAuthorizedException | OAuthExpectationFailedException |
                  OAuthCommunicationException e) {
-            throw new RuntimeException(e);
+            logger.error("Connect to Garmin - Step 1: User id '"+user.getId()+"'", e);
+            throw new ExceptionHandling.TrackViewerException("Error: Cannot connect to Garmin");
         }
     }
 
     @GetMapping(value="/profile/connectGarmin-step2")
-    public void connectToGarmin2(@RequestParam("oauth_token") String oauth_token, @RequestParam("oauth_verifier") String oauth_verifier) {
+    public String connectToGarmin2(@RequestParam("oauth_token") String oauth_token, @RequestParam("oauth_verifier") String oauth_verifier) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
 
@@ -102,14 +98,12 @@ public class GarminconnectController {
                 userThirdpartyConnect.setGarminUseraccesstokenSecret(userAccessTokenSecret);
                 userThirdpartyConnectRepository.save(userThirdpartyConnect);
             }
-
+            logger.info("GarminConnect User successfully linked Garmin Account: User id '"+user.getId()+"'");
+            return "redirect:/profile";
         } catch (OAuthMessageSignerException | OAuthNotAuthorizedException | OAuthExpectationFailedException |
                  OAuthCommunicationException e) {
-            throw new RuntimeException(e);
+            logger.error("Connect to Garmin - Step 2: User id '"+user.getId()+"'", e);
+            throw new ExceptionHandling.TrackViewerException("Error: Cannot connect to Garmin");
         }
-
-
     }
-
-
 }

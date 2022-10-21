@@ -52,7 +52,7 @@ public class MainController {
     private TrackDataRepository trackDataRepository;
 
     @Autowired
-    private OsmPeaksRepository osmPeaksRepository;
+    private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
 
     @Autowired
     private ActivitityService activitityService;
@@ -114,6 +114,16 @@ public class MainController {
         else
             at = TrackData.Activitytype.valueOf(activitytype.get());
         return activitityService.getActivitiesList(user, size, page, sort, descending, at);
+    }
+
+    @GetMapping("/profile")
+    public String showProfile(WebRequest request, Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        model.addAttribute("user", user);
+        UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
+        model.addAttribute("isGarminConnected", utc != null && utc.isGarminEnabled());
+        return "profile";
     }
 
     @GetMapping("/upload")

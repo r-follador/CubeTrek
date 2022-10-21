@@ -11,7 +11,7 @@
     <link href="../css/dashboard.css" rel="stylesheet">
 </head>
 <body>
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+<header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
     <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"><img class="me-2" src="/assets/logo.svg" width="30">CubeTrek</a>
     <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -23,32 +23,34 @@
     </ul>
     <div class="navbar-nav">
         <div class="nav-item text-nowrap">
-            <a class="nav-link px-3" href="#">Sign out</a>
+            <a class="nav-link px-3" href="#" th:href="@{/logout}">Sign out</a>
         </div>
     </div>
 </header>
 
 <div class="container-fluid">
-    <div class="row">
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+    <div th:with="field='dashboard'" class="row">
+        <nav th:fragment="navigation (field)" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
             <div class="position-sticky pt-3">
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">
-                            <span data-feather="home"></span>
+                        <a class="nav-link" aria-current="page" href="/dashboard" th:classappend="${field=='dashboard' ? 'active' : ''}">
                             Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/upload">
-                            <span data-feather="file"></span>
+                        <a class="nav-link" aria-current="page" href="/activities" th:classappend="${field=='activitylist' ? 'active' : ''}">
+                            Activity List
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/upload" th:classappend="${field=='upload' ? 'active' : ''}">
                             Upload
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <span data-feather="shopping-cart"></span>
-                            Products
+                        <a class="nav-link" href="/profile" th:classappend="${field=='profile' ? 'active' : ''}">
+                            Profile
                         </a>
                     </li>
                     <li class="nav-item">

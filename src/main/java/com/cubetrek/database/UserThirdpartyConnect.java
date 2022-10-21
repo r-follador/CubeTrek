@@ -17,9 +17,14 @@ public class UserThirdpartyConnect {
     @JoinColumn(nullable = false, name = "user_id")
     private Users user;
 
-    String GarminUseraccesstoken;
-    String GarminUseraccesstokenSecret;
-    boolean garminEnabled = false;
+    @Column
+    private String garminUseraccesstoken;
+
+    @Column
+    private String garminUseraccesstokenSecret;
+
+    @Column
+    private boolean garminEnabled = false;
 
 
 }
