@@ -1,5 +1,6 @@
 package com.cubetrek.upload.garminconnect;
 
+import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.*;
 import com.cubetrek.registration.OnRegistrationCompleteEvent;
 import com.cubetrek.registration.RegistrationListener;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoProperties;
 import org.springframework.context.ApplicationListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -41,12 +43,13 @@ public class GarminNewFileEventListener implements ApplicationListener<OnNewGarm
     @Autowired
     private StorageService storageService;
 
+    @Async
     @Override
     public void onApplicationEvent(OnNewGarminFileEvent event) {
         this.downloadFile(event);
     }
 
-    private void downloadFile(OnNewGarminFileEvent event) {
+    public void downloadFile(OnNewGarminFileEvent event) {
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByGarminUseraccesstoken(event.getUserAccessToken());
         if (userThirdpartyConnect == null){
             logger.error("GarminConnect: pull file failed: Unknown Useracccestoken: "+event.getUserAccessToken());
@@ -73,6 +76,8 @@ public class GarminNewFileEventListener implements ApplicationListener<OnNewGarm
             logger.error("GarminConnect: pull file failed: User id: "+user.getId()+", UserAccessToken '"+event.getUserAccessToken()+"', CallbackURL '"+event.getCallbackURL()+"'");
             logger.error("GarminConnect", e);
             return;
+        } catch (ExceptionHandling.FileNotAccepted e) {
+            //Already loggged in StorageService, do nothing
         }
 
         if (uploadResponse != null)
