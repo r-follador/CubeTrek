@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import javax.sound.midi.Track;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -118,7 +119,20 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
 
     Page<TrackData.TrackMetadata> findByOwnerAndHidden(Users owner, boolean hidden, Pageable pageable);
 
+    List<TrackData.TrackMetadata> findByOwnerAndTrackgroupOrderByDatetrackDesc(Users owner, Long trackgroup);
+
     List<TrackData.TrackMetadata> findByOwnerAndHiddenAndActivitytype(Users owner, boolean hidden, TrackData.Activitytype activitytype, Pageable pageable);
 
     long countByOwnerAndHidden(Users users, boolean hidden);
+
+    @Query(value = "SELECT trackdata.* " +
+            "FROM trackdata JOIN trackgeodata ON trackdata.trackgeodata_id = trackgeodata.id " +
+            "WHERE trackdata.owner = :user_id " +
+            "  AND st_DWITHIN(trackgeodata.multilinestring, " +
+            "    (SELECT trackgeodata.multilinestring FROM trackdata JOIN trackgeodata ON trackdata.trackgeodata_id = trackgeodata.id " +
+            "       WHERE trackdata.id = :trackid), 0.0001) " +
+            "  AND st_hausdorffdistance(trackgeodata.multilinestring, " +
+            "    (SELECT trackgeodata.multilinestring FROM trackdata JOIN trackgeodata ON trackdata.trackgeodata_id = trackgeodata.id" +
+            "        WHERE trackdata.id = :trackid), 1) < 0.005 ", nativeQuery = true)
+    List<TrackData> findMatchingActivities(long user_id, long trackid);
 }

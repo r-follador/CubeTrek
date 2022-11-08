@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="../assets/logo.svg">
+    <title>CubeTrek - Bulk Download of Strava and Garmin files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div class="col-lg-8 mx-auto p-3 py-md-5">
+    <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
+        <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
+            <img class="me-2" width="40" src="../assets/logo.svg">
+            <span class="fs-4">CubeTrek</span>
+        </a>
+    </header>
+
+    <main>
+        <h1>Exporting all Data from Garmin and Strava (Bulk Download)</h1>
+        <p class="fs-5 col-md-8">
+            This guide explains how to export all activity files from third parties (such as Garmin and Strava) in bulk
+            and upload them into <strong>Cubetrek</strong>.</p>
+
+        <hr class="col-3 col-md-2 mb-5">
+
+        <div class="row g-5">
+            <div class="col-md-5 me-1">
+                <h2>Garmin (Garmin Connect)</h2>
+                <p>Garmin unfortunately hides the option to bulk download your FIT files quite well.</p>
+                <ol>
+                    <li>Go to <a href="https://www.garmin.com/account/datamanagement/">https://www.garmin.com/account/datamanagement/</a> and log in using your Garmin Connect account and password</li>
+                    <li>Click on <strong>Export Your Data</strong></li>
+                    <li>Click on <strong>Request Data Export</strong></li>
+                    <li>Now wait... It can take several days to get the data.</li>
+                    <li>You will receive an email from Garmin (on your mail account associated with your Garmin Connect Account); make sure to check your Spam folder (or social folder in Gmail)<br>
+                        <img class="shadow-sm p-3 bg-body rounded" src="bulkdownload_activities-garmin_download1.png"></li>
+                    <li>Click the <strong>Download</strong> link and download the Zip File</li>
+                    <li>Open or Unzip your Zip-File and navigate to: <strong>DI_CONNECT</strong> > <strong>DI-Connect-Fitness-Uploaded-Files</strong></li>
+                    <li>There's another Zip file hiding in there, called e.g. <strong>UploadedFiles_0-Part1.zip</strong></li>
+                    <li>That's it, that's where all the FIT files are hiding.<br>
+                        <img class="shadow-sm p-3 bg-body rounded" src="bulkdownload_activities-garmin_download2.png"></li>
+                    <li>You can now login to <strong>CubeTrek</strong> and drag-and-drop the files into <a href="https://cubetrek.com/upload/">https://cubetrek.com/upload/</a></li>
+                </ol>
+            </div>
+
+            <div class="col-md-5 ms-1">
+                <h2>Strava</h2>
+
+                <p>Strava makes it slightly easier to download your activity data in bulk, but still hides the option behind a scary "Delete Your Account"-Button.</p>
+
+                <ol>
+                    <li>Log into Strava and on your profile picture go to <strong>Settings</strong> > <strong>My Account</strong> (or click here: https://www.strava.com/account)</li>
+                    <li>At the very bottom, there's a section called <strong>Download or Delete Your Account</strong><br>
+                        <img class="shadow-sm p-3 bg-body rounded" src="bulkdownload_activities-strava_download1.png"></li>
+                    <li>Click on <strong>Get Started</strong> (don't worry, this will not delete your account)</li>
+                    <li>On <strong>Step 2 Download Request (optional)</strong>, click on <strong>Request Your Archive</strong><br>
+                        <img class="shadow-sm p-3 bg-body rounded" src="bulkdownload_activities-strava_download2.png"></li>
+                    </li>
+                    <li>Within a couple of hours, you will receive an email from Strava (make sure to check your Spam folder, or Social folder in Gmail)<br>
+                        <img class="shadow-sm p-3 bg-body rounded" src="bulkdownload_activities-strava_download3.png"></li>
+                    </li>
+                    <li>Click on <strong>Download Archive</strong> and open the Zip file</li>
+                    <li>In the subfolder <strong>activities</strong>, this is where all the Gzipped FIT and GPX files are stored.<br>
+                        <img class="shadow-sm p-3 bg-body rounded" src="bulkdownload_activities-strava_download4.png"></li>
+                    </li>
+                    <li>You can now login to <strong>CubeTrek</strong> and drag-and-drop the files into <a href="https://cubetrek.com/upload/">https://cubetrek.com/upload/</a></li>
+                </ol>
+            </div>
+        </div>
+    </main>
+    <footer class="pt-5 my-5 text-muted border-top">
+        CubeTrek &middot; &copy; 2022
+    </footer>
+</div>
+
+
+<script src="/docs/5.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+
+
+</body>
+</html>

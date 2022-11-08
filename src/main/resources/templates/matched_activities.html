@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - Matching Activities</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+<header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"><img class="me-2" src="/assets/logo.svg" width="30">CubeTrek</a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <ul class="navbar-nav px-3">
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            <img src="../assets/cubetrek_settings.svg" height="20px"></a>
+    </ul>
+    <div class="navbar-nav">
+        <div class="nav-item text-nowrap">
+            <a class="nav-link px-3" href="#" th:href="@{/logout}">Sign out</a>
+        </div>
+    </div>
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav th:replace="dashboard.html :: navigation(field='activitylist')" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        </nav>
+    </div>
+
+    <div class="row">
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Compare Matching Activities</h1>
+            </div>
+
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                <h4 class="h4">Matching Activities</h4>
+            </div>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th> Date </th>
+                    <th> Title </th>
+                    <th> Duration </th>
+                    <th> Ascent</th>
+                    <th> Distance</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${matching.empty}">
+                    <td colspan="2"><i>No Activities</i></td>
+                </tr>
+                <tr th:each="track : ${matching}">
+                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy HH:mm z')}"> Date </span></td>
+                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                    <td><span th:text="${track.getDuration()}"> Duration </span></td>
+                    <td><span th:text="${track.getElevationup()}"> Ascent </span></td>
+                    <td><span th:text="${track.getDistance()}"> Distance </span></td>
+                </tr>
+                </tbody>
+            </table>
+
+        </main>
+    </div>
+</div>
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script src="../js/d3.min.js"></script>
+<script>
+
+    function settings() {
+        if (localStorage.getItem("metric") === null) {
+            localStorage.setItem("metric", true);
+        } else {
+            metric = (localStorage.getItem("metric")==="true");
+        }
+
+        if (metric) {
+            document.getElementById("metricChecked").checked = true;
+            setMetric();
+        } else {
+            document.getElementById("metricChecked").checked = false;
+            setMetric();
+        }
+    }
+
+    function clickSettingsMetric() {
+        metric = document.getElementById("metricChecked").checked;
+        localStorage.setItem("metric",metric);
+        setMetric();
+    }
+
+    function setMetric() {
+        document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+    }
+
+    window.addEventListener("resize", function () {
+
+    });
+
+
+</script>
+
+</html>

@@ -14,11 +14,11 @@
         .drop-area {
             border: 2px dashed #ccc;
             border-radius: 20px;
-            width: 480px;
             padding: 5px;
+            background-color: #dfe7ff;
         }
         .dragging {
-            border: 4px #000000;
+            background-color: #b5c9ff;
         }
 
         #drop_zone * {pointer-events: none;}
@@ -35,16 +35,21 @@
 
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2" th:text="'Upload for ' + ${user.getName()}" >Upload</h1>
+                <h1 class="h2">Upload Files</h1>
             </div>
+
+            <p class="fs-5 col-md-8">
+                Upload Activity Files (FIT and GPX) to your profile. See the <a href="/static/bulkdownload.html">Bulk
+                download guide</a> on how to download those files from Garmin, Strava, etc.</p>
+
+            <p class="fs-5 col-md-8">
+                Link your Garmin account in <a href="/profile">your profile</a> to automatically sync your Garmin
+            activities with <strong>CubeTrek</strong>.</p>
 
                 <div id="drop_zone" class="drop-area">
                     <input type="file" id="uploadfile" multiple>
                     <p>Click or drag files. Accepted file types: GPX and FIT.</p>
                 </div>
-
-
-
             <table class="table" id="table" style="display: none;">
                <thead><tr>
                    <th>File name</th>

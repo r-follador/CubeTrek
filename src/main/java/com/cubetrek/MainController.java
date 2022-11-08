@@ -157,6 +157,17 @@ public class MainController {
         return trackViewerService.mapView3D(authentication, trackid, model, timeZone);
     }
 
+    @GetMapping(value="/matching/{groupid}")
+    public String viewMatchingActivities(@PathVariable("groupid") long groupid, Model model, TimeZone timeZone)
+    {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        model.addAttribute("matching", activitityService.getMatchingActivities((Users) authentication.getPrincipal(), groupid));
+
+        return "matched_activities";
+    }
+
+
     @ResponseBody
     @GetMapping(value = "/api/geojson/{itemid}.geojson", produces = "application/json")
     public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {

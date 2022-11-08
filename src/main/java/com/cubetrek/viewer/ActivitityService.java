@@ -67,6 +67,10 @@ public class ActivitityService {
         return trackDataRepository.findByOwnerAndHidden(user, false, paging);
     }
 
+    public List<TrackData.TrackMetadata> getMatchingActivities(Users user, Long matchgroup) {
+        return trackDataRepository.findByOwnerAndTrackgroupOrderByDatetrackDesc(user, matchgroup);
+    }
+
 
     public List<TrackData.TrackMetadata> getActivitiesList(Users user, Integer size, Integer pageNo, String sort, boolean descending, TrackData.Activitytype activitytype) {
         Sort sorter;

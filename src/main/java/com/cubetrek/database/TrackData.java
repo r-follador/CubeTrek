@@ -156,6 +156,9 @@ public class TrackData implements Serializable {
     @Column(name = "favorite", columnDefinition = "boolean default false")
     private boolean favorite;
 
+    @Column(name = "trackgroup")
+    private Long trackgroup;
+
     public void setBBox(LatLonBoundingBox bbox) {
         setBbox_N((float)bbox.getN_Bound());
         setBbox_E((float)bbox.getE_Bound());
@@ -210,5 +213,10 @@ public class TrackData implements Serializable {
         TrackData.Activitytype getActivitytype();
         boolean isHidden();
         boolean isFavorite();
+        Long getTrackgroup();
+
+        default String getTrackgroupString() { //need to convert long to String for Javascript (uses float otherwise)
+            return String.valueOf(getTrackgroup());
+        }
     }
 }

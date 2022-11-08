@@ -313,6 +313,7 @@
     }
 
     function listData(data) {
+        console.log(data);
         for (var entry of data) {
             entries[entry.id] = entry;
             var newRow = tablebody.insertRow();
@@ -522,6 +523,7 @@
         row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
         row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
         row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
+        row.insertCell().innerHTML = (entry.trackgroup?"<a href='/matching/"+entry.trackgroupString+"'><img src='/assets/matched.svg'></a>":"");
         row.insertCell().innerHTML = "<div onclick='menu("+entry.id+")' style='cursor:pointer' id='c"+entry.id+"'>...</div>"
     }
     async function deleteRow(rowid)

@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -34,6 +36,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipInputStream;
 
 
 @Service
@@ -68,6 +72,9 @@ public class StorageService {
     HGTFileLoader_LocalStorage hgtFileLoader_3DEM;
     HGTFileLoader_LocalStorage hgtFileLoader_1DEM;
 
+    @Autowired
+    ApplicationEventPublisher eventPublisher;
+
     @PostConstruct
     public void init() {
         //akrobatik needed to use @values in construtor
@@ -95,10 +102,33 @@ public class StorageService {
 
         GPXWorker.ConversionOutput conversionOutput = null;
         try {
-            if (filedata.length>1_000_000) {
+            if (filedata.length>10_000_000) {
                 logger.info("File upload - Failed because too large file size - by User "+(user==null? "Anonymous":"'"+user.getId()+"'"));
                 throw new ExceptionHandling.FileNotAccepted("File is too large.");
             }
+
+            if (filename.toLowerCase(Locale.ROOT).endsWith("gzip")||filename.toLowerCase(Locale.ROOT).endsWith("gz")) {
+                filename = filename.toLowerCase(Locale.ROOT);
+                if (filename.endsWith("gzip"))
+                    filename = filename.substring(0, filename.length() - 5);
+                else if (filename.endsWith("gz"))
+                    filename = filename.substring(0, filename.length() - 3);
+
+                try (ByteArrayInputStream bin = new ByteArrayInputStream(filedata);
+                     GZIPInputStream gzipper = new GZIPInputStream(bin))
+                {
+                    byte[] buffer = new byte[1024];
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    int len;
+                    while ((len = gzipper.read(buffer)) > 0) {
+                        out.write(buffer, 0, len);
+                    }
+                    gzipper.close();
+                    out.close();
+                    filedata = out.toByteArray();
+                }
+            }
+
             if (filename.toLowerCase(Locale.ROOT).endsWith("gpx"))
                 conversionOutput = GPXWorker.loadGPXTracks(new ByteArrayInputStream(filedata));
             else if (filename.toLowerCase().endsWith("fit"))
@@ -260,6 +290,7 @@ public class StorageService {
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
         logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
+        eventPublisher.publishEvent(new OnNewUploadEvent(trackData.getId()));
         return ur;
     }
 
