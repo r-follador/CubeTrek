@@ -41,36 +41,35 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Compare Matching Activities</h1>
             </div>
+            <div class="row">
+                <div class="col d-flex p-0">
+                    <div class="d-flex flex-fill w-100 flex-column p-0 m-0" style="height: 25vh; min-height: 250px">
+                        <div class="flex-grow-1 p-0 m-0" id="graph" style="width:95%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
+                Error fetching data
+            </div>
 
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Matching Activities</h4>
             </div>
 
-            <table class="table">
+            <table class="table table-hover">
                 <thead>
                 <tr>
                     <th></th>
                     <th> Date </th>
                     <th> Title </th>
                     <th> Duration </th>
-                    <th> Ascent</th>
-                    <th> Distance</th>
+                    <th> Ascent </th>
+                    <th> Distance </th>
                 </tr>
                 </thead>
-                <tbody>
-                <tr th:if="${matching.empty}">
-                    <td colspan="2"><i>No Activities</i></td>
-                </tr>
-                <tr th:each="track : ${matching}">
-                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
-                             th:title="${track.activitytype.getDisplayValue()}"></td>
-                    <td><span th:text="${#dates.format(track.getDatetrack(), 'dd MMM yyyy HH:mm z')}"> Date </span></td>
-                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
-                    <td><span th:text="${track.getDuration()}"> Duration </span></td>
-                    <td><span th:text="${track.getElevationup()}"> Ascent </span></td>
-                    <td><span th:text="${track.getDistance()}"> Distance </span></td>
-                </tr>
+                <tbody id="tbody">
                 </tbody>
             </table>
 
@@ -101,7 +100,141 @@
 </body>
 
 <script src="../js/d3.min.js"></script>
+<script th:inline="javascript">
+    var icons = {};
+    /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
+    icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
+    /*[/]*/
+</script>
 <script>
+
+    var groupidstring = "[(${groupidstring})]";
+
+    var entries = {};
+    let metric = true;
+    const miles_per_km = 0.621371;
+    const feet_per_m = 3.28084;
+    const tablebody = document.getElementById("tbody");
+
+    function populateTable() { //clear everything and start downloading data
+        while (tablebody.firstChild) {
+            tablebody.removeChild(tablebody.firstChild);
+        }
+        listData();
+    }
+
+    function addRowInfo(row, entry) {
+        row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
+        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
+        row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
+        row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
+        row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
+        row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
+    }
+
+    function fetchData() {
+        var url = "/matching_ajax?groupid="+groupidstring;
+
+        fetch(url)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    document.getElementById("errorbox").style.display = 'block';
+                }
+            })
+            .then(data => {
+                for (var entry of data) {
+                    entries[entry.id] = entry;
+                }
+                populateTable();
+                drawGraph();
+                }
+            );
+    }
+
+    function listData() {
+        for (const [id, entry] of Object.entries(entries)) {
+            var newRow = tablebody.insertRow();
+            newRow.id="r"+entry.id;
+            addRowInfo(newRow, entry);
+        }
+    }
+
+    function minToString(minutes) {
+        var m = minutes % 60;
+        var h = (minutes-m)/60;
+        return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+    datas = [];
+
+    function drawGraph() {
+        let count = 0;
+        for (const [id, entry] of Object.entries(entries)) {
+            datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)});
+        }
+
+        this.width = document.getElementById('graph').clientWidth * 0.8;
+        this.width = Math.max(500, this.width);
+
+        d3.select("#graph").select("svg").remove(); //clear if exists already
+
+        margingraph = {top: 10, right: 30, bottom: 25, left: 40};
+
+        width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
+        height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
+
+        // append the svg object to the body of the page
+        d3.select("#graph").select("svg").remove(); //clear if exists already
+        this.svg = d3.select("#graph")
+            .append("svg")
+            .attr("width", this.width + this.margingraph.left + this.margingraph.right)
+            .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
+
+
+        var x = d3.scaleLinear()
+            .domain(d3.extent(datas, function(d) { return d.xpos}))
+            .range([ 0, width]);
+
+
+        var y = d3.scaleLinear()
+            .domain(d3.extent(datas, function(d) { return d.pace}))
+            .range([ 0, height ]);
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+        svg
+            .append("g")
+            .selectAll("dot")
+            .data(datas)
+            .enter()
+            .append("circle")
+            .attr("class", "myCircle")
+            .attr("cx", function(d) { return x(d.xpos) } )
+            .attr("cy", function(d) { return y(d.pace) } )
+            .attr("r", 8)
+            .attr("stroke", "#69b3a2")
+            .attr("stroke-width", 3)
+            .attr("fill", "white")
+
+        svg.append("path")
+            .datum(datas)
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1.5)
+            .attr("d", d3.line()
+                .curve(d3.curveBasis) // Just add that to have a curve instead of segments
+                .x(function(d) { return x(d.xpos) })
+                .y(function(d) { return y(d.pace) })
+            )
+
+
+    }
+
 
     function settings() {
         if (localStorage.getItem("metric") === null) {
@@ -127,11 +260,15 @@
 
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        populateTable();
     }
 
     window.addEventListener("resize", function () {
 
     });
+
+    settings();
+    fetchData();
 
 
 </script>

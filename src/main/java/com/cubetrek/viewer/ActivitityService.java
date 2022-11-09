@@ -68,7 +68,7 @@ public class ActivitityService {
     }
 
     public List<TrackData.TrackMetadata> getMatchingActivities(Users user, Long matchgroup) {
-        return trackDataRepository.findByOwnerAndTrackgroupOrderByDatetrackDesc(user, matchgroup);
+        return trackDataRepository.findByOwnerAndTrackgroupAndHiddenOrderByDatetrackDesc(user, matchgroup, false);
     }
 
 

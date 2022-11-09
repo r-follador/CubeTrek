@@ -6,6 +6,8 @@ import com.cubetrek.upload.*;
 import com.cubetrek.viewer.ActivitityService;
 import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,11 +162,16 @@ public class MainController {
     @GetMapping(value="/matching/{groupid}")
     public String viewMatchingActivities(@PathVariable("groupid") long groupid, Model model, TimeZone timeZone)
     {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        model.addAttribute("matching", activitityService.getMatchingActivities((Users) authentication.getPrincipal(), groupid));
-
+        model.addAttribute("groupidstring", Long.toString(groupid));
         return "matched_activities";
+    }
+
+    @ResponseBody
+    @GetMapping(value="/matching_ajax", produces = "application/json")
+    public List<TrackData.TrackMetadata> getActivitiesAjax(@RequestParam("groupid") long groupid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        return activitityService.getMatchingActivities(user, groupid);
     }
 
 
