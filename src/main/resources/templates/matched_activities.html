@@ -9,6 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
     <link href="../css/dashboard.css" rel="stylesheet">
+    <script src='../js/maplibre-gl.js'></script>
+    <link href='../css/maplibre-gl.css' rel='stylesheet'/>
 </head>
 <body>
 <header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
@@ -30,7 +32,7 @@
 
 <div class="container-fluid">
     <div class="row">
-        <nav th:replace="dashboard.html :: navigation(field='activitylist')" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <nav th:replace="dashboard.html :: navigation(field='none')" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
         </nav>
     </div>
 
@@ -42,9 +44,17 @@
                 <h1 class="h2">Compare Matching Activities</h1>
             </div>
             <div class="row">
-                <div class="col d-flex p-0">
-                    <div class="d-flex flex-fill w-100 flex-column p-0 m-0" style="height: 25vh; min-height: 250px">
-                        <div class="flex-grow-1 p-0 m-0" id="graph" style="width:95%"></div>
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                    <h4 class="h4">Pace Graph</h4>
+                </div>
+
+                <div class="row" style="height: 25vh;">
+                    <div class="col-xl-8">
+                      <div class="p-0 m-0" id="graph" style="width: 100%; height: 100%; min-height: 100px; " ></div>
+                    </div>
+                    <div class="col-xl-4">
+                        <div class="row" id="map2d" style="height: 90%; width: 100%; min-height: 100px; min-width: 100px;"></div>
+                        <div class="row" id="map2dlegend"></div>
                     </div>
                 </div>
             </div>
@@ -53,25 +63,24 @@
                 Error fetching data
             </div>
 
+            <div class="row pt-4">
 
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
-                <h4 class="h4">Matching Activities</h4>
+                <div id="activitytable" style="height: 45vh; overflow:auto;">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th> Date </th>
+                            <th> Title </th>
+                            <th> Duration </th>
+                            <th> Ascent </th>
+                            <th> Distance </th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
             </div>
-
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    <th></th>
-                    <th> Date </th>
-                    <th> Title </th>
-                    <th> Duration </th>
-                    <th> Ascent </th>
-                    <th> Distance </th>
-                </tr>
-                </thead>
-                <tbody id="tbody">
-                </tbody>
-            </table>
 
         </main>
     </div>
@@ -86,7 +95,7 @@
             <div class="modal-body">
 
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()" checked="checked">
                     <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
                 </div>
 
@@ -97,7 +106,6 @@
         </div>
     </div>
 </div>
-</body>
 
 <script src="../js/d3.min.js"></script>
 <script th:inline="javascript">
@@ -105,12 +113,10 @@
     /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
     icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
     /*[/]*/
-</script>
-<script>
-
     var groupidstring = "[(${groupidstring})]";
-
-    var entries = {};
+</script>
+<script th:inline="none">
+    var entries = [];
     let metric = true;
     const miles_per_km = 0.621371;
     const feet_per_m = 3.28084;
@@ -130,6 +136,9 @@
         row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
         row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
         row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
+        row.onmouseover = (event) => {highlight(entry.id, false)};
+        row.onmouseout = (event) => {unhighlight(entry.id)};
+        row.onclick = (event) => {clickactivity(entry.id, false)};
     }
 
     function fetchData() {
@@ -145,19 +154,46 @@
             })
             .then(data => {
                 for (var entry of data) {
-                    entries[entry.id] = entry;
+                    entries.push(entry);
                 }
                 populateTable();
                 drawGraph();
+                fetchgeojson(entries[0].id, true);
                 }
             );
     }
 
+    function fetchgeojson(trackid, reload) {
+        var url = "/api/geojson/"+trackid+".geojson";
+
+        if (!reload) {
+            map.removeLayer('route');
+            map.removeSource('route');
+        }
+
+        document.getElementById("map2dlegend").innerText = (new Date(Date.parse(entries.find(x => x.id === trackid).datetrack))).toLocaleString();
+
+        fetch(url)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    document.getElementById("errorbox").style.display = 'block';
+                }
+            })
+            .then(geojson => {
+                prepareMap2d(geojson, reload);
+                }
+            );
+
+
+    }
+
     function listData() {
-        for (const [id, entry] of Object.entries(entries)) {
+        for (const e of entries) {
             var newRow = tablebody.insertRow();
-            newRow.id="r"+entry.id;
-            addRowInfo(newRow, entry);
+            newRow.id="r"+e.id;
+            addRowInfo(newRow, e);
         }
     }
 
@@ -167,19 +203,25 @@
         return h.toString() + ":" + (m<10?"0":"") + m.toString();
     }
 
+    function minFractionToString(minutes) {
+        seconds = minutes*60;
+        var sec = seconds % 60;
+        var min = (seconds-sec)/60;
+        return min.toString() + ":" + (sec<10?"0":"") + (sec.toFixed(0)).toString();
+    }
+
+
     datas = [];
+    var tooltip;
 
     function drawGraph() {
         let count = 0;
-        for (const [id, entry] of Object.entries(entries)) {
-            datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)});
+        for (const entry of entries) {
+            datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km)});
         }
 
         this.width = document.getElementById('graph').clientWidth * 0.8;
         this.width = Math.max(500, this.width);
-
-        d3.select("#graph").select("svg").remove(); //clear if exists already
-
         margingraph = {top: 10, right: 30, bottom: 25, left: 40};
 
         width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
@@ -195,17 +237,35 @@
             .attr("transform",
                 "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
 
-
-        var x = d3.scaleLinear()
+        var xscale = d3.scaleLinear()
             .domain(d3.extent(datas, function(d) { return d.xpos}))
-            .range([ 0, width]);
+            .range([ width, 0]);
 
-
-        var y = d3.scaleLinear()
+        var yscale = d3.scaleLinear()
             .domain(d3.extent(datas, function(d) { return d.pace}))
             .range([ 0, height ]);
         svg.append("g")
-            .call(d3.axisLeft(y));
+            .call(d3.axisLeft(yscale));
+
+        tooltip = d3.select("body")
+            .append("div")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden")
+            .style("background", "rgba(245, 245, 255, 0.6)");
+
+        svg.append("path")
+            .datum(datas)
+            .attr("fill", "none")
+            .attr("stroke", "#ff8001")
+            .attr("stroke-width", 1.5)
+            .attr("d", d3.line()
+                .curve(d3.curveBasis) // Just add that to have a curve instead of segments
+                .x(function(d) { return xscale(d.xpos) })
+                .y(function(d) { return yscale(d.pace) })
+            )
+
+        const minmax = d3.extent(datas, function(d) {return d.pace});
 
         svg
             .append("g")
@@ -213,28 +273,59 @@
             .data(datas)
             .enter()
             .append("circle")
-            .attr("class", "myCircle")
-            .attr("cx", function(d) { return x(d.xpos) } )
-            .attr("cy", function(d) { return y(d.pace) } )
-            .attr("r", 8)
-            .attr("stroke", "#69b3a2")
-            .attr("stroke-width", 3)
+            .attr("id", function(d) { return "c"+d.id })
+            .attr("cx", function(d) { return xscale(d.xpos) } )
+            .attr("cy", function(d) { return yscale(d.pace) } )
+            .attr("r", 5)
+            .attr("stroke", "#101010")
+            .attr("stroke-width", 1)
             .attr("fill", "white")
-
-        svg.append("path")
-            .datum(datas)
-            .attr("fill", "none")
-            .attr("stroke", "black")
-            .attr("stroke-width", 1.5)
-            .attr("d", d3.line()
-                .curve(d3.curveBasis) // Just add that to have a curve instead of segments
-                .x(function(d) { return x(d.xpos) })
-                .y(function(d) { return y(d.pace) })
-            )
-
+            .on("mouseover", function(e,i) {
+                highlight(i.id, true);
+            })
+            .on("mouseout", function(d,i) {
+                unhighlight(i.id);
+            })
+            .on("click", function(d,i) {
+                clickactivity(i.id);
+            })
+            .filter(function(d) { return d.pace == minmax[0] || d.pace == minmax[1]} )
+            .attr("stroke", "#5499c7")
+            .attr("stroke-width", 3);
 
     }
 
+    function highlight(id, scroll) {
+        let circle = d3.select('#c'+id);
+        circle.attr("r", 8)
+            .style("fill", "rgba(68,146,220,0.42)");
+        let row = document.getElementById('r'+id);
+        if (scroll)
+            document.getElementById('activitytable').scrollTo({top: row.offsetTop, behavior: 'smooth'});
+        row.style.transition = 'all ease 2000ms';
+        row.style.backgroundColor = "rgba(68,146,220,0.42)";
+        var minfraction = datas.find(x => x.id === id).pace;
+        var tooltipy = (document.getElementById('c'+id).getBoundingClientRect().top)+window.scrollY;
+        var tooltipx = (document.getElementById('c'+id).getBoundingClientRect().left+22);
+        tooltip
+            .html(minFractionToString(minfraction)+(metric?" min/km":" min/mi"))
+            .style("top", tooltipy+"px")
+            .style("left",tooltipx+"px")
+            .style("visibility", "visible");
+    }
+
+    function unhighlight(id) {
+        let circle = d3.select('#c'+id);
+        circle.attr("r", 5).style("fill", "white");
+        let row = document.getElementById('r'+id);
+        row.style.transition = 'all ease 500ms';
+        row.style.backgroundColor = "white";
+        tooltip.style("visibility", "hidden");
+    }
+
+    function clickactivity(id) {
+        fetchgeojson(id, false);
+    }
 
     function settings() {
         if (localStorage.getItem("metric") === null) {
@@ -261,16 +352,74 @@
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
         populateTable();
+        drawGraph();
     }
 
     window.addEventListener("resize", function () {
 
     });
 
+    var map;
+
+    function prepareMap2d(jsonData, reload) {
+        if (reload) {
+            map = new maplibregl.Map({
+                container: 'map2d',
+                style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI', // stylesheet location
+                bounds: [[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]],
+                touchPitch: false,
+                maxPitch: 0,
+                minZoom: 10,
+                maxZoom: 13,
+                attributionControl: false
+            });
+
+
+            map.on('load', function () {
+                map.addSource('route', {
+                        type: 'geojson',
+                        data: jsonData
+                    }
+                );
+                map.addLayer({
+                    'id': 'route',
+                    'type': 'line',
+                    'source': 'route',
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': '#ff8001',
+                        'line-width': 3
+                    }
+                });
+            });
+        } else {
+            map.addSource('route', {
+                    type: 'geojson',
+                    data: jsonData
+                }
+            );
+            map.addLayer({
+                'id': 'route',
+                'type': 'line',
+                'source': 'route',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#ff8001',
+                    'line-width': 3
+                }
+            });
+        }
+    }
+
     settings();
     fetchData();
 
-
 </script>
 
-</html>
+</body></html>

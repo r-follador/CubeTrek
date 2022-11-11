@@ -274,7 +274,6 @@ function prepareMap2d(jsonData) {
     var el = document.createElement('div');
     el.className = 'marker2d';
     marker= new maplibregl.Marker(el).setLngLat([0,0]).addTo(map);
-    map.on('load')
 }
 
 const datas = [];
