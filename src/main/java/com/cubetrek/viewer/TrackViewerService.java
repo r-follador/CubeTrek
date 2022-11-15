@@ -100,7 +100,7 @@ public class TrackViewerService {
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");
 
     @Transactional
-    public String mapView3D(Authentication authentication, long trackid, Model model, TimeZone timeZone) {
+    public String mapView3D(Authentication authentication, long trackid, Model model) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
@@ -110,7 +110,7 @@ public class TrackViewerService {
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
-        model.addAttribute("dateCreatedString", track.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter));
+        model.addAttribute("dateCreatedString", track.getDatetrack().toLocalDateTime().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
@@ -126,16 +126,14 @@ public class TrackViewerService {
 
     private boolean isReadAccessAllowed(Authentication authentication, TrackData track) {
         //throw new ExceptionHandling.TrackViewerException("Track ID cannot be accessed");
-        boolean accessAllowed;
         if (track.getSharing() == TrackData.Sharing.PUBLIC) //open for anyone
-            accessAllowed = true;
+            return true;
         else if (authentication instanceof AnonymousAuthenticationToken) //not logged in
-            accessAllowed = false;
+            return false;
         else {
             Users user = (Users) authentication.getPrincipal();
-            accessAllowed = track.getOwner().getId().equals(user.getId());
+            return track.getOwner().getId().equals(user.getId());
         }
-        return accessAllowed;
     }
 
     private boolean isWriteAccessAllowed(Authentication authentication, TrackData track) {

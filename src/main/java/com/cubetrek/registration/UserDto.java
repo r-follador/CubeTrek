@@ -32,4 +32,12 @@ public class UserDto {
     @NotNull
     @Email(message = "Email not valid")
     private String email;
+
+    @Getter
+    @Setter
+    private String timezone;
+
+    @Getter
+    @Setter
+    private boolean metric;
 }

@@ -1,7 +1,7 @@
 package com.cubetrek.upload;
 
-import com.cubetrek.database.*;
 import com.cubetrek.ExceptionHandling;
+import com.cubetrek.database.*;
 import com.cubetrek.viewer.TrackViewerService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,16 +28,14 @@ import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.sql.Date;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipInputStream;
 
 
 @Service
@@ -82,7 +80,7 @@ public class StorageService {
         hgtFileLoader_1DEM = new HGTFileLoader_LocalStorage(hgt_1dem_files);
     }
 
-    public UploadResponse store(Users user, MultipartFile file, TimeZone timeZone, TrackData.Sharing sharing) {
+    public UploadResponse store(Users user, MultipartFile file, String timeZone, TrackData.Sharing sharing) {
         String filename = file.getOriginalFilename();
 
         try {
@@ -93,7 +91,7 @@ public class StorageService {
         }
     }
 
-    public UploadResponse store(Users user, byte[] filedata, String filename, TimeZone timeZone, TrackData.Sharing sharing) {
+    public UploadResponse store(Users user, byte[] filedata, String filename, String timeZone, TrackData.Sharing sharing) {
         //user can be null, will be saved under anonymous user (id = 1)
         Track track = null;
         TrackData trackData = new TrackData();
@@ -250,7 +248,7 @@ public class StorageService {
         trackData.setUploadDate(new Date(System.currentTimeMillis()));
         trackData.setSegments(track.getSegments().size());
         trackData.setDatetrack(track.getSegments().get(0).getPoints().get(0).getTime().orElse(ZonedDateTime.now()));
-        trackData.setTimezone(timeZone.getID());
+        trackData.setTimezone(timeZone);
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(reduced);
         trackData.setElevationup(trackSummary.elevationUp);
@@ -271,7 +269,7 @@ public class StorageService {
             UploadResponse ur = new UploadResponse();
             ur.setTrackID(trackData_duplicate.getId());
             ur.setTitle(trackData_duplicate.getTitle() + " [Duplicate]");
-            ur.setDate(trackData_duplicate.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter));
+            ur.setDate(trackData_duplicate.getDatetrack().toLocalDateTime().atZone(ZoneId.of(timeZone)).format(formatter));
             ur.setActivitytype(trackData_duplicate.getActivitytype());
             ur.setTrackSummary(trackSummary);
 
@@ -286,7 +284,7 @@ public class StorageService {
         UploadResponse ur = new UploadResponse();
         ur.setTrackID(trackData.getId());
         ur.setTitle(trackData.getTitle());
-        ur.setDate(trackData.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter));
+        ur.setDate(trackData.getDatetrack().toLocalDateTime().atZone(ZoneId.of(timeZone)).format(formatter));
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
         logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
@@ -317,7 +315,7 @@ public class StorageService {
         return TrackData.Activitytype.Unknown;
     }
 
-    private String createTitle(LatLon highestPoint, MultiLineString lineString, TrackData trackData, TimeZone timeZone) {
+    private String createTitle(LatLon highestPoint, MultiLineString lineString, TrackData trackData, String timeZone) {
         OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
         if (peak != null)
             return peak.getName();
@@ -332,7 +330,7 @@ public class StorageService {
         if (reverseGeoCode!=null)
             return reverseGeoCode;
 
-        return "Activity on "+ trackData.getDatetrack().toLocalDateTime().atZone(timeZone.toZoneId()).format(formatter);
+        return "Activity on "+ trackData.getDatetrack().toLocalDateTime().atZone(ZoneId.of(timeZone)).format(formatter);
     }
 
     private String reverseGeocode(LatLon coord) {

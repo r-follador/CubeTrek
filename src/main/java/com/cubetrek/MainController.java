@@ -83,12 +83,12 @@ public class MainController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model, TimeZone timeZone) {
+    public String dashboard(Model model) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("user", user);
-        model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, timeZone));
+        model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
         Page<TrackData.TrackMetadata> out = activitityService.getTenRecentActivities(user, 0);
         model.addAttribute("pageTracks", out);
@@ -140,27 +140,27 @@ public class MainController {
 
     @ResponseBody
     @PostMapping(value = "/upload", produces = "application/json")
-    public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, TimeZone timeZone) {
+    public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        return storageService.store(user, file, timeZone, TrackData.Sharing.PRIVATE);
+        return storageService.store(user, file, user.getTimezone(), TrackData.Sharing.PRIVATE);
     }
 
     @ResponseBody
     @PostMapping(value = "/upload_anonymous", produces = "application/json")
-    public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, TimeZone timeZone) {
-        return storageService.store(null, file, timeZone, TrackData.Sharing.PUBLIC);
+    public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
+        return storageService.store(null, file, TimeZone.getDefault().getID(), TrackData.Sharing.PUBLIC);
     }
 
     @GetMapping(value="/view/{itemid}")
-    public String viewTrack(@PathVariable("itemid") long trackid, Model model, TimeZone timeZone)
+    public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return trackViewerService.mapView3D(authentication, trackid, model, timeZone);
+        return trackViewerService.mapView3D(authentication, trackid, model);
     }
 
     @GetMapping(value="/matching/{groupid}")
-    public String viewMatchingActivities(@PathVariable("groupid") long groupid, Model model, TimeZone timeZone)
+    public String viewMatchingActivities(@PathVariable("groupid") long groupid, Model model)
     {
         model.addAttribute("groupidstring", Long.toString(groupid));
         return "matched_activities";
@@ -242,7 +242,7 @@ public class MainController {
                 //    System.out.println("@@ within CH");
                     yield String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
                 //}else {
-                //    System.out.println("@@ outsie CH");
+                //    System.out.println("@@ outside CH");
                 //    yield String.format("https://api.maptiler.com/maps/dae70481-0d42-4345-867d-216c14f6ead8/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
                 //}
             }

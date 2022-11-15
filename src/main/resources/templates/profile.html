@@ -3,7 +3,7 @@
       xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
 
 <head>
-    <title>CubeTrek</title>
+    <title>CubeTrek - Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
@@ -31,7 +31,15 @@
             </div>
 
             <div>
+                <div th:text="${user.getName()}"></div>
+            </div>
+
+            <div>
                 <div th:text="${user.getEmail()}"></div>
+            </div>
+
+            <div>
+                <div th:text="${user.getTimezone()}"></div>
             </div>
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
@@ -41,13 +49,18 @@
                 Link Accounts to automatically sync your activities to <strong>CubeTrek</strong>.
             </div>
 
-            <div>
-                <img src="/assets/connect_logo_blue.png" width="200px">
-                <div th:if="${isGarminConnected}" class="badge bg-primary">Account is linked</div>
-                <div th:unless="${isGarminConnected}" class="badge bg-secondary">No Garmin Account is linked</div>
-                <div th:unless="${isGarminConnected}"><a href="/profile/connectGarmin-step1">Click to link</a></div>
-                <div th:if="${isGarminConnected}"><a href="/profile/connectGarmin-step1">Change</a></div>
+            <div class="card m-2 mt-4" style="width: 18rem;">
+                <img src="/assets/connect_logo_blue.png" class="card-img-top" alt="Garmin Connect Logo">
+                <div class="card-body">
+                    <h5 class="card-title">Garmin Connect</h5>
+                    <p class="card-text">Link your Garmin devices to CubeTrek</p>
+                    <a th:if="${isGarminConnected}" href="/profile/connectGarmin-step1" class="badge bg-primary">✅ Garmin Account is linked</a>
+                    <a th:unless="${isGarminConnected}" href="/profile/connectGarmin-step1" class="badge bg-secondary">No Garmin Account linked</a>
+                    <div th:unless="${isGarminConnected}"><a href="/profile/connectGarmin-step1">Click to link</a></div>
+                    <div th:if="${isGarminConnected}"><a href="/profile/connectGarmin-step1">Change</a></div>
+                </div>
             </div>
+
 
 
         </main>

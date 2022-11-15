@@ -1,10 +1,7 @@
 package com.cubetrek.registration;
 
-import com.cubetrek.database.Users;
-import com.cubetrek.database.UsersRepository;
+import com.cubetrek.database.*;
 import com.cubetrek.ExceptionHandling;
-import com.cubetrek.database.VerificationToken;
-import com.cubetrek.database.VerificationTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
@@ -14,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.Date;
+import java.util.Set;
+import java.util.TimeZone;
 
 @Service
 @Transactional
@@ -40,7 +39,14 @@ public class UserRegistrationService {
         userField.setPassword(passwordEncoder.encode(user.getPassword()));
         userField.setUserTier(Users.UserTier.FREE);
         userField.setUserRole(Users.UserRole.USER);
+        userField.setMetric(user.isMetric());
+        if (Set.of(TimeZone.getAvailableIDs()).contains(user.getTimezone()))
+            userField.setTimezone(user.getTimezone());
+        else
+            userField.setTimezone("Etc/UTC");
+        userField.setSharing(TrackData.Sharing.PRIVATE);
         return usersRepository.save(userField);
+
     }
 
     private boolean emailExist(String email) {

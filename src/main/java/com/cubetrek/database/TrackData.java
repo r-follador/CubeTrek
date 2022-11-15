@@ -11,6 +11,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 
 @Getter
@@ -217,6 +218,11 @@ public class TrackData implements Serializable {
 
         default String getTrackgroupString() { //need to convert long to String for Javascript (uses float otherwise)
             return String.valueOf(getTrackgroup());
+        }
+
+        default String getDatetrackIso() {
+            SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+            return isoDateFormat.format(getDatetrack());
         }
     }
 }

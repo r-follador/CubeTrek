@@ -47,6 +47,9 @@
                 <div class="invalid-feedback">
                     Valid Email is required.
                 </div>
+
+                <input th:field="*{timezone}" type="hidden" id="timezone" value="Etc/UTC">
+                <input th:field="*{metric}" type="hidden" id="metric" value="true">
             </div>
 
             <div class="col-6">
@@ -63,5 +66,10 @@
         </div>
 
     </main>
+</div>
 </body>
+<script>
+    document.getElementById("timezone").value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.getElementById("metric").value = (localStorage.getItem("metric") === null || localStorage.getItem("metric"));
+</script>
 </html>

@@ -20,8 +20,8 @@ public class ActivitityService {
     @Autowired
     TrackDataRepository trackDataRepository;
 
-    public String getActivityHeatmapAsJSON(Users user, TimeZone timeZone) {
-        return trackDataRepository.getAggregatedStatsAsJSON(user.getId(), timeZone.getID());
+    public String getActivityHeatmapAsJSON(Users user, String timeZone) {
+        return trackDataRepository.getAggregatedStatsAsJSON(user.getId(), timeZone);
     }
 
     public List<ActivityCount> getActivityTypeCount(Users user) {

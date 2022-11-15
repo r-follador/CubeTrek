@@ -8,10 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Entity(name = "users")
 @Table(name = "users")
@@ -64,6 +61,21 @@ public class Users implements UserDetails {
     @Column(name = "enabled")
     private boolean enabled;
 
+    @Getter
+    @Setter
+    @Column(name = "timezone", columnDefinition = "varchar(255)")
+    private String timezone = "Etc/UTC";
+
+    @Getter
+    @Setter
+    @Column(name = "metric", columnDefinition = "boolean default true")
+    private boolean metric;
+
+    @Getter
+    @Setter
+    @Column(name = "sharing", columnDefinition = "integer default 0") //default 0=private
+    private TrackData.Sharing sharing;
+
     @Override
     public String getUsername() {
         return name;
@@ -107,9 +119,10 @@ public class Users implements UserDetails {
     @Override
     public String toString() {
         return "Users{" +
-                "name=" + name + '\'' +
-                "email=" + email + '\'' +
-                "password=" + password + '\'' +
+                "name=" + getName() + '\n' +
+                "email=" + getEmail() + '\n' +
+                "password=" + getPassword() + '\n' +
+                "timezone=" + getTimezone() + '\n' +
                 '}';
     }
 }
