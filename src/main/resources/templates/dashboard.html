@@ -84,12 +84,22 @@
             </div>
 
             <div th:unless="${pageTracks.empty}" class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
-                <h4 class="h4">Activity Heatmap</h4>
+                <div class="h4">
+                    <span id="heatmaptype">Distance per Day</span>
+                    <div class="btn-group">
+                        <a class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                        Change...
+                        </a>
+                        <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" onclick="heatmapChange('distance')">Distance</a></li>
+                        <li><a class="dropdown-item" onclick="heatmapChange('ascent')">Ascent</a></li>
+                        <li><a class="dropdown-item" onclick="heatmapChange('number')">Number of Activities</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%">
             </div>
-
-
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Recent Activities</h4>
@@ -363,8 +373,9 @@
             let date = parseDate(dataHeatmap[i].trackdata_day);
             date.setHours(12,0,0,0);
             let day_dist = (dataHeatmap[i].day_dist/1000);
-            let day_elevationup = dataHeatmap[i].day_elevationup*(metric?1:feet_per_m);
-            datas.push({'date' : date, 'day_dist' : day_dist, 'day_elevationup' : day_elevationup});
+            let day_elevationup = dataHeatmap[i].day_elevationup;
+            let number = dataHeatmap[i].number;
+            datas.push({'date' : date, 'day_dist' : day_dist, 'day_elevationup' : day_elevationup, 'number' : number});
         }
 
         var minDate = new Date(d3.min(datas, d => d.date));
@@ -381,6 +392,8 @@
         }
     }
 
+    let heatmapType = "distance";
+
     function drawHeatmap() {
         this.width = document.getElementById('graph').clientWidth*0.8;
 
@@ -391,11 +404,56 @@
 
         Calendar(this.svg, datas, {
             x: d => d.date,
-            y: d => d.day_dist,
+            y: d => {
+                switch (heatmapType) {
+                    case 'distance':
+                        return d.day_dist;
+                    case 'ascent':
+                        return d.day_elevationup;
+                    case 'number':
+                        return d.number;
+                }
+            },
             width: this.width,
             cellSize: (this.width/60),
-            weekday: "monday"
-        })
+            weekday: "monday",
+            colors: (function(){
+                switch (heatmapType) {
+                    case 'distance':
+                        return d3.interpolateYlOrRd;
+                    case 'ascent':
+                        return d3.interpolateYlGn;
+                    case 'number':
+                        return d3.interpolateRdPu;
+                }}()),
+            formatingFunction: (function(){
+                switch (heatmapType) {
+                    case 'distance':
+                        return formatLongdist;
+                    case 'ascent':
+                        return formatShortdist;
+                    case 'number':
+                        return formatNumberActivities;
+                }}())
+        });
+    }
+
+    function heatmapChange(type) {
+        switch (type) {
+            case 'distance':
+                heatmapType = "distance";
+                document.getElementById("heatmaptype").innerText = "Distance per Day";
+                break;
+            case 'ascent':
+                heatmapType = "ascent";
+                document.getElementById("heatmaptype").innerText = "Vertical Ascent per Day";
+                break;
+            case 'number':
+                heatmapType = "number";
+                document.getElementById("heatmaptype").innerText = "Number of Activities per Day";
+                break;
+        }
+        drawHeatmap();
     }
 
     prepareHeatmapdata();
@@ -413,6 +471,7 @@
         weekday = "monday", // either: weekday, sunday, or monday
         formatDay = i => "SMTWTFS"[i], // given a day number in [0, 6], the day-of-week label
         formatMonth = "%b", // format specifier string for months (above the chart)
+        formatingFunction = formatShortdist,
         colors = d3.interpolateYlOrRd
     } = {}) {
         // Compute values.
@@ -501,7 +560,7 @@
             .on("mouseover", function(e, i) {
                 tooltip.style("visibility", "visible");
                 tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
-                tooltip.html(formatDate(X[i])+"<br>"+(Y[i] === undefined?"<i>No Activity</i>":formatValue(Y[i]*(metric?1:miles_per_km))+(metric?" km":" mi")));
+                tooltip.html(formatDate(X[i])+"<br>"+(Y[i] === undefined?"<i>No Activity</i>":formatingFunction(Y[i])));
             })
             .on("mouseout", function(e, i) {
                 tooltip.style("visibility", "hidden");
@@ -561,7 +620,18 @@
         return h.toString() + ":" + (m<10?"0":"") + m.toString();
     }
 
+    function formatShortdist(value) {
+        return (value *(metric?1:feet_per_m)).toFixed(0)+" "+(metric?"m":"ft");
+    }
 
+    function formatNumberActivities(value) {
+        return value+" " + (value>1?"Activities":"Activity");
+    }
+
+
+    function formatLongdist(value) {
+        return (value *(metric?1:miles_per_km)).toFixed(1)+" "+(metric?"km":"mi");
+    }
 
     function formatValues() {
         document.querySelectorAll('[data-duration]').forEach(function(element) {
@@ -577,11 +647,11 @@
         });
 
         document.querySelectorAll('[data-shortdist]').forEach(function(element) {
-            element.innerText = (element.dataset.shortdist*(metric?1:feet_per_m)).toFixed(0)+" "+(metric?"m":"ft");
+            element.innerText = formatShortdist(element.dataset.shortdist);
         });
 
         document.querySelectorAll('[data-longdist]').forEach(function(element) {
-            element.innerText = (element.dataset.longdist/1000*(metric?1:miles_per_km)).toFixed(1)+" "+(metric?"km":"mi");
+            element.innerText = formatLongdist(element.dataset.longdist/1000);
         });
     }
 

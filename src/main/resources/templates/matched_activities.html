@@ -41,19 +41,19 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Compare Matching Activities</h1>
+                <h1 class="h2"><span id="entrysize"></span> Matching Activities</h1>
             </div>
-            <div class="row">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
-                    <h4 class="h4">Pace Graph</h4>
+            <div class="row" style="height: 35vh;">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1">
+                    <h4 class="h4">Average Pace</h4>
                 </div>
 
-                <div class="row" style="height: 25vh;">
+                <div class="row">
                     <div class="col-xl-8">
-                      <div class="p-0 m-0" id="graph" style="width: 100%; height: 100%; min-height: 100px; " ></div>
+                      <div class="p-0 m-0" id="graph" style="width: 100%; height: 100%; min-height: 60px;" ></div>
                     </div>
-                    <div class="col-xl-4">
-                        <div class="row" id="map2d" style="height: 90%; width: 100%; min-height: 100px; min-width: 100px;"></div>
+                    <div class="col-xl-4 ps-5">
+                        <div class="row" id="map2d" style="height: 100%; width: 100%; min-height: 60px; min-width: 60px;"></div>
                         <div class="row" id="map2dlegend"></div>
                     </div>
                 </div>
@@ -63,9 +63,9 @@
                 Error fetching data
             </div>
 
-            <div class="row pt-4">
+            <div class="row pt-4" style="height: 45vh">
 
-                <div id="activitytable" style="height: 45vh; overflow:auto;">
+                <div id="activitytable" style="height: 100vh; overflow:auto;">
                     <table class="table">
                         <thead>
                         <tr>
@@ -114,6 +114,7 @@
     icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
     /*[/]*/
     var groupidstring = "[(${groupidstring})]";
+    var matches = [(${matches})];
 </script>
 <script th:inline="none">
     var entries = [];
@@ -131,7 +132,7 @@
 
     function addRowInfo(row, entry) {
         row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
-        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
+        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrackIso))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
         row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
         row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
         row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
@@ -141,26 +142,14 @@
         row.onclick = (event) => {clickactivity(entry.id, false)};
     }
 
-    function fetchData() {
-        var url = "/matching_ajax?groupid="+groupidstring;
-
-        fetch(url)
-            .then(response => {
-                if (response.status === 200) {
-                    return response.json();
-                } else {
-                    document.getElementById("errorbox").style.display = 'block';
-                }
-            })
-            .then(data => {
-                for (var entry of data) {
-                    entries.push(entry);
-                }
-                populateTable();
-                drawGraph();
-                fetchgeojson(entries[0].id, true);
-                }
-            );
+    function initData() {
+        for (var entry of matches) {
+            entries.push(entry);
+        }
+        populateTable();
+        drawGraph();
+        fetchgeojson(entries[0].id, true);
+        document.getElementById("entrysize").innerText = entries.length;
     }
 
     function fetchgeojson(trackid, reload) {
@@ -171,7 +160,7 @@
             map.removeSource('route');
         }
 
-        document.getElementById("map2dlegend").innerText = (new Date(Date.parse(entries.find(x => x.id === trackid).datetrack))).toLocaleString();
+        document.getElementById("map2dlegend").innerText = (new Date(Date.parse(entries.find(x => x.id === trackid).datetrackIso))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
 
         fetch(url)
             .then(response => {
@@ -289,8 +278,8 @@
             .on("click", function(d,i) {
                 clickactivity(i.id);
             })
-            .filter(function(d) { return d.pace == minmax[0] || d.pace == minmax[1]} )
-            .attr("stroke", "#5499c7")
+            .filter(function(d) { return d.pace === minmax[0] || d.pace === minmax[1]} )
+            .attr("stroke", "#fa7c7c")
             .attr("stroke-width", 3);
 
     }
@@ -356,7 +345,7 @@
     }
 
     window.addEventListener("resize", function () {
-
+        drawGraph();
     });
 
     var map;
@@ -418,7 +407,7 @@
     }
 
     settings();
-    fetchData();
+    initData();
 
 </script>
 

@@ -162,18 +162,16 @@ public class MainController {
     @GetMapping(value="/matching/{groupid}")
     public String viewMatchingActivities(@PathVariable("groupid") long groupid, Model model)
     {
-        model.addAttribute("groupidstring", Long.toString(groupid));
-        return "matched_activities";
-    }
-
-    @ResponseBody
-    @GetMapping(value="/matching_ajax", produces = "application/json")
-    public List<TrackData.TrackMetadata> getActivitiesAjax(@RequestParam("groupid") long groupid) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        return activitityService.getMatchingActivities(user, groupid);
+        model.addAttribute("groupidstring", Long.toString(groupid));
+        try {
+            model.addAttribute("matches", (new ObjectMapper().writeValueAsString(activitityService.getMatchingActivities(user, groupid))));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return "matched_activities";
     }
-
 
     @ResponseBody
     @GetMapping(value = "/api/geojson/{itemid}.geojson", produces = "application/json")
