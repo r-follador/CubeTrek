@@ -9,11 +9,14 @@ import com.cubetrek.viewer.TrackViewerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -157,6 +160,14 @@ public class MainController {
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return trackViewerService.mapView3D(authentication, trackid, model);
+    }
+
+    @GetMapping(value="/download/{itemid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public @ResponseBody byte[] downloadTrackfile(@PathVariable("itemid") long trackid, HttpServletResponse response)
+    {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return trackViewerService.downloadTrackfile(authentication, trackid, response);
+
     }
 
     @GetMapping(value="/matching/{groupid}")

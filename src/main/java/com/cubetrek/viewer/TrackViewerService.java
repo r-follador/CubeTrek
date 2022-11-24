@@ -1,9 +1,7 @@
 package com.cubetrek.viewer;
 
-import com.cubetrek.database.TrackData;
-import com.cubetrek.database.Users;
+import com.cubetrek.database.*;
 import com.cubetrek.ExceptionHandling;
-import com.cubetrek.database.TrackDataRepository;
 import com.sunlocator.topolibrary.GLTFDatafile;
 import com.sunlocator.topolibrary.HGTFileLoader_LocalStorage;
 import com.sunlocator.topolibrary.HGTWorker;
@@ -17,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -24,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
@@ -33,6 +33,9 @@ public class TrackViewerService {
 
     @Autowired
     private TrackDataRepository trackDataRepository;
+
+    @Autowired
+    private TrackRawfileRepository trackRawfileRepository;
 
     @Value("${cubetrek.hgt.1dem}")
     private String hgt_1dem_files;
@@ -145,4 +148,18 @@ public class TrackViewerService {
             return ownerid == user.getId();
         }
      }
+     @Transactional
+    public byte[] downloadTrackfile(Authentication authentication, long trackid, HttpServletResponse response) {
+        logger.info("Download Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
+        TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException("Not Found"));
+        Users user = (Users) authentication.getPrincipal();
+        if (!track.getOwner().getId().equals(user.getId()))
+            throw new ExceptionHandling.TrackAccessException("Not Found");
+
+        long trackRawfileId = track.getTrackrawfile().getId();
+        TrackRawfile trackRawfile = trackRawfileRepository.getReferenceById(trackRawfileId);
+        response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+trackRawfile.getOriginalfilename());
+
+        return trackRawfile.getOriginalgpx();
+    }
 }

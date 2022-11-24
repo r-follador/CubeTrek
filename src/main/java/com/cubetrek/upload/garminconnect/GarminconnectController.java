@@ -22,6 +22,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Objects;
+
 @Controller
 public class GarminconnectController {
     Logger logger = LoggerFactory.getLogger(GarminconnectController.class);
@@ -85,6 +87,14 @@ public class GarminconnectController {
 
             UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByUser(user);
 
+            UserThirdpartyConnect other = userThirdpartyConnectRepository.findByGarminUseraccesstoken(userAccessToken);
+
+            if ((other != null && userThirdpartyConnect != null && !Objects.equals(other.getId(), userThirdpartyConnect.getId())) || other != null && userThirdpartyConnect == null) {
+                throw new ExceptionHandling.UnnamedException("Failed", "This Garmin Account is already linked to another CubeTrek account");
+            }
+
+
+
             if (userThirdpartyConnect==null) {
                 UserThirdpartyConnect utc = new UserThirdpartyConnect();
                 utc.setGarminEnabled(true);
@@ -98,12 +108,12 @@ public class GarminconnectController {
                 userThirdpartyConnect.setGarminUseraccesstokenSecret(userAccessTokenSecret);
                 userThirdpartyConnectRepository.save(userThirdpartyConnect);
             }
-            logger.info("GarminConnect User successfully linked Garmin Account: User id '"+user.getId()+"'");
+            logger.info("GarminConnect User successfully linked Garmin Account: User id '"+user.getId()+"'; Garmin User Access Token: '"+userAccessToken+"'");
             return "redirect:/profile";
         } catch (OAuthMessageSignerException | OAuthNotAuthorizedException | OAuthExpectationFailedException |
                  OAuthCommunicationException e) {
             logger.error("Connect to Garmin - Step 2: User id '"+user.getId()+"'", e);
-            throw new ExceptionHandling.TrackViewerException("Error: Cannot connect to Garmin");
+            throw new ExceptionHandling.UnnamedException("Failed", "Cannot link Account to Garmin");
         }
     }
 }
