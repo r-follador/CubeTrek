@@ -15,9 +15,6 @@
 
     <link href="../css/dashboard.css" rel="stylesheet">
 
-    <script src="../js/babylon.js"></script>
-    <script src="../js/babylonjs.loaders.js"></script>
-
     <script src="../js/d3-regression.min.js"></script>
     <script src="../js/d3.min.js"></script>
 
@@ -59,19 +56,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
-            <canvas class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;"
-                    id="renderCanvas" touch-action="none"></canvas>
-            <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked
-                       onchange="mapstyle('summer')">
-                <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off"
-                       onchange="mapstyle('winter')">
-                <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off"
-                       onchange="mapstyle('satellite')">
-                <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
-            </div>
+            <div id="map2d" style="height: 100%; width: 100%; min-width: 100px;"></div>
         </div>
 
         <div class="col-xl-4 d-flex flex-xl-column p-0">
@@ -112,7 +97,7 @@
                 </div>
             </div>
             <div class="w-100" style="height: 25vh; min-height: 250px">
-                <div id="map2d" style="height: 100%; width: 100%; min-width: 100px;"></div>
+                <div id="mapkill" style="height: 100%; width: 100%; min-width: 100px;"></div>
             </div>
         </div>
     </div>
@@ -442,7 +427,7 @@
     var sharing = "[[${trackmetadata.sharing}]]";
 </script>
 <script src="../js/kd-tree.js"></script>
-<script src="../js/trackview_v2.js"></script>
+<script src="../js/trackview2d_v1.js"></script>
 
 </body>
 </html>

@@ -162,6 +162,13 @@ public class MainController {
         return trackViewerService.mapView3D(authentication, trackid, model);
     }
 
+    @GetMapping(value="/view2d/{itemid}")
+    public String viewTrack2D(@PathVariable("itemid") long trackid, Model model)
+    {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return trackViewerService.mapView2D(authentication, trackid, model);
+    }
+
     @GetMapping(value="/download/{itemid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public @ResponseBody byte[] downloadTrackfile(@PathVariable("itemid") long trackid, HttpServletResponse response)
     {

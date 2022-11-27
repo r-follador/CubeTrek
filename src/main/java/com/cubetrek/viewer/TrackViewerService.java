@@ -116,12 +116,32 @@ public class TrackViewerService {
         model.addAttribute("dateCreatedString", track.getDatetrack().toLocalDateTime().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
+        model.addAttribute("owner", track.getOwner().getName());
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
         return "trackview";
     }
 
+    @Transactional
+    public String mapView2D(Authentication authentication, long trackid, Model model) {
+        logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
+        TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
+        if (!isReadAccessAllowed(authentication, track))
+            throw new ExceptionHandling.TrackAccessException(noAccessMessage);
+
+        model.addAttribute("trackmetadata", track);
+        int hours = track.getDuration() / 60;
+        int minutes = track.getDuration() % 60;
+        model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
+        model.addAttribute("dateCreatedString", track.getDatetrack().toLocalDateTime().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
+        model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
+        model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
+        model.addAttribute("owner", track.getOwner().getName());
+        model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
+        return "trackview2d";
+    }
+
     private final Parser markdownParser =  Parser.builder().build();
-    private final HtmlRenderer markdownRenderer = HtmlRenderer.builder().build();
+    private final HtmlRenderer markdownRenderer = HtmlRenderer.builder().escapeHtml(true).sanitizeUrls(true).build();
     private String markdownToHTML(String markdown) {
         Node document = markdownParser.parse(markdown);
         return markdownRenderer.render(document);

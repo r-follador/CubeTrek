@@ -3,6 +3,7 @@ package com.cubetrek.upload;
 import com.cubetrek.database.TrackData;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.util.HtmlUtils;
 
 public class EditTrackmetadataDto {
 
@@ -40,7 +41,6 @@ public class EditTrackmetadataDto {
             errorMessage = "Title is too long (max. 250 characters)";
             return false;
         }
-
         return true;
     }
 }

@@ -124,7 +124,7 @@
                 <tr th:each="track : ${pageTracks}">
                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                    <td><span th:data-datetime="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                    <td><span th:data-datetime="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                     <td><span th:data-duration="${track.getDuration()}" th:text="${track.getDuration()}"> Duration </span></td>
                     <td><span th:data-shortdist="${track.getElevationup()}" th:text="${track.getElevationup()}"> Ascent </span></td>
@@ -170,7 +170,7 @@
                                 <tr th:each="track : ${topTracks.recentDistance}">
                                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                                    <td><span th:data-date="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                                    <td><span th:data-date="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:data-longdist="${track.getDistance()}" th:text="${track.getDistance()}"> Distance </span></td>
                                 </tr>
@@ -194,7 +194,7 @@
                                 <tr th:each="track : ${topTracks.alltimeDistance}">
                                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                                    <td><span th:data-date="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                                    <td><span th:data-date="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:data-longdist="${track.getDistance()}" th:text="${track.getDistance()}"> Distance </span></td>
                                 </tr>
@@ -232,7 +232,7 @@
                                 <tr th:each="track : ${topTracks.recentAscent}">
                                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                                    <td><span th:data-date="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                                    <td><span th:data-date="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:data-shortdist="${track.getElevationup()}" th:text="${track.getElevationup()}"> Ascent </span></td>
                                 </tr>
@@ -256,7 +256,7 @@
                                 <tr th:each="track : ${topTracks.alltimeAscent}">
                                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                                    <td><span th:data-date="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                                    <td><span th:data-date="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:data-shortdist="${track.getElevationup()}" th:text="${track.getElevationup()}"> Ascent </span></td>
                                 </tr>
@@ -294,7 +294,7 @@
                                 <tr th:each="track : ${topTracks.recentPeak}">
                                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                                    <td><span th:data-date="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                                    <td><span th:data-date="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:data-shortdist="${track.getHighestpoint()}" th:text="${track.getHighestpoint()}"> Highest Point </span></td>
                                 </tr>
@@ -318,7 +318,7 @@
                                 <tr th:each="track : ${topTracks.alltimePeak}">
                                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                                              th:title="${track.activitytype.getDisplayValue()}"></td>
-                                    <td><span th:data-date="${track.getDatetrackIso()}" th:text="${track.getDatetrackIso()}"> Date </span></td>
+                                    <td><span th:data-date="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
                                     <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
                                     <td><span th:data-shortdist="${track.getHighestpoint()}" th:text="${track.getHighestpoint()}"> Highest Point </span></td>
                                 </tr>
@@ -327,10 +327,7 @@
                         </div>
                     </div>
                 </div>
-
             </div>
-
-
         </main>
     </div>
 </div>
