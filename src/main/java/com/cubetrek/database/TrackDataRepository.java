@@ -9,9 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
-import javax.sound.midi.Track;
 import java.sql.Timestamp;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,7 +77,16 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
             "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND (date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 1) " +
             "GROUP BY trackdata_day " +
             "ORDER BY trackdata_day) AS t;", nativeQuery = true)
-    String getAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years distance, ascent, number of activities for Heatmap
+    String getDailyAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years distance, ascent, number of activities for Heatmap
+
+    @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
+            "SELECT date_trunc('month', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_month, trackdata.activitytype, sum(trackdata.distance) as monthly_dist, sum(trackdata.elevationup) as monthly_elevationup " +
+            "FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND (date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 1 OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 2) " +
+            "GROUP BY trackdata_month, trackdata.activitytype " +
+            "ORDER BY trackdata_month) AS t;", nativeQuery = true)
+    String getMonthlyAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years distance, ascent, number of activities for Heatmap
+
 
     @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance FROM trackdata " +
             "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '3 months' " +

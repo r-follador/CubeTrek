@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,7 +20,11 @@ public class ActivitityService {
     TrackDataRepository trackDataRepository;
 
     public String getActivityHeatmapAsJSON(Users user, String timeZone) {
-        return trackDataRepository.getAggregatedStatsAsJSON(user.getId(), timeZone);
+        return trackDataRepository.getDailyAggregatedStatsAsJSON(user.getId(), timeZone);
+    }
+
+    public String getMonthlyTotalAsJSON(Users user, String timeZone) {
+        return trackDataRepository.getMonthlyAggregatedStatsAsJSON(user.getId(), timeZone);
     }
 
     public List<ActivityCount> getActivityTypeCount(Users user) {

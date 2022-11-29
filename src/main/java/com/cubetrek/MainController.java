@@ -92,6 +92,7 @@ public class MainController {
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
+        model.addAttribute("monthlyTotalJSON", activitityService.getMonthlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
         Page<TrackData.TrackMetadata> out = activitityService.getTenRecentActivities(user, 0);
         model.addAttribute("pageTracks", out);
@@ -140,7 +141,6 @@ public class MainController {
         return "upload";
     }
 
-
     @ResponseBody
     @PostMapping(value = "/upload", produces = "application/json")
     public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
@@ -148,7 +148,6 @@ public class MainController {
         Users user = (Users)authentication.getPrincipal();
         return storageService.store(user, file, user.getTimezone(), TrackData.Sharing.PRIVATE);
     }
-
     @ResponseBody
     @PostMapping(value = "/upload_anonymous", produces = "application/json")
     public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
