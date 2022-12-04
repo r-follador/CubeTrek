@@ -48,7 +48,6 @@ public class RegistrationController {
         if (bindingResult.hasErrors())
             return "registration";
 
-
         try {
             Users registered = userRegistrationService.register(userDto);
             eventPublisher.publishEvent(new OnRegistrationCompleteEvent(registered));

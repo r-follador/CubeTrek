@@ -2,6 +2,9 @@ package com.cubetrek;
 
 import com.cubetrek.database.*;
 import com.cubetrek.newsletter.NewsletterService;
+import com.cubetrek.registration.OnRegistrationCompleteEvent;
+import com.cubetrek.registration.UserDto;
+import com.cubetrek.registration.UserDto_minimal;
 import com.cubetrek.upload.*;
 import com.cubetrek.viewer.ActivitityService;
 import com.cubetrek.viewer.TrackGeojson;
@@ -24,6 +27,8 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +36,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -126,10 +132,46 @@ public class MainController {
     public String showProfile(WebRequest request, Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        model.addAttribute("user", user);
+        UserDto_minimal userDto = new UserDto_minimal();
+        userDto.setEmail(user.getEmail());
+        userDto.setName(user.getName());
+        userDto.setSharing(user.getSharing());
+        model.addAttribute("user", userDto);
         UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
         model.addAttribute("isGarminConnected", utc != null && utc.isGarminEnabled());
         return "profile";
+    }
+
+    @PostMapping("/profile")
+    public String saveProfileChanges(
+            @ModelAttribute("user") @Valid UserDto_minimal userDto, BindingResult bindingResult, Model model) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+
+        if (bindingResult.hasErrors()) {
+            UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
+            model.addAttribute("isGarminConnected", utc != null && utc.isGarminEnabled());
+            model.addAttribute("user", userDto);
+            userDto.setName(user.getName());
+            userDto.setSharing(user.getSharing());
+            userDto.setEmail(user.getEmail());
+            model.addAttribute("isGarminConnected", utc != null && utc.isGarminEnabled());
+            model.addAttribute("user", userDto);
+            return "profile";
+        }
+
+
+        try {
+            user.setSharing(userDto.getSharing());
+            user.setName(userDto.getName());
+            usersRepository.save(user);
+        } catch (RuntimeException ex) {
+            logger.error("Registration Error", ex);
+            throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not update user profile, please try again later or send an email to contact@cubetrek.com");
+        }
+
+        return "redirect:/profile";
     }
 
     @GetMapping("/upload")

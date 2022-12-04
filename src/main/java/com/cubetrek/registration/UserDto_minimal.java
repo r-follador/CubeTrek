@@ -13,7 +13,7 @@ import javax.validation.constraints.Size;
  * Convenience class to transfer essential user data during registration
  */
 
-public class UserDto {
+public class UserDto_minimal {
     @Getter
     @Setter
     @NotNull
@@ -23,24 +23,7 @@ public class UserDto {
 
     @Getter
     @Setter
-    @NotNull
-    @NotBlank(message = "Password cannot be empty")
-    @Size(min=5, message = "Password must be at least 5 characters")
-    private String password;
-
-    @Getter
-    @Setter
-    @NotNull
-    @Email(message = "Email not valid")
     private String email;
-
-    @Getter
-    @Setter
-    private String timezone;
-
-    @Getter
-    @Setter
-    private boolean metric;
 
     @Getter
     @Setter

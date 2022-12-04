@@ -4,6 +4,11 @@
 
 <head>
     <title>CubeTrek - Profile</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
@@ -30,19 +35,46 @@
                 <h4 class="h4">Settings</h4>
             </div>
 
-            <div>
-                <div th:text="${user.getName()}"></div>
-            </div>
+            <form action="/profile" th:object="${user}" method="POST" enctype="utf8">
+                <div class="col-4">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="username-label">User name</span>
+                        <input type="text" id="username" th:field="*{name}" class="form-control" aria-label="Username" aria-describedby="username-label" onchange="enableButton()">
+                    </div>
+                    <p class="alert alert-warning" role="alert" th:each="error: ${#fields.errors('name')}"
+                       th:text="${error}">Validation error</p>
 
-            <div>
-                <div th:text="${user.getEmail()}"></div>
-            </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="email-label">Email</span>
+                        <input type="text" id="email" th:field="*{email}" class="form-control" aria-label="Username" aria-describedby="email-label" disabled>
+                    </div>
 
-            <div>
-                <div th:text="${user.getTimezone()}"></div>
-            </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Sharing</span>
+                        <div class="form-control">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" th:field="*{sharing}" value="PRIVATE" onchange="enableButton()">
+                                <label class="form-check-label" for="flexRadioDefault1">
+                                    Private - <i>Tracks can only be viewed by me.</i>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"  th:field="*{sharing}" value="PUBLIC" onchange="enableButton()">
+                                <label class="form-check-label" for="flexRadioDefault2">
+                                    Public - <i>Tracks are visible for everyone.</i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        Note: Sharing settings affect only future uploaded tracks. Settings can be changed individually for each track.
+                    </div>
 
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                    <button class="col-4 btn btn-primary mt-2" type="submit" id="savechange" disabled>Save Changes</button>
+                </div>
+            </form>
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mt-4">
                 <h4 class="h4">Linked Third-Party Accounts</h4>
             </div>
             <div>
@@ -68,4 +100,9 @@
 </div>
 
 </body>
+<script>
+    function enableButton() {
+        document.getElementById('savechange').disabled=false;
+    }
+</script>
 </html>
