@@ -70,6 +70,13 @@
         Invalid username and password.
     </div>
 
+    <div th:if="${param.error}" class="card">
+        <div class="card-body">
+            Forgot your password?<br><a href="/reset_password">Change it here</a>
+        </div>
+
+    </div>
+
     <div th:if="${param.logout}" class="alert alert-primary" role="alert">
         You have been logged out.
     </div>

@@ -2,6 +2,7 @@ package com.cubetrek.registration;
 
 import com.cubetrek.MainController;
 import com.cubetrek.database.Users;
+import com.cubetrek.database.VerificationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
         String token = UUID.randomUUID().toString();
         Calendar expiryDate = Calendar.getInstance();
         expiryDate.add(Calendar.HOUR_OF_DAY, 1);
-        userRegistrationService.createVerificationToken(user, token, expiryDate.getTime());
+        userRegistrationService.createVerificationToken(user, token, expiryDate.getTime(), VerificationToken.VerificationType.EMAIL_VERIFICATION);
 
         String recipientAddress = user.getEmail();
         String subject = "CubeTrek Registration Confirmation";

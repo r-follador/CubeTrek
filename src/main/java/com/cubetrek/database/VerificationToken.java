@@ -13,6 +13,10 @@ import java.util.Date;
 @Getter
 @Setter
 public class VerificationToken {
+    public enum VerificationType {
+        EMAIL_VERIFICATION, PASSWORD_RESET;
+    }
+
     private static final int EXPIRATION = 60 * 24;
 
     @Id
@@ -32,4 +36,9 @@ public class VerificationToken {
         cal.add(Calendar.MINUTE, expiryTimeInMinutes);
         return new Date(cal.getTime().getTime());
     }
+
+    @Setter
+    @Getter
+    @Column(name = "tokentype", nullable = false)
+    private VerificationType verificationType;
 }
