@@ -88,6 +88,13 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     String getMonthlyAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years distance, ascent, number of activities for Heatmap
 
 
+    @Query(value = """ 
+            SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance, trackdata.elevationup, trackdata.hidden, trackdata.duration, trackdata.favorite, trackdata.sharing, trackdata.trackgroup, trackdata.elevationdown, trackdata.highestpoint, trackdata.lowestpoint FROM trackdata
+            WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND date_trunc('day', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) = to_timestamp(:day, 'YYYY-MM-DD')
+            ORDER BY trackdata.datetrack;
+            """, nativeQuery = true)
+    List<TrackData.TrackMetadata> findTrackOfGivenDay(long user_id, String day, String user_timezone);
+
     @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance FROM trackdata " +
             "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '3 months' " +
             "ORDER BY trackdata.distance DESC " +

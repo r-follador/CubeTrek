@@ -1,5 +1,6 @@
 package com.cubetrek.viewer;
 
+import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
 import com.cubetrek.database.Users;
@@ -68,6 +69,16 @@ public class ActivitityService {
     public Page<TrackData.TrackMetadata> getTenRecentActivities(Users user, Integer pageNo) {
         PageRequest paging = PageRequest.of(pageNo, 10, Sort.by("datetrack").descending());
         return trackDataRepository.findByOwnerAndHidden(user, false, paging);
+    }
+
+    public List<TrackData.TrackMetadata> getActivityOfDay(Users user, int year, int month, int day, String timezone) {
+        month++; //convert from javascript/java numbering starting with 0=jan to SQL 1=jan
+        //Sanity check
+        if (year > 2100 || year < 1900 || day < 1 || day > 31 || month < 1 || month > 12)
+            throw new ExceptionHandling.UnnamedExceptionJson("Date out of range");
+        String dateDay = year+"-"+String.format("%02d", month)+"-"+String.format("%02d", day);
+        System.out.println("@@@@@ Dateday "+dateDay);
+        return trackDataRepository.findTrackOfGivenDay(user.getId(), dateDay, timezone);
     }
 
     public List<TrackData.TrackMetadata> getMatchingActivities(Users user, Long matchgroup) {

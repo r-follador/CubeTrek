@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
 
 
@@ -104,6 +105,21 @@ public class MainController {
         model.addAttribute("pageTracks", out);
         model.addAttribute("totalActivities", out.getTotalElements());
         return "dashboard";
+    }
+
+    @ResponseBody
+    @GetMapping("/activities_per_day")
+    public List<TrackData.TrackMetadata> getActivitiesForGivenDay(@RequestParam("year") int year, @RequestParam("month") int month, @RequestParam("day") int day, @RequestParam("timezone") String timezone) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        String tz;
+        if (Set.of(TimeZone.getAvailableIDs()).contains(timezone))
+            tz = timezone;
+        else
+            tz = "Etc/UTC";
+        //TODO: get actual activities for day
+        System.out.println("@@@@ year, monht, day "+year+","+month+","+day);
+        return activitityService.getActivityOfDay(user, year, month, day, timezone);
     }
 
     @GetMapping("/activities")

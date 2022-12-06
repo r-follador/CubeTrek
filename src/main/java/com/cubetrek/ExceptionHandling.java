@@ -52,6 +52,15 @@ public class ExceptionHandling {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler({UnnamedExceptionJson.class})
+    public final ResponseEntity<Object> handleTrackViewer(UnnamedExceptionJson ex) {
+
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setResponse(ex.msg);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler({TrackAccessException.class})
     public final String handleTrackViewerAccess(TrackAccessException ex) {
         logger.info("- Track Access Exception");
@@ -84,6 +93,11 @@ public class ExceptionHandling {
     @AllArgsConstructor
     public static class UnnamedException extends RuntimeException {
         public String title = "";
+        public String msg ="";
+    }
+
+    @AllArgsConstructor
+    public static class UnnamedExceptionJson extends RuntimeException {
         public String msg ="";
     }
 
