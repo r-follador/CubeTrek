@@ -86,7 +86,7 @@ public class TrackData implements Serializable {
 
     @Getter
     @Setter
-    @ManyToOne(cascade= CascadeType.MERGE)
+    @ManyToOne(cascade= CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinColumn(name = "owner")
     private Users owner;
 

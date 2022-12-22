@@ -143,6 +143,8 @@ public class TrackViewerService {
     private final Parser markdownParser =  Parser.builder().build();
     private final HtmlRenderer markdownRenderer = HtmlRenderer.builder().escapeHtml(true).sanitizeUrls(true).build();
     private String markdownToHTML(String markdown) {
+        if (markdown == null)
+            return "";
         Node document = markdownParser.parse(markdown);
         return markdownRenderer.render(document);
     }
