@@ -87,6 +87,14 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
             "ORDER BY trackdata_month) AS t;", nativeQuery = true)
     String getMonthlyAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years distance, ascent, number of activities for Heatmap
 
+    @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
+            "SELECT date_trunc('year', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_year, trackdata.activitytype, sum(trackdata.distance) as yearly_dist, sum(trackdata.elevationup) as yearly_elevationup " +
+            "FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false " +
+            "GROUP BY trackdata_year, trackdata.activitytype " +
+            "ORDER BY trackdata_year) AS t;", nativeQuery = true)
+    String getYearlyAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //All time distance, ascent, number of activities
+
 
     @Query(value = """ 
             SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance, trackdata.elevationup, trackdata.hidden, trackdata.duration, trackdata.favorite, trackdata.sharing, trackdata.trackgroup, trackdata.elevationdown, trackdata.highestpoint, trackdata.lowestpoint FROM trackdata
@@ -136,6 +144,19 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     List<TrackData.TrackMetadata> findByOwnerAndTrackgroupAndHiddenOrderByDatetrackDesc(Users owner, Long trackgroup, boolean hidden);
 
     List<TrackData.TrackMetadata> findByOwnerAndHiddenAndActivitytype(Users owner, boolean hidden, TrackData.Activitytype activitytype, Pageable pageable);
+
+    @Query(value = """ 
+            SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance, trackdata.elevationup, trackdata.hidden, trackdata.duration, trackdata.favorite, trackdata.sharing, trackdata.trackgroup, trackdata.elevationdown, trackdata.highestpoint, trackdata.lowestpoint FROM trackdata
+            WHERE trackdata.owner = :user_id AND trackdata.hidden = false
+            ORDER BY trackdata.datetrack DESC LIMIT :limit ;
+            """, nativeQuery = true)
+    List<TrackData.TrackMetadata> findMostRecent(long user_id, int limit);
+
+    @Query(value = """ 
+            SELECT COUNT(*) FROM trackdata
+            WHERE trackdata.owner = :user_id AND trackdata.hidden = false;
+            """, nativeQuery = true)
+    int countTotalActivities(long user_id);
 
     long countByOwnerAndHidden(Users users, boolean hidden);
 

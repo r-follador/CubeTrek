@@ -28,6 +28,10 @@ public class ActivitityService {
         return trackDataRepository.getMonthlyAggregatedStatsAsJSON(user.getId(), timeZone);
     }
 
+    public String getYearlyTotalAsJSON(Users user, String timeZone) {
+        return trackDataRepository.getYearlyAggregatedStatsAsJSON(user.getId(), timeZone);
+    }
+
     public List<ActivityCount> getActivityTypeCount(Users user) {
         //convert List of ActivityCountInterface to list of ActivityCount
         return trackDataRepository.getActivityCounts(user.getId()).stream()
@@ -66,9 +70,12 @@ public class ActivitityService {
     }
 
 
-    public Page<TrackData.TrackMetadata> getTenRecentActivities(Users user, Integer pageNo) {
-        PageRequest paging = PageRequest.of(pageNo, 10, Sort.by("datetrack").descending());
-        return trackDataRepository.findByOwnerAndHidden(user, false, paging);
+    public List<TrackData.TrackMetadata> getTenRecentActivities(Users user) {
+        return trackDataRepository.findMostRecent(user.getId(), 10);
+    }
+
+    public int getActivityCount(Users user) {
+        return trackDataRepository.countTotalActivities(user.getId());
     }
 
     public List<TrackData.TrackMetadata> getActivityOfDay(Users user, int year, int month, int day, String timezone) {

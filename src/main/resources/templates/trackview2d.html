@@ -52,6 +52,9 @@
 <div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
     Error Message
 </div>
+<div th:if="${tracktoobig}" class="alert alert-info" id="tracktoobigmessage" role="alert">
+    Track covers area above 100km x 100km, this is currently too large for 3D view
+</div>
 
 <div class="container-fluid">
     <div class="row">

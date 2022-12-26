@@ -74,16 +74,16 @@
                 <h1 class="h2">Dashboard</h1>
             </div>
 
-            <div th:if="${pageTracks.empty}" class="card m-5" style="width: 18rem;">
+            <div th:if="${recentTracks.empty}" class="card m-5" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">Your Profile is empty 😔</h5>
-                    <p class="card-text">Add your Tracks to get started. Upload your files, link your Garmin account.</p>
+                    <p class="card-text">Add your Tracks to get started. Upload your files, link your Garmin account to automatically sync future activities.</p>
                     <a href="/upload" class="btn btn-primary m-1">Upload Activity Files</a>
                     <a href="/profile" class="btn btn-primary m-1">Link Accounts</a>
                 </div>
             </div>
 
-            <div th:unless="${pageTracks.empty}" class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+            <div th:unless="${recentTracks.empty}" class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <div class="h4">
                     <span>Personal Heatmap</span>
                     <div class="btn-group">
@@ -118,10 +118,10 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${pageTracks.empty}">
+                <tr th:if="${recentTracks.empty}">
                     <td colspan="2"><i>No Activities</i></td>
                 </tr>
-                <tr th:each="track : ${pageTracks}">
+                <tr th:each="track : ${recentTracks}">
                     <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
                              th:title="${track.activitytype.getDisplayValue()}"></td>
                     <td><span th:data-datetime="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
@@ -137,7 +137,7 @@
             <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
-                <h4 class="h4">Monthly Totals
+                <h4 class="h4">Totals
                     <div class="btn-group">
                         <a class="btn btn-light btn-sm" id="barGraphButton" data-bs-toggle="dropdown" aria-expanded="false">
                             Activitytype
@@ -151,6 +151,9 @@
 							<li><a class="dropdown-item" onclick="updateBargraphType('distance')">Distance</a></li>
 							<li><a class="dropdown-item" onclick="updateBargraphType('ascent')">Ascent</a></li>
                         </ul>
+						<a class="btn btn-light btn-sm" id="barGraphButton3" onclick="updateBargraphTime()">
+                            Monthly
+                        </a>
                     </div>
                 </h4>
             </div>
@@ -416,12 +419,16 @@
 
     var datamonthly = [(${monthlyTotalJSON})];
 
+    var datayearly = [(${yearlyTotalJSON})];
+
     var parseDate = d3.utcParse("%Y-%m-%dT%H:%M:%S%Z");
     let metric = true;
     const miles_per_km = 0.621371;
     const feet_per_m = 3.28084;
     const datas = [];
-    const bargraphdatas = [];
+    const bargraphdatasMonthly = [];
+    const bargraphdatasYearly = [];
+
 
     function prepareHeatmapdata() {
         for (var i=0; i<dataHeatmap.length; i++) {
@@ -449,6 +456,7 @@
 
     let bargraphType = "distance";
     let bargraphActivity = 2;
+	let bargraphYearly = false;
 
 	let barchart = [];
 
@@ -458,15 +466,23 @@
             date.setHours(12,0,0,0);
             let monthly_dist = (datamonthly[i].monthly_dist/1000);
             let activitytype = datamonthly[i].activitytype;
-            bargraphdatas.push({'date' : date, 'monthly_dist' : monthly_dist, 'monthly_elevationup' : datamonthly[i].monthly_elevationup, 'activitytype' : activitytype});
+            bargraphdatasMonthly.push({'date' : date, 'monthly_dist' : monthly_dist, 'monthly_elevationup' : datamonthly[i].monthly_elevationup, 'activitytype' : activitytype});
         }
 
-        const uniqueActivities = [...new Set(bargraphdatas.map(item => item.activitytype))];
-        document.getElementById("barGraphButton").innerText = Object.keys(icons)[uniqueActivities[0]];
+        for (var i=0; i<datayearly.length; i++) {
+            let date = parseDate(datayearly[i].trackdata_year);
+            date.setHours(12,0,0,0);
+            let yearly_dist = (datayearly[i].yearly_dist/1000);
+            let activitytype = datayearly[i].activitytype;
+            bargraphdatasYearly.push({'date' : date, 'yearly_dist' : yearly_dist, 'yearly_elevationup' : datayearly[i].yearly_elevationup, 'activitytype' : activitytype});
+        }
+
+        const uniqueActivities = [...new Set(bargraphdatasMonthly.map(item => item.activitytype))];
+        document.getElementById("barGraphButton").innerText = icons[Object.keys(icons)[uniqueActivities[0]]][1];
         bargraphActivity = uniqueActivities[0];
         for (let act of uniqueActivities) {
             var node = document.createElement("li");
-            node.innerHTML = "<a class='dropdown-item' onclick='updateBargraphActivity("+act+")'>"+Object.keys(icons)[act]+"</a>";
+            node.innerHTML = "<a class='dropdown-item' onclick='updateBargraphActivity("+act+")'>"+icons[Object.keys(icons)[act]][1]+"</a>";
             document.getElementById("barGraphDropdown").appendChild(node);
         }
 
@@ -474,11 +490,11 @@
         this.width = Math.max(500, this.width);
         d3.select("#bargraph").select("svg").remove(); //clear if exists already
         this.svg = d3.select("#bargraph").append("svg");
-        barchart = BarChart(this.svg, bargraphdatas, bargraphActivity);
+        barchart = BarChart(this.svg, bargraphdatasMonthly, bargraphdatasYearly, bargraphActivity);
     }
 
     function updateBargraphActivity(activity) {
-		document.getElementById("barGraphButton").innerText = Object.keys(icons)[activity];
+		document.getElementById("barGraphButton").innerText = icons[Object.keys(icons)[activity]][1];
         bargraphActivity = activity;
         updateBargraph();
     }
@@ -496,8 +512,14 @@
         updateBargraph();
     }
 
+	function updateBargraphTime() {
+		bargraphYearly = !bargraphYearly;
+		document.getElementById("barGraphButton3").innerText = (bargraphYearly ? "Yearly" : "Monthly");
+        updateBargraph();
+    }
+
     function updateBargraph() {
-		barchart.update(bargraphActivity, bargraphType);
+		barchart.update(bargraphActivity, bargraphType, bargraphYearly);
     }
 
     let heatmapType = "distance";
@@ -664,6 +686,7 @@
             .attr("y", i => countDay(X[i].getUTCDay()) * cellSize + 0.5)
             .attr("fill", i => color(Y[i]))
             .on("mouseover", function(e, i) {
+				let thisRect = d3.select(this);
                 tooltip.style("visibility", "visible");
                 tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
                 tooltip.html(formatDate(X[i])+"<br>"+(Y[i] === undefined?"<i>No Activity</i>":formatingFunction(Y[i])));
@@ -734,56 +757,71 @@
             });
     }
 
-    // Copyright 2021 Observable, Inc.
-    // Released under the ISC license.
-    // https://observablehq.com/@d3/sortable-bar-chart
-    function BarChart(svg, data, activitytype, {
+    function BarChart(svg, data_monthly, data_yearly, activitytype, {
         width = 1000,
         height = 300,
         marginTop = 30, // top margin, in pixels
         marginRight = 0, // right margin, in pixels
         marginBottom = 30, // bottom margin, in pixels
-        marginLeft = 40, // left margin, in pixels
+        marginLeft = 60, // left margin, in pixels
         xRange = [marginLeft, width - marginRight], // [xmin, xmax]
-        xPadding = 0.1, // amount of x-range to reserve to separate groups
         yRange = [height - marginBottom, marginTop], // [ymin, ymax]
         yFormat, // a format specifier string for the y-axis
         duration: initialDuration = 250, // transition duration, in milliseconds
         delay: initialDelay = (_, i) => i * 20 // per-element transition delay, in milliseconds
     } = {}) {
         // Compute values.
-        let X = d3.map(data.filter(d => d.activitytype === activitytype), d => d.date);
-        let Y = d3.map(data.filter(d => d.activitytype === activitytype), d => d.monthly_dist*(metric?1:miles_per_km));
+        let X_monthly = d3.map(data_monthly.filter(d => d.activitytype === activitytype), d => d.date);
+        let X_yearly = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.date);
+        let Y = d3.map(data_monthly.filter(d => d.activitytype === activitytype), d => d.monthly_dist*(metric?1:miles_per_km));
 
         //xDomain
-        let xDomain = new d3.InternSet(d3.map(data, d => d.date));
-        const minDate = new Date(d3.min(xDomain));
+        let xDomain_monthly = new d3.InternSet(d3.map(data_monthly, d => d.date));
+        const minDate = new Date(d3.min(xDomain_monthly));
+		minDate.setMonth(0);
         const today = new Date();
-        xDomain = [];
+		today.setMonth(11);
+        xDomain_monthly = [];
         while (minDate <= today) {
-            xDomain.push(new Date(minDate));
+            xDomain_monthly.push(new Date(minDate));
             minDate.setMonth(minDate.getMonth() + 1);
         }
-        //xDomain = new d3.InternSet(xDomain);
+		xDomain_monthly = [...new Set(xDomain_monthly)];
 
-		xDomain = [...new Set(xDomain)];
+        let xDomain_yearly = new d3.InternSet(d3.map(data_yearly, d => d.date));
+        const minDate_year = new Date(d3.min(xDomain_yearly));
+        xDomain_yearly = [];
+        while (minDate_year <= today) {
+            xDomain_yearly.push(new Date(minDate_year));
+            minDate_year.setFullYear(minDate_year.getFullYear() + 1);
+        }
+        xDomain_yearly = [...new Set(xDomain_yearly)];
+
+		let yearDomain_monthly = new d3.InternSet(d3.map(xDomain_monthly, d => d.getFullYear()));
+		let monthDomain_monthly = new d3.InternSet(d3.map(xDomain_monthly, d => d.getMonth()));
+
+		const xScaleYear_monthly = d3.scaleBand().domain(yearDomain_monthly).range(xRange).paddingOuter(0).paddingInner(0.05);
+		const xScaleMonth_monthly = d3.scaleBand().domain(monthDomain_monthly).range([0, xScaleYear_monthly.bandwidth()]).padding(0.05);
+
+        let yearDomain_yearly = new d3.InternSet(d3.map(xDomain_yearly, d => d.getFullYear()));
+        const xScaleYear_yearly = d3.scaleBand().domain(yearDomain_yearly).range(xRange).paddingOuter(0).paddingInner(0.05);
+
 
         //yDomain
         let yDomain = [0, d3.max(Y)];
 
         // Construct scales, axes, and formats.
-        const xScale = d3.scaleBand(xDomain, xRange).padding(xPadding);
         let yScale = d3.scaleLinear(yDomain, yRange);
-        const xAxis = d3.axisBottom(xScale).tickSizeOuter(0)
-				.tickFormat(d => d3.timeFormat("%b")(d));
         let yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
-        const format = yScale.tickFormat(100, yFormat);
 
         svg
             .attr("width", width)
             .attr("height", height)
             .attr("viewBox", [0, 0, width, height])
-            .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+            .on("click", function(e, i) {
+                updateBargraphTime();
+            });
 
         const yGroup = svg.append("g")
             .attr("transform", `translate(${marginLeft},0)`)
@@ -798,27 +836,49 @@
                 .attr("text-anchor", "start")
                 .text("↑ Distance ["+(metric?"km":"mi")+"]"));
 
-		let xcolors = d3.scaleOrdinal(xDomain, colors = d3.quantize(d3.interpolateHcl("#fafa6e", "#2A4858"), 12));
+		let xcolorsMonthly = d3.scaleOrdinal(xDomain_monthly, colors = d3.quantize(d3.interpolateHcl("#fafa6e", "#2A4858"), 12));
+		let xcolorsYearly = d3.scaleOrdinal(xDomain_yearly, colors = d3.quantize(d3.interpolateHcl("#fafa6e", "#2A4858"), 12));
 
 		var formatDate = d3.timeFormat("%B %Y");
 
-        const rect = svg.append("g")
+        const rect_monthly = svg.append("g")
             .selectAll("rect")
-            .data(xDomain)
+            .data(xDomain_monthly)
             .join("rect")
 			.each(function(d, i) {
-				position(d3.select(this), d, "distance");
-			})
-            .style("mix-blend-mode", "multiply")
-			.attr("fill", i => xcolors(i));
+				position_monthly(d3.select(this), d, "distance");
+			}).attr("fill", i => xcolorsMonthly(i))
+			.style("mix-blend-mode", "multiply");
 
-        const xGroup = svg.append("g")
-            .attr("transform", `translate(0,${height - marginBottom})`)
-            .call(xAxis);
+        const rect_yearly = svg.append("g")
+            .selectAll("rect")
+            .data(xDomain_yearly)
+            .join("rect")
+            .each(function(d, i) {
+                position_yearly(d3.select(this), d, "distance");
+            }).attr("fill", i => xcolorsYearly(i))
+            .style("mix-blend-mode", "multiply")
+            .style("visibility", "hidden");
+
+		const monthAxis = svg.append("g");
+
+		for (let year of yearDomain_monthly) {
+			const xAxis = d3.axisBottom(xScaleMonth_monthly).tickSize(0)
+				.tickFormat(d => d3.timeFormat("%b")((new Date()).setMonth(d)));
+			monthAxis.append("g")
+				.attr("transform", `translate(${xScaleYear_monthly(year)},${13+height - marginBottom})`)
+				.call(xAxis).call(g => g.select(".domain").remove());
+		}
+
+		const xAxis_year_monthly = d3.axisBottom(xScaleYear_monthly).tickSize(0);
+        const xAxis_year_yearly = d3.axisBottom(xScaleYear_yearly).tickSize(0);
+		const yearaxis = svg.append("g")
+				.attr("transform", `translate(0,${height - marginBottom})`)
+				.call(xAxis_year_monthly);
 
         // A helper method for updating the position of bars.
-        function position(rect, xdomaindate, measuretype) {
-			let index = X.findIndex(element => element.getTime() === xdomaindate.getTime());
+        function position_monthly(rect, xdomaindate, measuretype) {
+			let index = X_monthly.findIndex(element => element.getTime() === xdomaindate.getTime());
 			let y = 0;
 			if (index !== -1) {
 				y = yScale(Y[index]);
@@ -826,30 +886,67 @@
 				y = yScale(0);
 			}
 			return rect
-				.attr("x", xScale(xdomaindate))
-				.attr("width", xScale.bandwidth())
+				.attr("width", xScaleMonth_monthly.bandwidth())
 				.on("mouseover", function(e, i) {
 					if (index < 0)
 						return;
+
 					tooltip.style("visibility", "visible");
 					tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
 
 					switch (measuretype) {
 					case 'distance':
-						tooltip.html(Y[index].toFixed(1) + (metric?" km":" mi")+"<br>"+formatDate(X[index]));
+						tooltip.html(Y[index].toFixed(1) + (metric?" km":" mi")+"<br>"+formatDate(X_monthly[index]));
 						break;
 					case 'ascent':
-						tooltip.html(Y[index].toFixed(0) + (metric?" m":" ft")+"<br>"+formatDate(X[index]));
+						tooltip.html(Y[index].toFixed(0) + (metric?" m":" ft")+"<br>"+formatDate(X_monthly[index]));
 						break;
 					}
-
 				})
 				.on("mouseout", function(e, i) {
 					tooltip.style("visibility", "hidden");
 				})
-				.transition()
-				.attr("y", y)
+				.attr("x", xScaleYear_monthly(xdomaindate.getFullYear())+xScaleMonth_monthly(xdomaindate.getMonth()))
+                .attr("width", xScaleMonth_monthly.bandwidth())
+                .transition()
+                .attr("y", y)
 				.attr("height", yScale(0) - y);
+        }
+
+        function position_yearly(rect, xdomaindate, measuretype) {
+            let index = X_yearly.findIndex(element => element.getTime() === xdomaindate.getTime());
+            let y = 0;
+            if (index !== -1) {
+                y = yScale(Y[index]);
+            } else {
+                y = yScale(0);
+            }
+            return rect
+                .attr("width", xScaleYear_yearly.bandwidth())
+                .on("mouseover", function(e, i) {
+                    if (index < 0)
+                        return;
+
+                    tooltip.style("visibility", "visible");
+                    tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
+
+                    switch (measuretype) {
+                        case 'distance':
+                            tooltip.html(Y[index].toFixed(1) + (metric?" km":" mi")+"<br>"+X_yearly[index].getFullYear());
+                            break;
+                        case 'ascent':
+                            tooltip.html(Y[index].toFixed(0) + (metric?" m":" ft")+"<br>"+X_yearly[index].getFullYear());
+                            break;
+                    }
+                })
+                .on("mouseout", function(e, i) {
+                    tooltip.style("visibility", "hidden");
+                })
+                .attr("x", xScaleYear_yearly(xdomaindate.getFullYear()))
+                .attr("width", xScaleYear_yearly.bandwidth())
+                .transition()
+                .attr("y", y)
+                .attr("height", yScale(0) - y);
         }
 
         // A helper method for generating grid lines on the y-axis.
@@ -862,123 +959,69 @@
                 .attr("stroke-opacity", 0.1);
         }
 
-        // Call chart.update(activitytype, measuretype) to transition to new data.
+        // Call chart.update(activitytype, measuretype, yearlySum) to transition to new data.
         return Object.assign(svg.node(), {
-            update(activitytype, measuretype) {
-                // Re-Compute values.
-				X = d3.map(data.filter(d => d.activitytype === activitytype), d => d.date);
-				switch (measuretype) {
-					case 'distance':
-						Y = d3.map(data.filter(d => d.activitytype === activitytype), d => d.monthly_dist*(metric?1:miles_per_km));
-						document.getElementById("bargraphhead").innerHTML = "↑ Distance ["+(metric?"km":"mi")+"]";
-						break;
-					case 'ascent':
-						Y = d3.map(data.filter(d => d.activitytype === activitytype), d => d.monthly_elevationup*(metric?1:feet_per_m));
-						document.getElementById("bargraphhead").innerHTML = "↑ Vertical Ascent ["+(metric?"m":"ft")+"]";
-						break;
-				}
-				yDomain = [0, d3.max(Y)];
-				yScale = d3.scaleLinear(yDomain, yRange);
-				yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
+            update(activitytype, measuretype, yearlySum) {
 
-				yGroup.transition().call(yAxis);
-				yGroup.call(g => g.selectAll(".tick").call(grid));
+                if (yearlySum) {
+                    X_yearly = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.date);
+                    switch (measuretype) {
+                        case 'distance':
+                            Y = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.yearly_dist*(metric?1:miles_per_km));
+                            document.getElementById("bargraphhead").innerHTML = "↑ Distance ["+(metric?"km":"mi")+"]";
+                            break;
+                        case 'ascent':
+                            Y = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.yearly_elevationup*(metric?1:feet_per_m));
+                            document.getElementById("bargraphhead").innerHTML = "↑ Vertical Ascent ["+(metric?"m":"ft")+"]";
+                            break;
+                    }
+                    yearaxis.transition().call(xAxis_year_yearly);
+                    monthAxis.style("visibility", "hidden");
+                } else {
+                    X_monthly = d3.map(data_monthly.filter(d => d.activitytype === activitytype), d => d.date);
+                    switch (measuretype) {
+                        case 'distance':
+                            Y = d3.map(data_monthly.filter(d => d.activitytype === activitytype), d => d.monthly_dist*(metric?1:miles_per_km));
+                            document.getElementById("bargraphhead").innerHTML = "↑ Distance ["+(metric?"km":"mi")+"]";
+                            break;
+                        case 'ascent':
+                            Y = d3.map(data_monthly.filter(d => d.activitytype === activitytype), d => d.monthly_elevationup*(metric?1:feet_per_m));
+                            document.getElementById("bargraphhead").innerHTML = "↑ Vertical Ascent ["+(metric?"m":"ft")+"]";
+                            break;
+                    }
+                    yearaxis.transition().call(xAxis_year_monthly);
+                    monthAxis.style("visibility", "visible");
+                }
 
-				rect.each(function(d, i) {
-					position(d3.select(this), d, measuretype);
-				});
+                yDomain = [0, d3.max(Y)];
+                yScale = d3.scaleLinear(yDomain, yRange);
+                yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
+
+                yGroup.transition().call(yAxis);
+                yGroup.call(g => g.selectAll(".tick").call(grid));
+
+                if (yearlySum) {
+                    rect_yearly
+                        .style("visibility", "visible")
+                        //.transition().duration(500).style("opacity", 1)
+                        .each(function(d, i) {
+                        position_yearly(d3.select(this), d, measuretype);
+                        d3.select(this).attr("fill", i => {return xcolorsYearly(i)});
+                        });
+
+                    rect_monthly.style("visibility","hidden");
+                } else {
+                    rect_monthly.style("visibility", "visible")
+                        //.transition().duration(500).style("opacity", 1)
+                        .each(function(d, i) {
+                        position_monthly(d3.select(this), d, measuretype);
+                        d3.select(this).attr("fill", i => {return xcolorsMonthly(i)});
+                        });
+
+                    rect_yearly.style("visibility","hidden");
+                }
             }
         });
-    }
-
-
-    function BarChart_old(svg, data, {
-        x = d => d.activitytype,
-        y = d => d.monthly_dist*(metric?1:miles_per_km),
-        z = d => d.date,
-        yLabel = "↑ Distance ["+(metric?"km":"mi")+"]",
-        width = 1000,
-        height = 300,
-        marginTop = 30, // top margin, in pixels
-        marginRight = 0, // right margin, in pixels
-        marginBottom = 30, // bottom margin, in pixels
-        marginLeft = 40, // left margin, in pixels
-        xRange = [marginLeft, width - marginRight], // [xmin, xmax]
-        xPadding = 0.1, // amount of x-range to reserve to separate groups
-        yRange = [height - marginBottom, marginTop], // [ymin, ymax]
-        zPadding = 0.05, // amount of x-range to reserve to separate bars
-        yFormat, // a format specifier string for the y-axis
-    } = {}) {
-        // Compute values.
-        const X = d3.map(data, x);
-        const Y = d3.map(data, y);
-        const Z = d3.map(data, z);
-
-        // Compute default domains, and unique the x- and z-domains.
-        const xDomain = [...new Set(bargraphdatas.map(d => d.activitytype))];
-        const yDomain = [0, d3.max(Y)];
-        const zDomain = [...new Set(bargraphdatas.map(d => d.date))];
-
-        //xDomain = new d3.InternSet(xDomain);
-        //zDomain = new d3.InternSet(zDomain);
-
-        // Omit any data not present in both the x- and z-domain.
-        const I = d3.range(X.length);
-
-        // Construct scales, axes, and formats.
-        const xScale = d3.scaleBand(xDomain, xRange).paddingInner(xPadding);
-        const xzScale = d3.scaleBand(zDomain, [0, xScale.bandwidth()]).padding(zPadding);
-        const yScale = d3.scaleLinear(yDomain, yRange);
-        const zScale = d3.scaleOrdinal(zDomain, colors = d3.quantize(d3.interpolateHcl("#fafa6e", "#2A4858"), 12));
-        const xAxis = d3.axisBottom(xScale).tickSizeOuter(0);
-        const yAxis = d3.axisLeft(yScale).ticks(height / 60, yFormat);
-
-        svg
-            .attr("width", width)
-            .attr("height", height)
-            .attr("viewBox", [0, 0, width, height])
-            .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
-
-        svg.append("g")
-            .attr("transform", `translate(${marginLeft},0)`)
-            .call(yAxis)
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line").clone()
-                .attr("x2", width - marginLeft - marginRight)
-                .attr("stroke-opacity", 0.1))
-            .call(g => g.append("text")
-                .attr("x", -marginLeft)
-                .attr("y", 10)
-                .attr("fill", "currentColor")
-                .attr("text-anchor", "start")
-                .text(yLabel));
-
-        const bar = svg.append("g")
-            .selectAll("rect")
-            .data(I)
-            .join("rect")
-            .attr("x", i => xScale(X[i]) + xzScale(Z[i]))
-            .attr("y", i => yScale(Y[i]))
-            .attr("width", xzScale.bandwidth())
-            .attr("height", i => yScale(0) - yScale(Y[i]))
-            .attr("fill", i => zScale(Z[i]));
-
-        var format = d3.timeFormat("%B %Y");
-
-        bar.on("mouseover", function(e, i) {
-            tooltip.style("visibility", "visible");
-            tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
-            tooltip.html(Y[i].toFixed(1) + (metric?" km":" mi")+"<br>"+format(Z[i]));
-        })
-            .on("mouseout", function(e, i) {
-                tooltip.style("visibility", "hidden");
-            });
-
-        svg.append("g")
-            .attr("transform", `translate(0,${height - marginBottom})`)
-            .call(xAxis);
-
-        return Object.assign(svg.node(), {scales: {color: zScale}});
     }
 
     function settings() {

@@ -100,10 +100,10 @@ public class MainController {
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
         model.addAttribute("monthlyTotalJSON", activitityService.getMonthlyTotalAsJSON(user, user.getTimezone()));
+        model.addAttribute("yearlyTotalJSON", activitityService.getYearlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
-        Page<TrackData.TrackMetadata> out = activitityService.getTenRecentActivities(user, 0);
-        model.addAttribute("pageTracks", out);
-        model.addAttribute("totalActivities", out.getTotalElements());
+        model.addAttribute("recentTracks",  activitityService.getTenRecentActivities(user));
+        model.addAttribute("totalActivities", activitityService.getActivityCount(user));
         return "dashboard";
     }
 
@@ -204,12 +204,13 @@ public class MainController {
     public UploadResponse uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        return storageService.store(user, file, user.getTimezone(), TrackData.Sharing.PRIVATE);
+        return storageService.store(user, file);
     }
     @ResponseBody
     @PostMapping(value = "/upload_anonymous", produces = "application/json")
     public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
-        return storageService.store(null, file, TimeZone.getDefault().getID(), TrackData.Sharing.PUBLIC);
+        Users user = usersRepository.getReferenceById(1L); //anonymous user
+        return storageService.store(user, file);
     }
 
     @GetMapping(value="/view/{itemid}")

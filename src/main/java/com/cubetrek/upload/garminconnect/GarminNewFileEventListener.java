@@ -69,7 +69,7 @@ public class GarminNewFileEventListener implements ApplicationListener<OnNewGarm
             byte[] filedata = request.getInputStream().readAllBytes();
             String filename = "garmin-push_"+event.getActivityId()+"."+event.getFileType();
 
-            uploadResponse = storageService.store(user, filedata, filename, TimeZone.getDefault().getID(), TrackData.Sharing.PRIVATE);
+            uploadResponse = storageService.store(user, filedata, filename);
 
         } catch (IOException | OAuthMessageSignerException | OAuthExpectationFailedException |
                  OAuthCommunicationException e) {

@@ -118,6 +118,12 @@ public class TrackViewerService {
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
+
+        //check if too big for 3D view (more than 100x100km)
+        if (track.getBBox().getWidthLatMeters() > 100000 || track.getBBox().getWidthLonMeters() > 100000) {
+            model.addAttribute("tracktoobig", true);
+            return "trackview2d";
+        }
         return "trackview";
     }
 

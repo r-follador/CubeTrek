@@ -55,13 +55,13 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" th:field="*{sharing}" value="PRIVATE" onchange="enableButton()">
                                 <label class="form-check-label" for="flexRadioDefault1">
-                                    Private - <i>Tracks can only be viewed by me.</i>
+                                    Private - <i>Tracks can only be viewed by me</i>
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2"  th:field="*{sharing}" value="PUBLIC" onchange="enableButton()">
                                 <label class="form-check-label" for="flexRadioDefault2">
-                                    Public - <i>Tracks are visible for everyone.</i>
+                                    Public - <i>Tracks are visible for everyone</i>
                                 </label>
                             </div>
                         </div>
@@ -78,28 +78,48 @@
                 <h4 class="h4">Linked Third-Party Accounts</h4>
             </div>
             <div>
-                Link Accounts to automatically sync your activities to <strong>CubeTrek</strong>.
+                Link Accounts to automatically sync your activities to <strong>CubeTrek</strong>.<br>
+                Any future activities will be downloaded to your CubeTrek account. However, past activities cannot be
+                synced this way, <a href="/static/bulkdownload.html">but there are other ways</a>.
             </div>
 
-            <div class="card m-2 mt-4" style="width: 18rem;">
+            <div class="card m-2 mt-4" style="width: 18rem; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#garminModal">
                 <img src="/assets/connect_logo_blue.png" class="card-img-top" alt="Garmin Connect Logo">
                 <div class="card-body">
                     <h5 class="card-title">Garmin Connect</h5>
                     <p class="card-text">Link your Garmin devices to CubeTrek</p>
-                    <a th:if="${isGarminConnected}" href="/profile/connectGarmin-step1" class="badge bg-primary">✅ Garmin Account is linked</a>
-                    <a th:unless="${isGarminConnected}" href="/profile/connectGarmin-step1" class="badge bg-secondary">No Garmin Account linked</a>
-                    <div th:unless="${isGarminConnected}"><a href="/profile/connectGarmin-step1">Click to link</a></div>
-                    <div th:if="${isGarminConnected}"><a href="/profile/connectGarmin-step1">Change</a></div>
+                    <div th:if="${isGarminConnected}" class="badge bg-primary">✅ Garmin Account is linked</div>
+                    <div th:unless="${isGarminConnected}" class="badge bg-secondary">No Garmin Account linked</div>
                 </div>
             </div>
-
-
-
         </main>
     </div>
 </div>
 
 </body>
+
+
+<!-- Modal -->
+<div class="modal fade" id="garminModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Garmin Connect</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                You will be redirected to the Garmin Connect website.
+                <img class="img-thumbnail" width="300px" src="/assets/connect_screenshot.png"><br>
+                Make sure to set "Activities" sharing to green/enabled and click "Save".
+            </div>
+            <div class="modal-footer">
+                <a href="/profile/connectGarmin-step1" type="button" class="btn btn-primary">Go To Garmin Connect</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
     function enableButton() {
         document.getElementById('savechange').disabled=false;
