@@ -49,7 +49,7 @@
 
                 <div id="drop_zone" class="drop-area">
                     <input type="file" id="uploadfile" multiple>
-                    <p>Click or drag files. Accepted file types: GPX and FIT.</p>
+                    <p>Click or drag files.<br>Accepted file types: GPX and FIT and Zip-Archives.</p>
                 </div>
             <table class="table" id="table" style="display: none;">
                <thead><tr>
@@ -70,6 +70,7 @@
         </main>
     </div>
 </div>
+<script src="/js/zip.js"></script>
 <script>
     const inputElement = document.getElementById("uploadfile");
     const dropbox = document.getElementById("drop_zone");
@@ -89,14 +90,38 @@
 
         for (let i = 0, numFiles = fileList.length; i < numFiles; i++) {
             const file = fileList[i];
-            sendFile(file);
+
+            if (file.name.toLowerCase().endsWith(".zip")) { //assume this is a zip
+                handleZip(file);
+            } else {
+                sendFile(file);
+            }
         }
+    }
+
+    async function handleZip(file) {
+        const zipFileReader = new zip.BlobReader(file);
+        const zipReader = new zip.ZipReader(zipFileReader);
+        const entries = await zipReader.getEntries();
+        for (let e of entries) {
+          if (e.filename.toLowerCase().endsWith(".fit") || e.filename.toLowerCase().endsWith(".gpx") || e.filename.toLowerCase().endsWith(".gz")) {
+              var data = await e.getData(new zip.BlobWriter());
+              var fileOut = new File([data], e.filename);
+              sendFile(fileOut);
+          } else if (e.filename.toLowerCase().endsWith(".zip")) {
+              var data = await e.getData(new zip.BlobWriter());
+              var fileOut = new File([data], e.filename);
+              await handleZip(fileOut);
+          }
+        }
+        await zipReader.close();
     }
 
     var tableStore = {key1: "empty"};
     var concurrentuploads = 0;
 
     function sendFile(file) {
+        console.log(file);
         table.style.display = 'block';
         const uri = "/upload";
         const xhr = new XMLHttpRequest();
@@ -150,7 +175,7 @@
         concurrentuploads++;
         setTimeout(function() {
             xhr.send(fd);
-        }, Math.max(concurrentuploads-5,0)*10); //TODO: longer timeouts for production
+        }, Math.max(concurrentuploads-5,0)*100);
     }
 
     function minToString(minutes) {
@@ -188,10 +213,8 @@
     function clickdropbox(e) {
         inputElement.click();
     }
-
-
-
 </script>
+
 
 </body>
 </html>

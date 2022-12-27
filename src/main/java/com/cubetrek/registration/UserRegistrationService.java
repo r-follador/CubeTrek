@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.NewsAddress;
 import javax.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
 import java.util.*;

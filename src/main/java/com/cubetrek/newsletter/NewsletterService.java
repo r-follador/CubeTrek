@@ -40,7 +40,7 @@ public class NewsletterService {
         String regex = "^(.+)@(.+)$";
         Pattern pattern = Pattern.compile(regex);
         if (!pattern.matcher(email).matches())
-            throw new ExceptionHandling.FileNotAccepted("That doesn't look lika a valid email address ;(");
+            throw new ExceptionHandling.FileNotAccepted("That doesn't look like a valid email address ;(");
         signup.setEmail(email);
         signup.setDate(new Date(System.currentTimeMillis()));
         logger.info("Saving email address - Successful");

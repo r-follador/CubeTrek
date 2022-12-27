@@ -59,7 +59,10 @@
                    th:text="${error}">Validation error</p>
             </div>
         </div>
-        <button class="col-6 btn btn-lg btn-primary mt-5" type="submit">submit</button>
+        <div class="mt-5">
+            Read the <a href="/static/privacy.html">Privacy Policy</a>.
+        </div>
+        <button class="col-6 btn btn-lg btn-primary mt-2" type="submit">submit</button>
     </form>
         <div class="pt-3">
         Already registered?    <a th:href="@{/login.html}">Login</a>

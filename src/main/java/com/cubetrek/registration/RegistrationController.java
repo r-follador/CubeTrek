@@ -1,6 +1,8 @@
 package com.cubetrek.registration;
 
 import com.cubetrek.ExceptionHandling;
+import com.cubetrek.database.NewsletterSignup;
+import com.cubetrek.database.NewsletterSignupRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.database.VerificationToken;
 import lombok.Getter;
@@ -29,6 +31,9 @@ public class RegistrationController {
 
     @Autowired
     ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    NewsletterSignupRepository newsletterSignupRepository;
 
     Logger logger = LoggerFactory.getLogger(RegistrationController.class);
 
@@ -82,6 +87,10 @@ public class RegistrationController {
         userRegistrationService.saveRegisteredUser(user);
         logger.info("User Email successfully validated: "+user.getEmail());
         userRegistrationService.deleteToken(user);
+        NewsletterSignup signup = new NewsletterSignup();
+        signup.setEmail(user.getEmail());
+        signup.setDate(new java.sql.Date(System.currentTimeMillis()));
+        newsletterSignupRepository.save(signup);
         return "redirect:/successRegisterValidation";
     }
 

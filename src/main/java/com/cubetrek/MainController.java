@@ -2,8 +2,6 @@ package com.cubetrek;
 
 import com.cubetrek.database.*;
 import com.cubetrek.newsletter.NewsletterService;
-import com.cubetrek.registration.OnRegistrationCompleteEvent;
-import com.cubetrek.registration.UserDto;
 import com.cubetrek.registration.UserDto_minimal;
 import com.cubetrek.upload.*;
 import com.cubetrek.viewer.ActivitityService;
@@ -12,13 +10,10 @@ import com.cubetrek.viewer.TrackViewerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,7 +23,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -206,6 +200,8 @@ public class MainController {
         Users user = (Users)authentication.getPrincipal();
         return storageService.store(user, file);
     }
+
+    @Transactional
     @ResponseBody
     @PostMapping(value = "/upload_anonymous", produces = "application/json")
     public UploadResponse uploadFileAnonymously(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model) {
