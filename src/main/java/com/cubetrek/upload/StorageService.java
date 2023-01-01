@@ -86,7 +86,7 @@ public class StorageService {
         try {
             return store(user, file.getBytes(), filename);
         } catch (IOException e) {
-            logger.error("File upload - Failed because IOException - by User "+user.getId(), e);
+            logger.error("File upload - Failed because IOException 1 - by User "+user.getId(), e);
             throw new ExceptionHandling.FileNotAccepted("File is corrupted");
         }
     }
@@ -140,7 +140,7 @@ public class StorageService {
             trackRawfile.setOriginalfilename(filename);
             trackData.setTrackrawfile(trackRawfile);
         } catch (IOException e) {
-            logger.error("File upload - Failed because IOException - by User "+user.getId(), e);
+            logger.error("File upload - Failed because IOException 2 - by User "+user.getId() + " - Filename: '"+filename+"'", e);
             throw new ExceptionHandling.FileNotAccepted("File is corrupted");
         }
 
@@ -156,7 +156,7 @@ public class StorageService {
             throw new ExceptionHandling.FileNotAccepted("GPX file is too small");
         }
 
-        if (reduced.getSegments().get(0).getPoints().size() > 10000) {
+        if (reduced.getSegments().get(0).getPoints().size() > 20000) {
             logger.info("File upload - Failed because too many GPX points - by User "+user.getId());
             throw new ExceptionHandling.FileNotAccepted("GPX file is too large");
         }
@@ -221,7 +221,7 @@ public class StorageService {
                 times.add(time);
             }
         } catch (Exception e) {
-            logger.error("File upload - Failed because general exception in converson to LineString - by User "+user.getId(), e);
+            logger.error("File upload - Failed because general exception in conversion to LineString - by User "+user.getId(), e);
             throw new ExceptionHandling.FileNotAccepted("File can't be read or is corrupted.");
         }
         MultiLineString multilinestring = new MultiLineString(lineStrings, gf);
@@ -248,7 +248,7 @@ public class StorageService {
         trackData.setHighestpoint(trackSummary.highestpointEle);
         trackData.setComment("");
 
-        trackData.setTitle(createTitle(highestPoint, trackgeodata.getMultiLineString(), trackData, user.getTimezone()));
+        trackData.setTitle(createTitlePreliminary(trackData, user.getTimezone()));
         trackData.setActivitytype(getActivitytype(conversionOutput));
 
         //Check if duplicate
@@ -277,7 +277,7 @@ public class StorageService {
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
         logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
-        eventPublisher.publishEvent(new OnNewUploadEvent(trackData.getId()));
+        eventPublisher.publishEvent(new OnNewUploadEvent(trackData.getId(), highestPoint, user.getTimezone()));
         return ur;
     }
 
@@ -304,14 +304,17 @@ public class StorageService {
         return TrackData.Activitytype.Unknown;
     }
 
-    private String createTitle(LatLon highestPoint, MultiLineString lineString, TrackData trackData, String timeZone) {
+    private String createTitlePreliminary(TrackData trackData, String timeZone) {
+        return "Activity on "+ trackData.getDatetrack().toLocalDateTime().atZone(ZoneId.of(timeZone)).format(formatter);
+    }
+
+    protected String createTitleFinal(LatLon highestPoint, TrackData trackData, String timeZone) {
         OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
         if (peak != null)
             return peak.getName();
 
-        GeographyService.OsmPeakList peak2 = geographyService.findPeaksAlongPath(lineString, 500);
+        GeographyService.OsmPeakList peak2 = geographyService.findPeaksAlongPath(trackData.getTrackgeodata().getMultiLineString(), 500);
         if (peak2 != null && peak2.getLength()>0) {
-            System.out.println("---- new name: "+peak2.getList()[0].getName());
             return peak2.getList()[0].getName();
         }
 
@@ -319,7 +322,7 @@ public class StorageService {
         if (reverseGeoCode!=null)
             return reverseGeoCode;
 
-        return "Activity on "+ trackData.getDatetrack().toLocalDateTime().atZone(ZoneId.of(timeZone)).format(formatter);
+        return createTitlePreliminary(trackData, timeZone);
     }
 
     private String reverseGeocode(LatLon coord) {

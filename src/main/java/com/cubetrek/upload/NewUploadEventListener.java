@@ -26,6 +26,9 @@ public class NewUploadEventListener implements ApplicationListener<OnNewUploadEv
     @Autowired
     private TrackDataRepository trackDataRepository;
 
+    @Autowired
+    private StorageService storageService;
+
     @Async
     @Transactional
     @Override
@@ -35,9 +38,16 @@ public class NewUploadEventListener implements ApplicationListener<OnNewUploadEv
 
     public void newUploadFile(OnNewUploadEvent event) {
 
+        TrackData newUploadedActivity = trackDataRepository.getReferenceById(event.getTrackId());
+
+        //Get the final title of the activity
+        String title = storageService.createTitleFinal(event.getHighestPoint(), newUploadedActivity, event.getTimezone());
+        newUploadedActivity.setTitle(title);
+        trackDataRepository.save(newUploadedActivity);
+
+
         ///Find matching activities of the same owner
         long time = System.currentTimeMillis();
-        TrackData newUploadedActivity = trackDataRepository.getReferenceById(event.getTrackId());
         List<TrackData> mt = trackDataRepository.findMatchingActivities(newUploadedActivity.getOwner().getId(), newUploadedActivity.getId());
 
         if (mt.size() >= 2) {

@@ -121,7 +121,6 @@
     var concurrentuploads = 0;
 
     function sendFile(file) {
-        console.log(file);
         table.style.display = 'block';
         const uri = "/upload";
         const xhr = new XMLHttpRequest();
@@ -131,7 +130,6 @@
         tableStore[file.name+file.lastModified].insertCell(0).appendChild(document.createTextNode(file.name));
         tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<div class=\"progress\"><div class=\"progress-bar progress-bar-striped progress-bar-animated\" role=\"progressbar\" style=\"width: 0%\" id='progress"+file.name+file.lastModified+"'></div></div>";
         tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "<div class=\"spinner-border spinner-border-sm text-info\" role=\"status\" />";
-
 
         xhr.open("POST", uri, true);
         xhr.upload.onprogress = function(evt)
@@ -162,7 +160,13 @@
                 tableStore[file.name+file.lastModified].deleteCell(2);
                 tableStore[file.name+file.lastModified].deleteCell(1);
                 tableStore[file.name+file.lastModified].insertCell(1).innerHTML = "<span class=\"badge bg-warning text-dark\">Error</span>";
-                tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "No response from server";
+                tableStore[file.name+file.lastModified].insertCell(2).innerHTML = "No response from server; retry in 60 sec";
+                setTimeout(function() {
+                    tableStore[file.name+file.lastModified].deleteCell(2);
+                    tableStore[file.name+file.lastModified].deleteCell(1);
+                    tableStore[file.name+file.lastModified].deleteCell(0);
+                    sendFile(file);
+                }, 60000);
             } else if (xhr.readyState === 4) {
                 tableStore[file.name+file.lastModified].deleteCell(2);
                 tableStore[file.name+file.lastModified].deleteCell(1);
@@ -175,7 +179,7 @@
         concurrentuploads++;
         setTimeout(function() {
             xhr.send(fd);
-        }, Math.max(concurrentuploads-5,0)*100);
+        }, Math.max(concurrentuploads-5,0)*1000);
     }
 
     function minToString(minutes) {
