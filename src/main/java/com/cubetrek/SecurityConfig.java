@@ -1,5 +1,6 @@
 package com.cubetrek;
 
+import com.cubetrek.registration.CustomAuthenticationSuccessHandler;
 import com.cubetrek.registration.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,9 @@ import org.springframework.web.cors.CorsUtils;
 @Configuration
 @EnableWebSecurity(debug = false)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
     @Override
     public void configure(WebSecurity web) throws Exception {
@@ -36,7 +40,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     .loginPage("/login")
                     .loginProcessingUrl("/login")
                     .usernameParameter("email")
-                    .defaultSuccessUrl("/dashboard", true)
+                    .successHandler(customAuthenticationSuccessHandler)
                 .permitAll()
                 .and()
                 .logout()

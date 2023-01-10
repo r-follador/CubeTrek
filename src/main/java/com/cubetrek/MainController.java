@@ -209,6 +209,7 @@ public class MainController {
         return storageService.store(user, file);
     }
 
+    @Transactional
     @GetMapping(value="/view/{itemid}")
     public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
@@ -216,6 +217,7 @@ public class MainController {
         return trackViewerService.mapView3D(authentication, trackid, model);
     }
 
+    @Transactional
     @GetMapping(value="/view2d/{itemid}")
     public String viewTrack2D(@PathVariable("itemid") long trackid, Model model)
     {
@@ -228,7 +230,6 @@ public class MainController {
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return trackViewerService.downloadTrackfile(authentication, trackid, response);
-
     }
 
     @GetMapping(value="/matching/{groupid}")
