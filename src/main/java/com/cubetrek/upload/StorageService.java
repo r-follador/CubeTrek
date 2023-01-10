@@ -140,8 +140,13 @@ public class StorageService {
             trackRawfile.setOriginalfilename(filename);
             trackData.setTrackrawfile(trackRawfile);
         } catch (IOException e) {
-            logger.error("File upload - Failed because IOException 2 - by User "+user.getId() + " - Filename: '"+filename+"'", e);
-            throw new ExceptionHandling.FileNotAccepted("File is corrupted");
+            if (e.getMessage().startsWith("FIT fixstatus: 201")) {
+                logger.error("File upload - Failed because IOException 2: FIT fixstatus 201 - by User "+user.getId() + " - Filename: '"+filename+"'; Size: "+(filedata.length/1000)+"kb");
+                throw new ExceptionHandling.FileNotAccepted("File does not contain GPS data");
+            } else {
+                logger.error("File upload - Failed because IOException 2 - by User " + user.getId() + " - Filename: '" + filename + "'", e);
+                throw new ExceptionHandling.FileNotAccepted("File is corrupted");
+            }
         }
 
         if (track == null || track.isEmpty() || track.getSegments().isEmpty() || track.getSegments().get(0).getPoints().isEmpty() || track.getSegments().get(0).getPoints().size() < 3) {
