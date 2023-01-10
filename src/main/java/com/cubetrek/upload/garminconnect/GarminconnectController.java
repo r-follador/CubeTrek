@@ -93,8 +93,6 @@ public class GarminconnectController {
                 throw new ExceptionHandling.UnnamedException("Failed", "This Garmin Account is already linked to another CubeTrek account");
             }
 
-
-
             if (userThirdpartyConnect==null) {
                 UserThirdpartyConnect utc = new UserThirdpartyConnect();
                 utc.setGarminEnabled(true);

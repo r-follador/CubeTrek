@@ -26,5 +26,15 @@ public class UserThirdpartyConnect {
     @Column
     private boolean garminEnabled = false;
 
+    @Column
+    private String polarUseraccesstoken;
+
+    @Column
+    private String polarUserid;
+
+    @Column
+    private boolean polarEnabled = false;
+
+
 
 }
