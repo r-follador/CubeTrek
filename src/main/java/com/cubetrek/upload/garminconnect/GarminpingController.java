@@ -1,6 +1,5 @@
 package com.cubetrek.upload.garminconnect;
 
-import com.cubetrek.database.Users;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,10 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -52,7 +48,7 @@ public class GarminpingController {
                         return ResponseEntity.badRequest().build();
                     }
                     //Publish async event; handled by GarminNewFileEventListener
-                    eventPublisher.publishEvent(new OnNewGarminFileEvent(activityId, userAccessToken, callbackURL, fileType));
+                    eventPublisher.publishEvent(new GarminNewFileEventListener.OnEvent(activityId, userAccessToken, callbackURL, fileType));
                 }
             }
             if (deregistrations != null && !deregistrations.isNull() && !deregistrations.isEmpty() && deregistrations.isArray()) {
@@ -64,7 +60,7 @@ public class GarminpingController {
                         return ResponseEntity.badRequest().build();
                     }
                     //Publish async event; handled by GarminNewReregistrationEventListener
-                    eventPublisher.publishEvent(new OnNewGarminDeregistrationEvent(userAccessToken, false));
+                    eventPublisher.publishEvent(new GarminNewDeregistrationEventListener.OnEvent(userAccessToken, false));
                 }
             }
             if (userPermissionsChange != null && !userPermissionsChange.isNull() && !userPermissionsChange.isEmpty() && userPermissionsChange.isArray()) {
@@ -79,7 +75,7 @@ public class GarminpingController {
                     }
                     boolean isEnabled = permissions.contains("ACTIVITY_EXPORT");
                     //Publish async event; handled by GarminNewReregistrationEventListener
-                    eventPublisher.publishEvent(new OnNewGarminDeregistrationEvent(userAccessToken, isEnabled));
+                    eventPublisher.publishEvent(new GarminNewDeregistrationEventListener.OnEvent(userAccessToken, isEnabled));
                 }
             }
             if (success) {

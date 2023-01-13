@@ -6,33 +6,28 @@ import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.upload.StorageService;
 import com.cubetrek.upload.UploadResponse;
-import com.cubetrek.upload.garminconnect.OnNewGarminFileEvent;
-import oauth.signpost.OAuthConsumer;
-import oauth.signpost.basic.DefaultOAuthConsumer;
-import oauth.signpost.exception.OAuthCommunicationException;
-import oauth.signpost.exception.OAuthExpectationFailedException;
-import oauth.signpost.exception.OAuthMessageSignerException;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 
 @Component
-public class PolarNewFileEventListener implements ApplicationListener<OnNewPolarFileEvent> {
+public class PolarNewFileEventListener implements ApplicationListener<PolarNewFileEventListener.OnEvent> {
 
     Logger logger = LoggerFactory.getLogger(PolarNewFileEventListener.class);
 
@@ -46,13 +41,16 @@ public class PolarNewFileEventListener implements ApplicationListener<OnNewPolar
     @Autowired
     private StorageService storageService;
 
+    @Autowired
+    PolarAccesslinkService polarAccesslinkService;
+
     @Async
     @Override
-    public void onApplicationEvent(OnNewPolarFileEvent event) {
+    public void onApplicationEvent(OnEvent event) {
         this.downloadFile(event);
     }
 
-    public void downloadFile(OnNewPolarFileEvent event) {
+    public void downloadFile(OnEvent event) {
 
         if (!event.getUrl().startsWith("https://www.polaraccesslink.com")) {
             logger.error("PolarAccesslink: will not download file, wrong URL prefix: "+event.getUrl());
@@ -70,19 +68,12 @@ public class PolarNewFileEventListener implements ApplicationListener<OnNewPolar
         HttpClient httpClient = HttpClient.newHttpClient();
         UploadResponse uploadResponse = null;
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", "Bearer "+userThirdpartyConnect.getPolarUseraccesstoken())
-                    .header("Accept", "*/*")
-                    .uri(new URI(downloadUrl))
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .GET()
-                    .build();
 
-
-            HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            HttpResponse<InputStream> response = polarAccesslinkService.userTokenAuthenticationGET_getFile(downloadUrl, userThirdpartyConnect.getPolarUseraccesstoken());
 
             if (response.statusCode() == 200) {
                 byte[] filedata = response.body().readAllBytes();
+                response.body().close();
                 String filename = "polar-"+event.entityId+".FIT";
                 uploadResponse = storageService.store(user, filedata, filename);
             } else {
@@ -102,6 +93,21 @@ public class PolarNewFileEventListener implements ApplicationListener<OnNewPolar
             logger.info("PolarAccesslink: pull file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
         else
             logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'");
+    }
+
+    @Getter
+    @Setter
+    static public class OnEvent extends ApplicationEvent {
+        String entityId;
+        String userId;
+        String url;
+
+        public OnEvent(String entityId, String userId, String url) {
+            super(userId);
+            this.entityId = entityId;
+            this.userId = userId;
+            this.url = url;
+        }
     }
 
 

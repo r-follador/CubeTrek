@@ -97,6 +97,7 @@ public class MainController {
         model.addAttribute("yearlyTotalJSON", activitityService.getYearlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
         model.addAttribute("recentTracks",  activitityService.getTenRecentActivities(user));
+        model.addAttribute("favoriteTracks",  activitityService.getFavoriteActivities(user));
         model.addAttribute("totalActivities", activitityService.getActivityCount(user));
         return "dashboard";
     }
@@ -130,11 +131,7 @@ public class MainController {
     public List<TrackData.TrackMetadata> getActivitiesAjax(@RequestParam("size") int size, @RequestParam("page") int page, @RequestParam("sortby") String sort, @RequestParam("descending") boolean descending, @RequestParam(value = "filterby", required = false) Optional<String> activitytype) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        TrackData.Activitytype at;
-        if (activitytype.isEmpty())
-                at = null;
-        else
-            at = TrackData.Activitytype.valueOf(activitytype.get());
+        TrackData.Activitytype at = activitytype.map(TrackData.Activitytype::valueOf).orElse(null);
         return activitityService.getActivitiesList(user, size, page, sort, descending, at);
     }
 
@@ -209,7 +206,6 @@ public class MainController {
         return storageService.store(user, file);
     }
 
-    @Transactional
     @GetMapping(value="/view/{itemid}")
     public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
@@ -217,7 +213,6 @@ public class MainController {
         return trackViewerService.mapView3D(authentication, trackid, model);
     }
 
-    @Transactional
     @GetMapping(value="/view2d/{itemid}")
     public String viewTrack2D(@PathVariable("itemid") long trackid, Model model)
     {
@@ -382,6 +377,13 @@ public class MainController {
         trackDataRepository.deleteById(id);
         logger.info("Delete ID '"+id+"'");
         return new UpdateTrackmetadataResponse(true);
+    }
+
+    @ResponseBody
+    @RequestMapping(value="/api/modify/matching/")
+    public UpdateTrackmetadataResponse batchRenameMatchingactivities(@RequestBody EditTrackmetadataDto editTrackmetadataDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return storageService.batchRenameMatchingActivities(authentication, editTrackmetadataDto);
     }
 
     @ResponseBody

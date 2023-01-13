@@ -2,6 +2,7 @@ package com.cubetrek.upload;
 
 import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.*;
+import com.cubetrek.viewer.ActivitityService;
 import com.cubetrek.viewer.TrackViewerService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,6 +74,9 @@ public class StorageService {
     @Autowired
     ApplicationEventPublisher eventPublisher;
 
+    @Autowired
+    ActivitityService activitityService;
+
     @PostConstruct
     public void init() {
         //akrobatik needed to use @values in construtor
@@ -134,6 +138,12 @@ public class StorageService {
                 logger.info("File upload - Failed because wrong file suffix - by User "+user.getId());
                 throw new ExceptionHandling.FileNotAccepted("File type (suffix) not recognized. Either GPX or FIT files accepted.");
             }
+
+            if (conversionOutput.trackList.isEmpty()) {
+                logger.error("File upload - Failed because no tracks in Tracklist - by User "+user.getId() + " - Filename: '"+filename+"'; Size: "+(filedata.length/1000)+"kb");
+                throw new ExceptionHandling.FileNotAccepted("File contains no tracks");
+            }
+
             track = conversionOutput.trackList.get(0);
 
             trackRawfile.setOriginalgpx(filedata);
@@ -353,14 +363,30 @@ public class StorageService {
         if (!editTrackmetadataDto.check())
             throw new ExceptionHandling.EditTrackmetadataException(editTrackmetadataDto.getErrorMessage());
 
-        isWriteAccessAllowed(authentication, editTrackmetadataDto.getIndex());
+        isWriteAccessAllowedToTrack(authentication, editTrackmetadataDto.getIndex());
 
         trackDataRepository.updateTrackMetadata(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), editTrackmetadataDto.getNote(), editTrackmetadataDto.getActivitytype());
         logger.info("Modify ID '"+editTrackmetadataDto.getIndex()+"'");
         return new UpdateTrackmetadataResponse(true);
     }
 
-    private void isWriteAccessAllowed(Authentication authentication, long trackId) {
+    @Transactional
+    public UpdateTrackmetadataResponse batchRenameMatchingActivities(Authentication authentication, @RequestBody EditTrackmetadataDto editTrackmetadataDto) {
+        if (editTrackmetadataDto==null)
+            throw new ExceptionHandling.EditTrackmetadataException("Failed to Submit Modifications");
+
+        if (!editTrackmetadataDto.check())
+            throw new ExceptionHandling.EditTrackmetadataException(editTrackmetadataDto.getErrorMessage());
+
+        isWriteAccessAllowedToTrackgroup(authentication, editTrackmetadataDto.getIndex());
+        Users user = (Users) authentication.getPrincipal();
+        trackDataRepository.batchRenameTrackgroup(editTrackmetadataDto.getIndex(), editTrackmetadataDto.getTitle(), user);
+
+        logger.info("Batch rename Trackgroup '"+editTrackmetadataDto.getIndex()+"' by User '"+user.getId()+"'");
+        return new UpdateTrackmetadataResponse(true);
+    }
+
+    private void isWriteAccessAllowedToTrack(Authentication authentication, long trackId) {
         boolean writeAccess;
         if (authentication instanceof AnonymousAuthenticationToken) //not logged in
             writeAccess = false;
@@ -371,5 +397,19 @@ public class StorageService {
         }
         if (!writeAccess)
             throw new ExceptionHandling.TrackViewerException(TrackViewerService.noAccessMessage);
+    }
+
+    private void isWriteAccessAllowedToTrackgroup(Authentication authentication, long trackgroup) {
+        if (authentication instanceof AnonymousAuthenticationToken) //not logged in
+            throw new ExceptionHandling.TrackViewerException(TrackViewerService.noAccessMessage);
+        else {
+
+            Users user = (Users) authentication.getPrincipal();
+            TrackData.TrackMetadata firstExample = activitityService.getMatchingActivities(user, trackgroup).stream().findFirst().orElse(null);
+            if (firstExample == null)
+                throw new ExceptionHandling.TrackViewerException(TrackViewerService.noAccessMessage);
+            else
+                isWriteAccessAllowedToTrack(authentication, firstExample.getId());
+        }
     }
 }

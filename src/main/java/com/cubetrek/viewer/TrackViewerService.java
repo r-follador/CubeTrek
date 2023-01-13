@@ -47,7 +47,7 @@ public class TrackViewerService {
 
     @PostConstruct
     public void init() {
-        //akrobatik needed to use @values in construtor
+        //akrobatik needed to use @values in constructor
         hgtFileLoader_3DEM= new HGTFileLoader_LocalStorage( hgt_3dem_files);
     }
 
@@ -102,7 +102,7 @@ public class TrackViewerService {
 
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");
 
-    @Transactional
+    @Transactional(readOnly  = true)
     public String mapView3D(Authentication authentication, long trackid, Model model) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
@@ -127,7 +127,7 @@ public class TrackViewerService {
         return "trackview";
     }
 
-    @Transactional
+    @Transactional(readOnly  = true)
     public String mapView2D(Authentication authentication, long trackid, Model model) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));

@@ -42,10 +42,14 @@
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2"><span id="entrysize"></span> Matching Activities</h1>
+                <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#editModal">Rename Activities</a>
             </div>
             <div class="row" style="height: 35vh;">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1">
-                    <h4 class="h4">Average Pace</h4>
+                    <h4 class="h4">Average Pace <a class="btn btn-light btn-sm" id="barGraphButton" onclick="updateGraph()">
+                        Sequential
+                    </a></h4>
+
                 </div>
 
                 <div class="row">
@@ -107,6 +111,34 @@
     </div>
 </div>
 
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Batch Rename</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" style="display: none;" id="errormessageedit" role="alert">
+                </div>
+                <div class="alert alert-success" style="display: none;" id="successmessageedit" role="alert">
+                </div>
+                <form>
+                    <div class="mb-3">
+                        <label for="inputTitleBatchRename" class="form-label">Rename all <span id="entrysize2"></span> matching Activities</label>
+                        <input type="text" class="form-control" id="inputTitleBatchRename" value="bla"
+                               maxlength="250">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="../js/d3.min.js"></script>
 <script th:inline="javascript">
     var icons = {};
@@ -122,6 +154,7 @@
     const miles_per_km = 0.621371;
     const feet_per_m = 3.28084;
     const tablebody = document.getElementById("tbody");
+    let graph;
 
     function populateTable() { //clear everything and start downloading data
         while (tablebody.firstChild) {
@@ -147,21 +180,20 @@
             entries.push(entry);
         }
         populateTable();
-        drawGraph();
+        graph = Graph();
         fetchgeojson(entries[0].id, true);
         document.getElementById("entrysize").innerText = entries.length;
+        document.getElementById("entrysize2").innerText = entries.length;
+        document.getElementById("inputTitleBatchRename").value = entries[0].title;
     }
 
     function fetchgeojson(trackid, reload) {
         var url = "/api/geojson/"+trackid+".geojson";
-
         if (!reload) {
             map.removeLayer('route');
             map.removeSource('route');
         }
-
         document.getElementById("map2dlegend").innerText = (new Date(Date.parse(entries.find(x => x.id === trackid).datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
-
         fetch(url)
             .then(response => {
                 if (response.status === 200) {
@@ -170,12 +202,7 @@
                     document.getElementById("errorbox").style.display = 'block';
                 }
             })
-            .then(geojson => {
-                prepareMap2d(geojson, reload);
-                }
-            );
-
-
+            .then(geojson => {prepareMap2d(geojson, reload);});
     }
 
     function listData() {
@@ -199,14 +226,16 @@
         return min.toString() + ":" + (sec<10?"0":"") + (sec.toFixed(0)).toString();
     }
 
-
     datas = [];
     var tooltip;
 
-    function drawGraph() {
+    let sequentialGraph = true;
+
+    function Graph() {
+
         let count = 0;
         for (const entry of entries) {
-            datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km)});
+            datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack)});
         }
 
         this.width = document.getElementById('graph').clientWidth * 0.8;
@@ -216,7 +245,6 @@
         width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
         height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
 
-        // append the svg object to the body of the page
         d3.select("#graph").select("svg").remove(); //clear if exists already
         this.svg = d3.select("#graph")
             .append("svg")
@@ -229,12 +257,16 @@
         var xscale = d3.scaleLinear()
             .domain(d3.extent(datas, function(d) { return d.xpos}))
             .range([ width, 0]);
+        var xAxis = svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(xscale));
 
         var yscale = d3.scaleLinear()
             .domain(d3.extent(datas, function(d) { return d.pace}))
             .range([ 0, height ]);
-        svg.append("g")
-            .call(d3.axisLeft(yscale));
+        var yAxis = svg.append("g")
+            .call(d3.axisLeft(yscale).ticks(6));
+
 
         tooltip = d3.select("body")
             .append("div")
@@ -243,45 +275,116 @@
             .style("visibility", "hidden")
             .style("background", "rgba(245, 245, 255, 0.6)");
 
-        svg.append("path")
-            .datum(datas)
-            .attr("fill", "none")
-            .attr("stroke", "#ff8001")
-            .attr("stroke-width", 1.5)
-            .attr("d", d3.line()
-                .curve(d3.curveBasis) // Just add that to have a curve instead of segments
-                .x(function(d) { return xscale(d.xpos) })
-                .y(function(d) { return yscale(d.pace) })
-            )
+        const path = svg.append("path")
+            .datum(datas);
+
+        drawPath();
+        function drawPath() {
+            path
+                .attr("fill", "none")
+                .attr("stroke", "#ff8001")
+                .attr("stroke-width", 1.5)
+                .transition()
+                .attr("d", d3.line()
+                    .curve(d3.curveBasis) // Just add that to have a curve instead of segments
+                    .x(function (d) {
+                        if (sequentialGraph)
+                            return xscale(d.xpos);
+                        else
+                            return xscale(d.date);
+                    })
+                    .y(function (d) {
+                        return yscale(d.pace)
+                    })
+                )
+        }
 
         const minmax = d3.extent(datas, function(d) {return d.pace});
 
-        svg
-            .append("g")
-            .selectAll("dot")
-            .data(datas)
-            .enter()
-            .append("circle")
-            .attr("id", function(d) { return "c"+d.id })
-            .attr("cx", function(d) { return xscale(d.xpos) } )
-            .attr("cy", function(d) { return yscale(d.pace) } )
-            .attr("r", 5)
-            .attr("stroke", "#101010")
-            .attr("stroke-width", 1)
-            .attr("fill", "white")
-            .on("mouseover", function(e,i) {
+        const circles = svg.append("g").selectAll("dot").data(datas).enter().append("circle")
+            .attr("id", function (d) {
+                return "c" + d.id
+            })
+            .attr("cy", function (d) {
+                return yscale(d.pace)
+            })
+            .on("mouseover", function (e, i) {
                 highlight(i.id, true);
             })
-            .on("mouseout", function(d,i) {
+            .on("mouseout", function (d, i) {
                 unhighlight(i.id);
             })
-            .on("click", function(d,i) {
+            .on("click", function (d, i) {
                 clickactivity(i.id);
-            })
-            .filter(function(d) { return d.pace === minmax[0] || d.pace === minmax[1]} )
-            .attr("stroke", "#fa7c7c")
-            .attr("stroke-width", 3);
+            });
 
+        drawCircles();
+        function drawCircles() {
+            circles
+                .transition()
+                .attr("cx", function (d) {
+                    if (sequentialGraph)
+                        return xscale(d.xpos);
+                    else
+                        return xscale(d.date);
+                })
+                .attr("r", 5)
+                .attr("stroke", "#101010")
+                .attr("stroke-width", 1)
+                .attr("fill", "white")
+                .filter(function (d) {
+                    return d.pace === minmax[0] || d.pace === minmax[1]
+                })
+                .attr("stroke", "#fa7c7c")
+                .attr("stroke-width", 3);
+        }
+
+
+        return Object.assign(svg.node(), {
+            update() {
+                console.log("update: "+sequentialGraph);
+
+                if (sequentialGraph) {
+                    xscale = d3.scaleLinear()
+                        .domain(d3.extent(datas, function (d) {
+                            return d.xpos
+                        }))
+                        .range([width, 0]);
+                    xAxis.call(d3.axisBottom(xscale)).style('opacity', 0);;
+                    drawCircles();
+                    drawPath();
+                } else {
+                    xscale = d3.scaleTime()
+                        .domain(d3.extent(datas, function (d) {
+                            return d.date
+                        }))
+                        .range([0, width]);
+                    xAxis.call(d3.axisBottom(xscale)).transition().style('opacity', 1);
+                    drawCircles();
+                    drawPath();
+                }
+            },
+            updateWindowSize() {
+                let count = 0;
+                datas = [];
+                for (const entry of entries) {
+                    datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack)});
+                }
+
+
+                width = document.getElementById('graph').clientWidth-margingraph.left-margingraph.right;
+                height = document.getElementById('graph').clientHeight-margingraph.top-margingraph.bottom;
+                svg.attr("width", width + margingraph.left + margingraph.right)
+                    .attr("height", height + margingraph.top + margingraph.bottom);
+
+                yscale = d3.scaleLinear()
+                    .domain(d3.extent(datas, function(d) { return d.pace}))
+                    .range([ 0, height ]);
+                yAxis.call(d3.axisLeft(yscale).ticks(6));
+
+                graph.update();
+            }
+        });
     }
 
     function highlight(id, scroll) {
@@ -341,11 +444,11 @@
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
         populateTable();
-        drawGraph();
+        graph.updateWindowSize();
     }
 
     window.addEventListener("resize", function () {
-        drawGraph();
+        graph.updateWindowSize();
     });
 
     var map;
@@ -406,8 +509,45 @@
         }
     }
 
-    settings();
     initData();
+    settings();
+
+
+    function saveEdit() {
+        let editTitle = document.getElementById("inputTitleBatchRename").value;
+
+        let data = {index: groupidstring, title: editTitle};
+
+        fetch("../api/modify/matching/", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(res => {
+            res.json().then(response => {
+                if (res.ok) {
+                    document.getElementById("successmessageedit").innerText = "Changes saved";
+                    document.getElementById("successmessageedit").style.display = "block";
+                    location.reload();
+                } else {
+                    document.getElementById("errormessageedit").innerText = response.response;
+                    document.getElementById("errormessageedit").style.display = "block";
+                }
+            });
+        }).catch(error => {
+            console.log("--error");
+            console.log(error);
+        });
+    }
+
+
+    function updateGraph() {
+        sequentialGraph = !sequentialGraph;
+        if (sequentialGraph)
+            document.getElementById("barGraphButton").innerText = "Sequential";
+        else
+            document.getElementById("barGraphButton").innerText = "Time";
+        graph.update();
+    }
 
 </script>
 

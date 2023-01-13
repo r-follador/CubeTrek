@@ -353,6 +353,40 @@
                     </div>
                 </div>
             </div>
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                <h4 class="h4"><img src='../assets/icon_favorite_select.svg' height='15px'> My Favorites <img src='../assets/icon_favorite_select.svg' height='15px'></h4>
+            </div>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th> Date </th>
+                    <th> Title </th>
+                    <th> Duration </th>
+                    <th> Ascent</th>
+                    <th> Distance</th>
+                    <th> </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${favoriteTracks.empty}">
+                    <td colspan="2"><i>No favorite Activities, mark them by clicking the star ⭐</i></td>
+                </tr>
+                <tr th:each="track : ${favoriteTracks}">
+                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                    <td><span th:data-datetime="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
+                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                    <td><span th:data-duration="${track.getDuration()}" th:text="${track.getDuration()}"> Duration </span></td>
+                    <td><span th:data-shortdist="${track.getElevationup()}" th:text="${track.getElevationup()}"> Ascent </span></td>
+                    <td><span th:data-longdist="${track.getDistance()}" th:text="${track.getDistance()}"> Distance </span></td>
+                    <td><span th:if="${track.getTrackgroup() != null}"> <a th:href="'/matching/'+${track.getTrackgroup()}"><img src="/assets/matched.svg" title="Matching Activities"></a></span></td>
+                </tr>
+                </tbody>
+            </table>
+
         </main>
     </div>
 </div>

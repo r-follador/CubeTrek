@@ -74,6 +74,10 @@ public class ActivitityService {
         return trackDataRepository.findMostRecent(user.getId(), 10);
     }
 
+    public List<TrackData.TrackMetadata> getFavoriteActivities(Users user) {
+        return trackDataRepository.findFavorite(user.getId());
+    }
+
     public int getActivityCount(Users user) {
         return trackDataRepository.countTotalActivities(user.getId());
     }

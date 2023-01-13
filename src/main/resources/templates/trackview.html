@@ -144,14 +144,17 @@
                         <div class="display-6"
                              th:attr="data-bs-toggle=${writeAccess?'modal':''}, data-bs-target=${writeAccess?'#editModal':''}"
                              th:attrappend="onmouseout=${writeAccess?'document.getElementById(''edittitle'').style.visibility = ''hidden'';':''}, onmouseover=${writeAccess?'document.getElementById(''edittitle'').style.visibility = ''visible'';':''}"
-
                         >
                             <img height="50px" th:src="${'../assets/'+trackmetadata.activitytype.getIconName()}"
                                  th:title="${trackmetadata.activitytype.getDisplayValue()}"><span th:text="${trackmetadata.title}"></span>
                             <img th:if="${writeAccess}" style="visibility:hidden" id="edittitle" height="20px"
                                  src="../assets/cubetrek_modify.svg">
                         </div>
-                        <div th:unless="${writeAccess}" class="figure-caption" th:text="${'Athlete: ' + owner}"></div>
+                        <div th:unless="${writeAccess}" class="fw-light" th:text="${'Athlete: ' + owner}"></div>
+                        <div>
+                            <a th:if="${writeAccess && trackmetadata.trackgroup != null}" type="button" class="btn btn-outline-secondary btn-sm ms-3 align-middle" th:href="${'/matching/'+trackmetadata.trackgroup}"><img src="../assets/matched.svg" height="20px"> View Matching Activities</a>
+                            <a th:if="${writeAccess}" type="button" class="btn btn-outline-secondary btn-sm ms-3 align-middle" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Edit Track</a>
+                        </div>
                     </div>
 
                     <div class="row">
@@ -255,7 +258,7 @@
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm"
                             onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
-                        Edit Track
+                        Edit Title and Type
                     </button>
                     <button type="button" class="btn btn-secondary btn-sm"
                             onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
@@ -289,7 +292,7 @@
     </div>
 </div>
 
-<div th:if=${writeAccess} class="modal fade" id="editModal" tabindex="-1">
+<div th:if="${writeAccess}" class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -328,7 +331,7 @@
     </div>
 </div>
 
-<div th:if=${writeAccess} class="modal fade" id="editNoteModal" tabindex="-1">
+<div th:if="${writeAccess}" class="modal fade" id="editNoteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -355,7 +358,7 @@
     </div>
 </div>
 
-<div th:if=${writeAccess} class="modal" id="confirmhidden" tabindex="-1">
+<div th:if="${writeAccess}" class="modal" id="confirmhidden" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -376,7 +379,7 @@
     </div>
 </div>
 
-<div th:if=${writeAccess} class="modal" id="confirmdelete" tabindex="-1">
+<div th:if="${writeAccess}" class="modal" id="confirmdelete" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

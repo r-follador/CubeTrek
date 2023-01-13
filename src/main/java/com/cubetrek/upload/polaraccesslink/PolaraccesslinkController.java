@@ -5,7 +5,6 @@ import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.upload.garminconnect.GarminconnectAuthSession;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,16 +46,12 @@ public class PolaraccesslinkController {
     private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
 
     @Autowired
-    private GarminconnectAuthSession garminconnectAuthSession;
+    PolarAccesslinkService polarAccesslinkService;
 
     //Get the Authentications
     final String authorizationEndpointUrl = "https://flow.polar.com/oauth2/authorization?response_type=code&client_id=";
     final String tokenEndpointUrl = "https://polarremote.com/v2/oauth2/token";
     final String registerUserUrl = "https://www.polaraccesslink.com/v3/users";
-
-
-    final String authorizeWebsiteUrl = "https://connect.garmin.com/oauthConfirm";
-
 
 
     @GetMapping(value="/profile/connectPolar-step1")
@@ -81,34 +76,14 @@ public class PolaraccesslinkController {
             throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Polar Accesslink account. Error message: '"+error+"'");
         }
 
-        HttpClient httpClient = HttpClient.newHttpClient();
-        try {
-            //Authorization
-            //https://www.polar.com/accesslink-api/?python#authentication
 
-            String authorization = polarClientId+":"+polarClientSecret;
-            String authorizationBase64 = Base64.getEncoder().encodeToString(authorization.getBytes());
-            logger.info("authorization string: "+authorization);
-            logger.info("authorization base64: "+authorizationBase64);
+
+        try {
             Map<String, String> data = new HashMap<>();
             data.put("grant_type", "authorization_code");
             data.put("code", code);
 
-
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", "Basic "+ authorizationBase64)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Accept", "application/json;charset=UTF-8")
-                    .uri(new URI(tokenEndpointUrl))
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .POST(getFormDataAsString(data))
-                    .build();
-
-
-            logger.info("Request string: "+request.toString());
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response =  polarAccesslinkService.clientCredentialsAuthenticationPOST_getJSON(data, "application/x-www-form-urlencoded", tokenEndpointUrl);
 
             //TODO: remove in working system
             logger.info("Received JSON1: Status: "+response.statusCode()+"; body: "+response.body());
@@ -138,16 +113,7 @@ public class PolaraccesslinkController {
             //Register user
             //https://www.polar.com/accesslink-api/?python#users
 
-            HttpRequest request_register = HttpRequest.newBuilder()
-                    .header("Authorization", "Bearer "+access_token)
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json;charset=UTF-8")
-                    .uri(new URI(registerUserUrl))
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .POST(HttpRequest.BodyPublishers.ofString("{\"member-id\": \"User_id_"+user.getId()+"\"}"))
-                    .build();
-
-            HttpResponse<String> response_register = httpClient.send(request_register, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response_register = polarAccesslinkService.userTokenAuthenticationPOST_getJSON("{\"member-id\": \"User_id_"+user.getId()+"\"}", "application/json", registerUserUrl, access_token);
 
             //TODO: remove in working system
             logger.info("Received JSON2: Status: "+response_register.statusCode()+"; body: "+response_register.body());
@@ -188,18 +154,5 @@ public class PolaraccesslinkController {
         }
 
 
-    }
-
-    private static HttpRequest.BodyPublisher getFormDataAsString(Map<String, String> formData) {
-        StringBuilder formBodyBuilder = new StringBuilder();
-        for (Map.Entry<String, String> singleEntry : formData.entrySet()) {
-            if (formBodyBuilder.length() > 0) {
-                formBodyBuilder.append("&");
-            }
-            formBodyBuilder.append(URLEncoder.encode(singleEntry.getKey(), StandardCharsets.UTF_8));
-            formBodyBuilder.append("=");
-            formBodyBuilder.append(URLEncoder.encode(singleEntry.getValue(), StandardCharsets.UTF_8));
-        }
-        return HttpRequest.BodyPublishers.ofString(formBodyBuilder.toString());
     }
 }

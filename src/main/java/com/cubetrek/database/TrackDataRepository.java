@@ -44,6 +44,15 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     void updateTrackMetadata(@Param(value = "id") long id, @Param(value = "title") String title, @Param(value = "comment") String comment, @Param(value="activitytype") TrackData.Activitytype activitytype);
 
     @Modifying
+    @CacheEvict(value = "trackdata", allEntries = true)
+    @Query("""
+        UPDATE trackdata SET title= :title
+        WHERE owner = :ownerid AND trackgroup = :trackgroupid
+    """)
+    void batchRenameTrackgroup(@Param(value = "trackgroupid") long trackgroupid, @Param(value = "title") String title, @Param(value = "ownerid") Users owner);
+
+
+    @Modifying
     @CacheEvict(value = "trackdata", key = "#id")
     @Query("update trackdata u set u.favorite = :favorite where u.id = :id")
     void updateTrackFavorite(@Param(value = "id") long id, @Param(value = "favorite") boolean favorite);
@@ -151,6 +160,13 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
             ORDER BY trackdata.datetrack DESC LIMIT :limit ;
             """, nativeQuery = true)
     List<TrackData.TrackMetadata> findMostRecent(long user_id, int limit);
+
+    @Query(value = """ 
+            SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance, trackdata.elevationup, trackdata.hidden, trackdata.duration, trackdata.favorite, trackdata.sharing, trackdata.trackgroup, trackdata.elevationdown, trackdata.highestpoint, trackdata.lowestpoint FROM trackdata
+            WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.favorite = true
+            ORDER BY trackdata.datetrack DESC ;
+            """, nativeQuery = true)
+    List<TrackData.TrackMetadata> findFavorite(long user_id);
 
     @Query(value = """ 
             SELECT COUNT(*) FROM trackdata

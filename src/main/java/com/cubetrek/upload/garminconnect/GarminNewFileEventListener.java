@@ -2,34 +2,31 @@ package com.cubetrek.upload.garminconnect;
 
 import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.*;
-import com.cubetrek.registration.OnRegistrationCompleteEvent;
-import com.cubetrek.registration.RegistrationListener;
 import com.cubetrek.upload.StorageService;
 import com.cubetrek.upload.UploadResponse;
+import lombok.Getter;
+import lombok.Setter;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.basic.DefaultOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoProperties;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.TimeZone;
 
 
 @Component
-public class GarminNewFileEventListener implements ApplicationListener<OnNewGarminFileEvent> {
+public class GarminNewFileEventListener implements ApplicationListener<GarminNewFileEventListener.OnEvent> {
 
     Logger logger = LoggerFactory.getLogger(GarminNewFileEventListener.class);
 
@@ -45,11 +42,11 @@ public class GarminNewFileEventListener implements ApplicationListener<OnNewGarm
 
     @Async
     @Override
-    public void onApplicationEvent(OnNewGarminFileEvent event) {
+    public void onApplicationEvent(OnEvent event) {
         this.downloadFile(event);
     }
 
-    public void downloadFile(OnNewGarminFileEvent event) {
+    public void downloadFile(OnEvent event) {
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByGarminUseraccesstoken(event.getUserAccessToken());
         if (userThirdpartyConnect == null){
             logger.error("GarminConnect: pull file failed: Unknown Useracccestoken: "+event.getUserAccessToken());
@@ -84,6 +81,23 @@ public class GarminNewFileEventListener implements ApplicationListener<OnNewGarm
             logger.info("GarminConnect: pull file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
         else
             logger.error("GarminConnect: pull file failed: User id: "+user.getId()+", UserAccessToken '"+event.getUserAccessToken()+"', CallbackURL '"+event.getCallbackURL()+"'");
+    }
+
+    @Getter
+    @Setter
+    public static class OnEvent extends ApplicationEvent {
+        String activityId;
+        String userAccessToken;
+        String callbackURL;
+        String fileType;
+
+        public OnEvent(String activityId, String userAccessToken, String callbackURL, String fileType) {
+            super(userAccessToken);
+            this.activityId = activityId;
+            this.userAccessToken = userAccessToken;
+            this.callbackURL = callbackURL;
+            this.fileType = fileType;
+        }
     }
 
 

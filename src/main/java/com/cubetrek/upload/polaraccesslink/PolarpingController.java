@@ -1,7 +1,5 @@
 package com.cubetrek.upload.polaraccesslink;
 
-import com.cubetrek.upload.garminconnect.OnNewGarminDeregistrationEvent;
-import com.cubetrek.upload.garminconnect.OnNewGarminFileEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,8 +45,7 @@ public class PolarpingController {
                     logger.warn("PolarAcceslink Ping: malformed Excercise Ping");
                     return ResponseEntity.badRequest().build();
                 }
-
-                eventPublisher.publishEvent(new OnNewPolarFileEvent(entity_id, user_id, url));
+                eventPublisher.publishEvent(new PolarNewFileEventListener.OnEvent(entity_id, user_id, url));
             }
             if (success) {
                 return ResponseEntity.ok().build();
