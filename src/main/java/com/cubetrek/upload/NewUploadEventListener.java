@@ -37,21 +37,17 @@ public class NewUploadEventListener implements ApplicationListener<OnNewUploadEv
     }
 
     public void newUploadFile(OnNewUploadEvent event) {
-
         TrackData newUploadedActivity = trackDataRepository.getReferenceById(event.getTrackId());
 
         //Get the final title of the activity
         String title = storageService.createTitleFinal(event.getHighestPoint(), newUploadedActivity, event.getTimezone());
-        newUploadedActivity.setTitle(title);
-        trackDataRepository.save(newUploadedActivity);
-
+        trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), title);
 
         ///Find matching activities of the same owner
         long time = System.currentTimeMillis();
         List<TrackData> mt = trackDataRepository.findMatchingActivities(newUploadedActivity.getOwner().getId(), newUploadedActivity.getId());
 
         if (mt.size() >= 2) {
-
             List<TrackData> unassignedActivities = new ArrayList<>();
             Long groupid = null;
             for (TrackData t : mt) {
@@ -59,7 +55,7 @@ public class NewUploadEventListener implements ApplicationListener<OnNewUploadEv
                     if (groupid== null) {
                         groupid = t.getTrackgroup();
                     } else {
-                        if (t.getTrackgroup()!=groupid)
+                        if (!t.getTrackgroup().equals(groupid))
                             unassignedActivities.add(t);
                     }
                 } else {

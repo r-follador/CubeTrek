@@ -305,9 +305,6 @@
             .attr("id", function (d) {
                 return "c" + d.id
             })
-            .attr("cy", function (d) {
-                return yscale(d.pace)
-            })
             .on("mouseover", function (e, i) {
                 highlight(i.id, true);
             })
@@ -321,6 +318,9 @@
         drawCircles();
         function drawCircles() {
             circles
+                .attr("cy", function (d) {
+                    return yscale(d.pace)
+                })
                 .transition()
                 .attr("cx", function (d) {
                     if (sequentialGraph)
@@ -342,8 +342,6 @@
 
         return Object.assign(svg.node(), {
             update() {
-                console.log("update: "+sequentialGraph);
-
                 if (sequentialGraph) {
                     xscale = d3.scaleLinear()
                         .domain(d3.extent(datas, function (d) {
@@ -377,9 +375,6 @@
                 svg.attr("width", width + margingraph.left + margingraph.right)
                     .attr("height", height + margingraph.top + margingraph.bottom);
 
-                yscale = d3.scaleLinear()
-                    .domain(d3.extent(datas, function(d) { return d.pace}))
-                    .range([ 0, height ]);
                 yAxis.call(d3.axisLeft(yscale).ticks(6));
 
                 graph.update();
@@ -545,7 +540,7 @@
         if (sequentialGraph)
             document.getElementById("barGraphButton").innerText = "Sequential";
         else
-            document.getElementById("barGraphButton").innerText = "Time";
+            document.getElementById("barGraphButton").innerText = "By Date";
         graph.update();
     }
 

@@ -42,7 +42,7 @@ public class SuccessfulLoginEventListener implements ApplicationListener<Success
 
         //Check if Polar is still connected
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByUser(event.getUser());
-        if (userThirdpartyConnect.isPolarEnabled()) {
+        if (userThirdpartyConnect != null && userThirdpartyConnect.isPolarEnabled()) {
             //try to get polar user info in order to check if still enabled; see https://github.com/polarofficial/accesslink-example-python/issues/28
             final String polarUserUrl = "https://www.polaraccesslink.com/v3/users/"+userThirdpartyConnect.getPolarUserid();
             try {

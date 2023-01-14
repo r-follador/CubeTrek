@@ -20,8 +20,9 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     @CacheEvict(value = "trackdata", key = "#id")
     void deleteById(Long id);
 
+
     @Cacheable(value = "trackdata", key = "#id")
-    @EntityGraph(attributePaths="trackgeodata")
+    @EntityGraph(attributePaths={"trackgeodata", "owner"})
     Optional<TrackData> findById(Long id);
 
     Optional<TrackData.TrackMetadata> findTrackMetadataById(Long id);
@@ -42,6 +43,12 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     @CacheEvict(value = "trackdata", key = "#id")
     @Query("update trackdata u set u.title = :title, u.comment = :comment, u.activitytype = :activitytype where u.id = :id")
     void updateTrackMetadata(@Param(value = "id") long id, @Param(value = "title") String title, @Param(value = "comment") String comment, @Param(value="activitytype") TrackData.Activitytype activitytype);
+
+    @Modifying
+    @CacheEvict(value = "trackdata", key = "#id")
+    @Query("update trackdata u set u.title = :title where u.id = :id")
+    void updateTrackMetadataTitle(@Param(value = "id") long id, @Param(value = "title") String title);
+
 
     @Modifying
     @CacheEvict(value = "trackdata", allEntries = true)
