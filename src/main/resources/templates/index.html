@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
 
+    <link href="css/carousel.css" rel="stylesheet">
+
     <style>
 
       @media (min-width: 768px) {
@@ -30,9 +32,58 @@
       }
 
       #drop_zone * {pointer-events: none;}
-    </style>
 
-    
+       .bd-placeholder-img {
+         font-size: 1.125rem;
+         text-anchor: middle;
+         -webkit-user-select: none;
+         -moz-user-select: none;
+         user-select: none;
+       }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+
+      .b-example-divider {
+        height: 3rem;
+        background-color: rgba(0, 0, 0, .1);
+        border: solid rgba(0, 0, 0, .15);
+        border-width: 1px 0;
+        box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+      }
+
+      .b-example-vr {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 100vh;
+      }
+
+      .bi {
+        vertical-align: -.125em;
+        fill: currentColor;
+      }
+
+      .nav-scroller {
+        position: relative;
+        z-index: 2;
+        height: 2.75rem;
+        overflow-y: hidden;
+      }
+
+      .nav-scroller .nav {
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 1rem;
+        margin-top: -1px;
+        overflow-x: auto;
+        text-align: center;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
   </head>
   <body>
     
@@ -82,24 +133,103 @@
 <main>
 
   <section class="py-5 text-center container">
-    <div class="row py-lg-5">
-      <div class="col-lg-6 col-md-8 mx-auto">
-        <h1 class="fw-light">Your GPS-Tracks in 3D</h1>
-        <p class="lead text-muted">Topography is what makes Skiing, Hiking, Trailrunning and Mountainbiking so exciting.</p>
-        <p class="lead text-muted">You conquer those Vertical Distances with a lot of sweat and effort, but your Tracking Software only shows a
-          boring 2D Map.</p>
-        <p class="lead text-muted">That's where <strong>CubeTrek</strong> comes in.
+
+    <img class="me-2" width="100" src="/assets/logo.svg">
+    <h1 class="fw-light">CubeTrek</h1>
+    <h2 class="fw-light">Home for all your GPS Tracks</h2>
+
+    <p>
+      <a href="#examples" class="btn btn-secondary my-2">See Examples</a>
+      <a href="#upload" class="btn btn-secondary my-2">Upload your own Track</a>
+      <a href="/registration" class="btn btn-primary my-2">Sign up for your Account</a>
+    </p>
+
+    <div class="container marketing mt-5">
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-7">
+        <h2 class="featurette-heading fw-normal lh-1">Your GPS Tracks in 3D.</h2>
+        <p class="lead">Topography is what makes Skiing, Hiking, Trail running and Mountain biking so exciting.
+          You conquer those vertical distances with a lot of sweat and effort, but your tracking software only shows a boring 2D map.<br>
+          <strong>That's where CubeTrek comes in.</strong>
         </p>
-        <p>
-          <a href="#examples" class="btn btn-primary my-2">See Examples</a>
-          <a href="#upload" class="btn btn-secondary my-2">Upload your own Track</a>
-          <a href="#news" class="btn btn-secondary my-2">Receive News</a>
-        </p>
-          <video autoplay muted loop playsinline class="col-8">
-            <source src="/assets/pics/rotating5.mp4" type="video/mp4">
-          </video>
+      </div>
+      <div class="col-md-5">
+        <video autoplay muted loop playsinline class="featurette-image img-fluid mx-auto" width="600" height="600">
+          <source src="../assets/pics/rotating5.mp4" type="video/mp4">
+        </video>
       </div>
     </div>
+
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-5 order-md-2">
+        <h2 class="featurette-heading fw-normal lh-1">Measure &amp; Compare.</span></h2>
+        <p class="lead">Compare daily, monthly and yearly performance metrics on your interactive dashboard.<br>
+          Sort by different activity types, calculate and compare total distances and vertical ascents.</p>
+      </div>
+      <div class="col-md-7 order-md-1">
+        <video autoplay muted loop playsinline class="featurette-image img-fluid mx-auto" width="700" height="500">
+          <source src="/assets/index_bargraph.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-7">
+        <h2 class="featurette-heading fw-normal lh-1">Your Personal Heatmap.</h2>
+        <p class="lead">Track your progress on <strong>CubeTrek</strong>'s Calendar Heatmap.
+          Reach your goals, record activity streaks.</p>
+      </div>
+      <div class="col-md-5">
+        <img class="featurette-image img-fluid mx-auto" width="700" height="500" src="/assets/index_heatmap.png"></img>
+
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-7 order-md-2">
+        <h2 class="featurette-heading fw-normal lh-1">Activity Matching.</h2>
+        <p class="lead"> Benchmark yourself against past performances on your favorite routes.
+          If you complete the same track several times, <strong>CubeTrek</strong> automatically
+          groups all efforts together and calculates a pace graph.</p>
+      </div>
+      <div class="col-md-5 order-md-1">
+        <img class="featurette-image img-fluid mx-auto" width="700" height="500" src="/assets/index_matchingactivities.png"></img>
+
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col">
+        <h2 class="featurette-heading fw-normal lh-1">And much more.</h2>
+        <p class="lead"><ul>
+        <li><strong>Best-Of Stats</strong>: View your longest distances, the highest peaks and furthest climbs.</li>
+        <li><strong>Sort and Filter</strong> your activities by type, date, duration, distance, ascent etc. - Never lose track of your past efforts.</li>
+        <li>Import FIT-, GPX-files and Zip-archives with one click.</li>
+        <li>Link Third Party accounts: sync with Garmin Connect and Polar Flow (more to come...)</li>
+      </ul></p>
+      </div>
+      <div class="col-md-5">
+        <img class="featurette-image img-fluid mx-auto" width="400" height="400" src="/assets/index_more.jpg"></img>
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+    </div>
+
+    <a href="/registration" class="btn btn-primary btn-lg">Sign up for your Account</a>
+
   </section>
 
   <div id="examples" class="album py-5 bg-light">
@@ -145,18 +275,32 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="row">
 
+        <h3 class="fw-light text-center mt-3">Recent public Uploads</h3>
+      <div class="d-flex justify-content-center">
+        <table>
+          <tbody>
+          <tr th:each="track : ${publicTracks}">
+            <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                     th:title="${track.activitytype.getDisplayValue()}"></td>
+            <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}">Title</a> by [[${track.getName()}]]</td>
+          </tr>
+          </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
   <div id="upload" class="py-5">
     <div class="container">
-      <h2 class="fw-light text-center">Upload and View your GPS-Track</h2>
+      <h2 class="fw-light text-center">Give it a Try</h2>
       <div class="row">
         <div id="drop_zone" class="col-4 offset-4 align-middle drop-area">
           <input type="file" id="uploadfile" style="display:none;">
-          <p><u>Click here</u> or drag your file into this Box.<br>
+          <p><u>Click here</u> or drag your GPS Track into this Box.<br>
             Accepted file types: GPX and FIT.</p>
         </div>
       </div>
@@ -178,27 +322,20 @@
           </table>
         </div>
       </div>
-      <div class="row pt-5">
-        <div class="col-md-6">
-          <span class="badge bg-warning text-dark">Privacy Disclaimer</span> Although the upload occurs anonymously (meaning no IP or email addresses are saved and correlated
-          to your upload, no ads and trackers are used), the GPS Track itself can contain data that might be sensitive (It shows when and where you have been, naturally).<br>
-          <strong>All uploaded tracks will be publicly visible.</strong>
+      <div class="row pt-2">
+        <div class="col-md-5">
+          <span class="badge bg-warning text-dark">Please note</span>
+          <li>All uploaded Tracks will be publicly visible</li>
+          <li>Only GPX and FIT files are supported</li>
+          <li>Let me know <a href="mailto:contact@cubetrek.com">via email</a> if something is not working</li></strong>
         </div>
-        <div class="col-md-6">
-          <span class="badge bg-warning text-dark">Experimental</span> The whole thing is still very experimental and
-          might blow up any minute.<br>
-          No guarantees on accuracy, no guarantees on how long the uploaded tracks will be available via the link.<br>
-          But if you encounter any problems, <a href="mailto:contact@cubetrek.com">please tell me via email</a> (include your GPS Track if possible).
-        </div>
+        <div class="col-md-2"></div>
+      <div class="col-md-5">
+        <span class="badge bg-warning text-dark">Sign up</span>
+        <li>Keep track of all your tracks</li>
+        <li>Get aggregated statistics and interactive graphs of all your adventures</li>
+        <li>Click <a href="/registration">here to register your account</a></li>
       </div>
-      <div class="row pt-4">
-        <div class="col-md-6">
-          <span class="badge bg-warning text-dark">Current Limitations</span> Only FIT and GPX files are supported (e.g. no TCX files) with the correct file suffix.<br>
-          Only activities that cover an area which is smaller than 100km x 100km (62x62 miles in medieval units).<br>
-          Max. file size is 10 MB (that's more than it sounds) <br>
-          The Track must contain time data.<br>
-          Elevation data is automatically added if not present (yes, that's actually not a limitation).
-        </div>
       </div>
     </div>
   </div>
@@ -216,14 +353,12 @@
           <button type="submit" class="btn btn-primary mb-3" onclick="newsletter(document.getElementById('emailinput').value)" id="submitemail">Submit</button> <span id="newslettermessage">Your address will not be shared.</span>
         </div>
         <div class="col-md-7 offset-md-1 lead">
-          <p><b>CubeTrek</b>'s still in an experimental stage.<br>
-            The Vision is to become the home for all your Mountain related GPS Tracks.</p>
+          <p><b>CubeTrek</b>'s still in an experimental stage.
           <p>To receive updates, sign up for the mailing list. Or get in touch via <a href="mailto:contact@cubetrek.com">Email</a>.</p>
         </div>
       </div>
     </div>
   </div>
-
   <div id="techdeeds" class="py-5">
     <div class="container">
       <div class="accordion" id="tech-exposition">
@@ -258,8 +393,6 @@
       </div>
     </div>
   </div>
-
-
 </main>
 
 <footer class="text-muted py-5 bg-light">
