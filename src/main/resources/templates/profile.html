@@ -36,7 +36,7 @@
             </div>
 
             <form action="/profile" th:object="${user}" method="POST" enctype="utf8">
-                <div class="col-4">
+                <div class="col-md-6">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="username-label">User name</span>
                         <input type="text" id="username" th:field="*{name}" class="form-control" aria-label="Username" aria-describedby="username-label" onchange="enableButton()">
@@ -83,7 +83,8 @@
                 synced this way, <a href="/static/bulkdownload.html">but there are other ways</a>.
             </div>
 
-            <div class="card m-2 mt-4" style="width: 18rem; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#garminModal">
+            <div class="row">
+            <div class="card m-2 mt-4 col-md-4" style="width: 18rem; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#garminModal">
                 <img src="/assets/connect_logo_blue.png" class="card-img-top" alt="Garmin Connect Logo">
                 <div class="card-body">
                     <h5 class="card-title">Garmin Connect</h5>
@@ -91,6 +92,17 @@
                     <div th:if="${isGarminConnected}" class="badge bg-primary">✅ Garmin Account is linked</div>
                     <div th:unless="${isGarminConnected}" class="badge bg-secondary">No Garmin Account linked</div>
                 </div>
+            </div>
+
+            <div class="card m-2 mt-4 col-md-4" style="width: 18rem; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#polarModal">
+                <img src="/assets/polar_logo.svg" class="card-img-top mt-2" alt="Polar Flow Logo">
+                <div class="card-body">
+                    <h5 class="card-title">Polar Flow</h5>
+                    <p class="card-text">Link your Polar devices to CubeTrek</p>
+                    <div th:if="${isPolarConnected}" class="badge bg-primary">✅ Polar Account is linked</div>
+                    <div th:unless="${isPolarConnected}" class="badge bg-secondary">No Polar Account linked</div>
+                </div>
+            </div>
             </div>
         </main>
     </div>
@@ -109,11 +121,30 @@
             </div>
             <div class="modal-body">
                 You will be redirected to the Garmin Connect website.
-                <img class="img-thumbnail" width="300px" src="/assets/connect_screenshot.png"><br>
+                <a href=""><img class="img-thumbnail" width="300px" src="/assets/connect_screenshot.png"></a><br>
                 Make sure to set "Activities" sharing to green/enabled and click "Save".
             </div>
             <div class="modal-footer">
                 <a href="/profile/connectGarmin-step1" type="button" class="btn btn-primary">Go To Garmin Connect</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="polarModal" tabindex="-1" aria-labelledby="exampleModalLabel2" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel2">Polar Flow</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                You will be redirected to the Polar Flow website.
+                <a href="/profile/connectPolar-step1"><img class="img-thumbnail" width="300px" src="/assets/polar_screenshot.png" alt="Screenshot"></a><br>
+                Make sure to "Agree to the Terms and Conditions" and click "Accept".
+            </div>
+            <div class="modal-footer">
+                <a href="/profile/connectPolar-step1" type="button" class="btn btn-primary">Go To Polar Accesslink</a>
             </div>
         </div>
     </div>

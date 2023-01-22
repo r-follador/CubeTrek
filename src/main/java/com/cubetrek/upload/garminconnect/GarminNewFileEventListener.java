@@ -49,7 +49,7 @@ public class GarminNewFileEventListener implements ApplicationListener<GarminNew
     public void downloadFile(OnEvent event) {
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByGarminUseraccesstoken(event.getUserAccessToken());
         if (userThirdpartyConnect == null){
-            logger.error("GarminConnect: pull file failed: Unknown Useracccestoken: "+event.getUserAccessToken());
+            logger.error("GarminConnect: pull file failed: Unknown Useracccestoken: "+event.getUserAccessToken()+"; Payload: "+event.getPayload());
             return;
         }
         Users user = userThirdpartyConnect.getUser();
@@ -70,17 +70,18 @@ public class GarminNewFileEventListener implements ApplicationListener<GarminNew
 
         } catch (IOException | OAuthMessageSignerException | OAuthExpectationFailedException |
                  OAuthCommunicationException e) {
-            logger.error("GarminConnect: pull file failed: User id: "+user.getId()+", UserAccessToken '"+event.getUserAccessToken()+"', CallbackURL '"+event.getCallbackURL()+"'");
+            logger.error("GarminConnect: pull file failed: User id: "+user.getId()+", UserAccessToken '"+event.getUserAccessToken()+"', CallbackURL '"+event.getCallbackURL()+"'; Payload: "+event.getPayload());
             logger.error("GarminConnect", e);
             return;
         } catch (ExceptionHandling.FileNotAccepted e) {
-            //Already loggged in StorageService, do nothing
+            //Already loggged in StorageService
+            logger.error("GarminConnect: pull file failed: Payload: "+event.getPayload());
         }
 
         if (uploadResponse != null)
             logger.info("GarminConnect: pull file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
         else
-            logger.error("GarminConnect: pull file failed: User id: "+user.getId()+", UserAccessToken '"+event.getUserAccessToken()+"', CallbackURL '"+event.getCallbackURL()+"'");
+            logger.error("GarminConnect: pull file failed: User id: "+user.getId()+", UserAccessToken '"+event.getUserAccessToken()+"', CallbackURL '"+event.getCallbackURL()+"'; Payload: "+event.getPayload());
     }
 
     @Getter
@@ -90,13 +91,15 @@ public class GarminNewFileEventListener implements ApplicationListener<GarminNew
         String userAccessToken;
         String callbackURL;
         String fileType;
+        String payload;
 
-        public OnEvent(String activityId, String userAccessToken, String callbackURL, String fileType) {
+        public OnEvent(String activityId, String userAccessToken, String callbackURL, String fileType, String payload) {
             super(userAccessToken);
             this.activityId = activityId;
             this.userAccessToken = userAccessToken;
             this.callbackURL = callbackURL;
             this.fileType = fileType;
+            this.payload = payload;
         }
     }
 

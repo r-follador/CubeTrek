@@ -8,12 +8,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
-@CacheConfig(cacheNames={"trackdata"})
 public interface TrackDataRepository extends JpaRepository<TrackData, Long>, JpaSpecificationExecutor<TrackData> {
 
     @Override
@@ -118,6 +118,24 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
             ORDER BY trackdata.datetrack;
             """, nativeQuery = true)
     List<TrackData.TrackMetadata> findTrackOfGivenDay(long user_id, String day, String user_timezone);
+
+    public interface PublicActivity {
+        TrackData.Activitytype getActivitytype();
+        int getId();
+        String getTitle();
+        String getName();
+    }
+
+    @Cacheable(value = "publictracks", key = "#size") //See CubetrekScheduler.emptypublictracksCache for cache clearing every 10min
+    @Query(value = """ 
+            SELECT trackdata.activitytype, trackdata.id, trackdata.title, users.name FROM trackdata
+           JOIN users ON trackdata.owner = users.id
+           WHERE trackdata.hidden = false AND trackdata.sharing = 2
+           ORDER BY trackdata.upload_date DESC
+           LIMIT :size
+            """, nativeQuery = true)
+    List<PublicActivity> findPublicActivities(int size);
+
 
     @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance FROM trackdata " +
             "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND trackdata.datetrack > CURRENT_DATE - INTERVAL '3 months' " +

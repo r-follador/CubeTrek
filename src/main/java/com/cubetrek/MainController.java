@@ -69,6 +69,7 @@ public class MainController {
     public String index(Model model, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         response.addHeader("Cache-Control", "max-age=600, public");
+        model.addAttribute("publicTracks", activitityService.getPublicActivitiesList(5));
         return "index";
     }
 
@@ -99,6 +100,7 @@ public class MainController {
         model.addAttribute("recentTracks",  activitityService.getTenRecentActivities(user));
         model.addAttribute("favoriteTracks",  activitityService.getFavoriteActivities(user));
         model.addAttribute("totalActivities", activitityService.getActivityCount(user));
+        logger.info("View Dashboard by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "dashboard";
     }
 
@@ -112,8 +114,6 @@ public class MainController {
             tz = timezone;
         else
             tz = "Etc/UTC";
-        //TODO: get actual activities for day
-        System.out.println("@@@@ year, monht, day "+year+","+month+","+day);
         return activitityService.getActivityOfDay(user, year, month, day, timezone);
     }
 
@@ -146,6 +146,7 @@ public class MainController {
         model.addAttribute("user", userDto);
         UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
         model.addAttribute("isGarminConnected", utc != null && utc.isGarminEnabled());
+        model.addAttribute("isPolarConnected", utc != null && utc.isPolarEnabled());
         return "profile";
     }
 

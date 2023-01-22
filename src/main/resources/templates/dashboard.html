@@ -16,7 +16,7 @@
     <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
-    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <div class="w-100"></div>
     <ul class="navbar-nav px-3">
         <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
             <img src="../assets/cubetrek_settings.svg" height="20px"></a>
@@ -77,7 +77,7 @@
             <div th:if="${recentTracks.empty}" class="card m-5" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">Your Profile is empty 😔</h5>
-                    <p class="card-text">Add your Tracks to get started. Upload your files, link your Garmin account to automatically sync future activities.</p>
+                    <p class="card-text">Add your Tracks to get started. Upload your files, link your Garmin and Polar account to automatically sync future activities.</p>
                     <a href="/upload" class="btn btn-primary m-1">Upload Activity Files</a>
                     <a href="/profile" class="btn btn-primary m-1">Link Accounts</a>
                 </div>

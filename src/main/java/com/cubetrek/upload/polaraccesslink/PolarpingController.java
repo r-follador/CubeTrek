@@ -13,6 +13,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.Optional;
+
 @Controller
 public class PolarpingController {
     Logger logger = LoggerFactory.getLogger(PolarpingController.class);
@@ -31,31 +33,32 @@ public class PolarpingController {
         logger.info("PolarAccesslink Ping received: "+payload);
 
         try {
-            boolean success = false;
-            JsonNode activities = (new ObjectMapper()).readTree(payload).get("EXCERCISE");
+            JsonNode activities = (new ObjectMapper()).readTree(payload);
 
             if (activities != null && !activities.isNull() && !activities.isEmpty()) {
-                success = true;
-                String user_id = (new ObjectMapper()).readTree(payload).get("user_id").asText("blarg");
-                String entity_id = (new ObjectMapper()).readTree(payload).get("entity_id").asText("blarg");
-                String timestamp = (new ObjectMapper()).readTree(payload).get("timestamp").asText("blarg");
-                String url = (new ObjectMapper()).readTree(payload).get("url").asText("blarg");
+                String event = Optional.ofNullable(activities.get("event")).map(JsonNode::asText).orElse("blarg");
+                String user_id = Optional.ofNullable(activities.get("user_id")).map(JsonNode::asText).orElse("blarg");
+                String entity_id = Optional.ofNullable(activities.get("entity_id")).map(JsonNode::asText).orElse("blarg");
+                String timestamp = Optional.ofNullable(activities.get("timestamp")).map(JsonNode::asText).orElse("blarg");
+                String url = Optional.ofNullable(activities.get("url")).map(JsonNode::asText).orElse("blarg");
 
-                if (user_id.equals("blarg") || entity_id.equals("blarg") || timestamp.equals("blarg") || url.equals("blarg")) {
-                    logger.warn("PolarAcceslink Ping: malformed Excercise Ping");
+                if (event.equals("blarg") || user_id.equals("blarg") || entity_id.equals("blarg") || timestamp.equals("blarg") || url.equals("blarg")) {
+                    logger.warn("PolarAcceslink Ping: malformed Ping, missing keys; Payload: "+payload);
                     return ResponseEntity.badRequest().build();
                 }
-                eventPublisher.publishEvent(new PolarNewFileEventListener.OnEvent(entity_id, user_id, url));
-            }
-            if (success) {
+                if (event.equals("EXERCISE"))
+                    eventPublisher.publishEvent(new PolarNewFileEventListener.OnEvent(entity_id, user_id, url, payload));
+                else
+                    logger.info("PolarAccesslink Ping: Not an EXERCISE event, ignored; event is: "+event +"; Payload: "+payload);
+
                 return ResponseEntity.ok().build();
             } else {
-                logger.info("PolarAccesslink Ping: cannot parse");
+                logger.info("PolarAccesslink Ping: cannot parse; Payload: "+payload);
                 return ResponseEntity.ok().build() ;
             }
         } catch (JsonProcessingException e) {
-            logger.error("PolarAccesslink Ping: JsonProcessingException", e);
-            throw new RuntimeException(e);
+            logger.error("PolarAccesslink Ping: JsonProcessingException; Payload: "+payload, e);
+            return ResponseEntity.ok().build();
         }
     }
 }

@@ -52,9 +52,14 @@
 <div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
     Error Message
 </div>
+<div th:unless="${isLoggedIn}" class="alert alert-primary alert-dismissible fade show m-0 p-2" role="alert">
+    Welcome Stranger. <a href="/signin" class="alert-link">Sign in</a> or <a href="/registration" class="alert-link">Register for an account</a>
+    <button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
 <div th:if="${tracktoobig}" class="alert alert-info" id="tracktoobigmessage" role="alert">
     Track covers area above 100km x 100km, this is currently too large for 3D view
 </div>
+
 
 <div class="container-fluid">
     <div class="row">

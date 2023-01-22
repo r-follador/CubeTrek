@@ -86,7 +86,7 @@ public class PolaraccesslinkController {
             HttpResponse<String> response =  polarAccesslinkService.clientCredentialsAuthenticationPOST_getJSON(data, "application/x-www-form-urlencoded", tokenEndpointUrl);
 
             //TODO: remove in working system
-            logger.info("Received JSON1: Status: "+response.statusCode()+"; body: "+response.body());
+                logger.info("Received JSON1: Status: "+response.statusCode()+"; body: "+response.body());
 
             if (response.statusCode()!=200) {
                 logger.error("Error linking Polar Accesslink account 2. User id: "+user.getId()+"; "+response.body());
@@ -124,7 +124,7 @@ public class PolaraccesslinkController {
             } else if (response_register.statusCode() == 409) {
                 logger.error("Error linking Polar Accesslink account 6 (Register User: User already registered to partner or duplicated member-id). User id: "+user.getId()+"; "+response_register.body());
                 throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Polar Accesslink account. Your account is already registered.");
-            } else if (response_register.statusCode() != 200) {
+            } else if (!(response_register.statusCode() == 200 || response_register.statusCode() == 201)) {
                 logger.error("Error linking Polar Accesslink account 7 (Register User). User id: "+user.getId()+"; Status code: "+response_register.statusCode()+"; body: "+response_register.body());
                 throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Polar Accesslink account.");
             }

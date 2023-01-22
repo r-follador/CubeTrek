@@ -102,6 +102,7 @@ public class StorageService {
         TrackRawfile trackRawfile = new TrackRawfile();
 
         GPXWorker.ConversionOutput conversionOutput = null;
+        boolean isFitFile = true;
         try {
             if (filedata.length>10_000_000) {
                 logger.info("File upload - Failed because too large file size - by User "+user.getId()+"'");
@@ -130,9 +131,11 @@ public class StorageService {
                 }
             }
 
-            if (filename.toLowerCase(Locale.ROOT).endsWith("gpx"))
+            if (filename.toLowerCase(Locale.ROOT).endsWith("gpx")) {
+                isFitFile = false;
                 conversionOutput = GPXWorker.loadGPXTracks(new ByteArrayInputStream(filedata));
-            else if (filename.toLowerCase().endsWith("fit"))
+            }
+            else if (filename.toLowerCase(Locale.ROOT).endsWith("fit"))
                 conversionOutput = GPXWorker.loadFitTracks(new ByteArrayInputStream(filedata));
             else {
                 logger.info("File upload - Failed because wrong file suffix - by User "+user.getId());
@@ -141,7 +144,10 @@ public class StorageService {
 
             if (conversionOutput.trackList.isEmpty()) {
                 logger.error("File upload - Failed because no tracks in Tracklist - by User "+user.getId() + " - Filename: '"+filename+"'; Size: "+(filedata.length/1000)+"kb");
-                throw new ExceptionHandling.FileNotAccepted("File contains no tracks");
+                if (isFitFile)
+                    throw new ExceptionHandling.FileNotAccepted("File contains no tracks");
+                else
+                    throw new ExceptionHandling.FileNotAccepted("File contains no tracks; is this a Route only GPX file?");
             }
 
             track = conversionOutput.trackList.get(0);
@@ -161,7 +167,10 @@ public class StorageService {
 
         if (track == null || track.isEmpty() || track.getSegments().isEmpty() || track.getSegments().get(0).getPoints().isEmpty() || track.getSegments().get(0).getPoints().size() < 3) {
             logger.info("File upload - Failed because track is empty - by User "+user.getId());
-            throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty");
+            if (isFitFile)
+                throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty");
+            else
+                throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty; Perhaps a Route only GPX file?");
         }
 
         Track reduced = GPXWorker.reduceTrackSegments(track, 2);

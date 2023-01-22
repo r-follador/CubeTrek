@@ -5,9 +5,11 @@ import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
 import com.cubetrek.database.Users;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -107,9 +109,11 @@ public class ActivitityService {
             return trackDataRepository.findByOwnerAndHiddenAndActivitytype(user, false, activitytype, paging);
     }
 
+    public List<TrackDataRepository.PublicActivity> getPublicActivitiesList(int size) {
+        return trackDataRepository.findPublicActivities(size);
+    }
+
     public long countNumberOfEntries(Users user) {
         return trackDataRepository.countByOwnerAndHidden(user, false);
     }
-
-
 }

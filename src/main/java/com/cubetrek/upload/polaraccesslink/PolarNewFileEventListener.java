@@ -52,25 +52,22 @@ public class PolarNewFileEventListener implements ApplicationListener<PolarNewFi
 
     public void downloadFile(OnEvent event) {
 
-        if (!event.getUrl().startsWith("https://www.polaraccesslink.com")) {
-            logger.error("PolarAccesslink: will not download file, wrong URL prefix: "+event.getUrl());
+        if (!event.getUrl().contains("polaraccesslink.com")) {
+            logger.error("PolarAccesslink: will not download file, wrong URL: "+event.getUrl()+"; Payload: "+event.getPayload());
             return;
         }
 
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByPolarUserid(event.getUserId());
         if (userThirdpartyConnect == null){
-            logger.error("PolarAccesslink: pull file failed: Unknown User id: "+event.getUserId());
+            logger.error("PolarAccesslink: pull file failed: Unknown User id: "+event.getUserId()+"; Payload: "+event.getPayload());
             return;
         }
         Users user = userThirdpartyConnect.getUser();
 
         String downloadUrl = event.getUrl()+"/fit";
-        HttpClient httpClient = HttpClient.newHttpClient();
         UploadResponse uploadResponse = null;
         try {
-
             HttpResponse<InputStream> response = polarAccesslinkService.userTokenAuthenticationGET_getFile(downloadUrl, userThirdpartyConnect.getPolarUseraccesstoken());
-
             if (response.statusCode() == 200) {
                 byte[] filedata = response.body().readAllBytes();
                 response.body().close();
@@ -78,12 +75,10 @@ public class PolarNewFileEventListener implements ApplicationListener<PolarNewFi
                 uploadResponse = storageService.store(user, filedata, filename);
             } else {
                 logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', CallbackURL '"+event.getUrl()+"'");
-                logger.error("Response status code: "+response.statusCode());
+                logger.error("Response status code: "+response.statusCode()+"; Payload: "+event.getPayload());
             }
-
-
         } catch (URISyntaxException | IOException | InterruptedException e) {
-            logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', CallbackURL '"+event.getUrl()+"'");
+            logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', CallbackURL '"+event.getUrl()+"'"+"; Payload: "+event.getPayload());
             logger.error("PolarAccesslink", e);
         } catch (ExceptionHandling.FileNotAccepted e) {
             //Already logged in StorageService, do nothing
@@ -92,7 +87,7 @@ public class PolarNewFileEventListener implements ApplicationListener<PolarNewFi
         if (uploadResponse != null)
             logger.info("PolarAccesslink: pull file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
         else
-            logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'");
+            logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'"+"; Payload: "+event.getPayload());
     }
 
     @Getter
@@ -101,12 +96,14 @@ public class PolarNewFileEventListener implements ApplicationListener<PolarNewFi
         String entityId;
         String userId;
         String url;
+        String payload;
 
-        public OnEvent(String entityId, String userId, String url) {
+        public OnEvent(String entityId, String userId, String url, String payload) {
             super(userId);
             this.entityId = entityId;
             this.userId = userId;
             this.url = url;
+            this.payload = payload;
         }
     }
 

@@ -30,7 +30,7 @@ public class GarminNewDeregistrationEventListener implements ApplicationListener
     public void deregUser(OnEvent event) {
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByGarminUseraccesstoken(event.getUserAccessToken());
         if (userThirdpartyConnect == null){
-            logger.error("GarminConnect: deregistration/permission change failed: Unknown Useracccestoken: "+event.getUserAccessToken());
+            logger.error("GarminConnect: deregistration/permission change failed: Unknown Useracccestoken: "+event.getUserAccessToken()+"; Payload: "+event.getPayload());
             return;
         }
 
@@ -47,10 +47,13 @@ public class GarminNewDeregistrationEventListener implements ApplicationListener
 
         boolean isEnabled;
 
-        public OnEvent(String userAccessToken, boolean isEnabled) {
+        String payload;
+
+        public OnEvent(String userAccessToken, boolean isEnabled, String payload) {
             super(userAccessToken);
             this.userAccessToken = userAccessToken;
             this.isEnabled = isEnabled;
+            this.payload = payload;
         }
     }
 
