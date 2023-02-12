@@ -93,7 +93,7 @@ public class PolarAccesslinkService {
 
 
 
-    private static HttpRequest.BodyPublisher getFormDataAsString(Map<String, String> formData) {
+    public static HttpRequest.BodyPublisher getFormDataAsString(Map<String, String> formData) {
         StringBuilder formBodyBuilder = new StringBuilder();
         for (Map.Entry<String, String> singleEntry : formData.entrySet()) {
             if (formBodyBuilder.length() > 0) {

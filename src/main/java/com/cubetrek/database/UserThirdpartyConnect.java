@@ -35,6 +35,18 @@ public class UserThirdpartyConnect {
     @Column
     private boolean polarEnabled = false;
 
+    @Column(columnDefinition = "TEXT")
+    private String suuntoUseraccesstoken;
+
+    @Column(columnDefinition = "TEXT")
+    private String suuntoRefreshtoken;
+
+    @Column
+    private String suuntoUserid;
+
+    @Column
+    private boolean suuntoEnabled = false;
+
 
 
 }

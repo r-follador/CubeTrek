@@ -14,6 +14,7 @@ const miles_per_km = 0.621371;
 const feet_per_m = 3.28084;
 var kdtree;
 var graph;
+var helperLight;
 
 var delayCreateScene = function() {
     var scene = new BABYLON.Scene(engine);
@@ -84,8 +85,8 @@ var delayCreateScene = function() {
         camera.autoRotationBehavior.idleRotationWaitTime = 60 * 1000;
 
         //showWorldAxis(5000);
-        var helperLight = new BABYLON.HemisphericLight("DirectionalLightAbove", new BABYLON.Vector3(0,0, -1), scene);
-        helperLight.intensity=0.3;
+        helperLight = new BABYLON.HemisphericLight("DirectionalLightAbove", new BABYLON.Vector3(0,0, -1), scene);
+        helperLight.intensity=0.6;
         var dirLight = new BABYLON.DirectionalLight("DirectionalLightSide", new BABYLON.Vector3(1, 1, 0), scene);
         dirLight.intensity = 2;
         scene.ambientColor = new BABYLON.Color3(1, 1, 1);
@@ -699,6 +700,7 @@ function settings() {
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
 canvas.addEventListener("wheel", evt => evt.preventDefault());
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+engine.setHardwareScalingLevel(0.7);
 const scene = delayCreateScene(); //Call the createScene function
 
 // Register a render loop to repeatedly render the scene
@@ -768,12 +770,15 @@ function mapstyle(style) {
     switch(style) {
         case 'summer':
             styletype = 'standard';
+            helperLight.intensity=0.6;
             break;
         case 'winter':
             styletype = 'winter';
+            helperLight.intensity=0.6;
             break;
         case 'satellite':
             styletype = 'satellite';
+            helperLight.intensity=0.8;
             break;
         default:
             styletype = 'standard';

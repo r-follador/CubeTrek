@@ -8,6 +8,8 @@ public interface UserThirdpartyConnectRepository extends JpaRepository<UserThird
 
     UserThirdpartyConnect findByPolarUserid(String PolarUserid);
 
+    UserThirdpartyConnect findBySuuntoUserid(String suuntoUserid);
+
     UserThirdpartyConnect findByUser(Users user);
 
     void deleteByUser(Users users);

@@ -152,7 +152,5 @@ public class PolaraccesslinkController {
             logger.error("Error linking Polar Accesslink account 4. User id: "+user.getId(), e);
             throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Polar Accesslink account.");
         }
-
-
     }
 }

@@ -5,6 +5,10 @@ import com.cubetrek.database.NewsletterSignup;
 import com.cubetrek.database.NewsletterSignupRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.database.VerificationToken;
+import com.cubetrek.upload.polaraccesslink.PolarAccesslinkService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -22,7 +26,15 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class RegistrationController {
@@ -46,10 +58,30 @@ public class RegistrationController {
 
     @PostMapping("/registration")
     public String registerUserAccount(
-            @ModelAttribute("user") @Valid UserDto userDto, BindingResult bindingResult) {
+            @ModelAttribute("user") @Valid UserDto userDto, @RequestParam(name="cf-turnstile-response", required = false, defaultValue = "none") String cf_turnstile_response, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors())
             return "registration";
+
+        try {
+            if (cf_turnstile_response.equals("none")) {
+                logger.error("Error Registration: no Cloudflare Turnstile transferred for Username: "+userDto.getName()+", email "+userDto.getEmail());
+                throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, please try again later or send an email to contact@cubetrek.com");
+            }
+            HttpResponse<String> response = verifyCloudflareTurnstile(cf_turnstile_response);
+            if (response.statusCode()!=200) {
+                logger.error("Error Registration: Cloudflare Turnstile returns not 200: "+response.statusCode()+"; "+response.body());
+                throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, please try again later or send an email to contact@cubetrek.com");
+            }
+            boolean turnstile_success = (new ObjectMapper()).readTree(response.body()).get("success").asBoolean(false);
+            if (!turnstile_success) {
+                logger.error("Error Registration: Cloudflare Turnstile returns not true: "+response.body());
+                throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, please try again later or send an email to contact@cubetrek.com");
+            }
+        } catch (URISyntaxException | IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
 
         try {
             Users registered = userRegistrationService.register(userDto);
@@ -64,6 +96,24 @@ public class RegistrationController {
 
         return "successRegister";
     }
+
+    public HttpResponse<String> verifyCloudflareTurnstile(String cf_turnstyle_response) throws URISyntaxException, IOException, InterruptedException {
+        HttpClient httpClient = HttpClient.newHttpClient();
+
+        Map<String, String> content = new HashMap<>();
+        content.put("secret", "0x4AAAAAAACez2pOfKpLEGVmbCpkPL8n73E");
+        content.put("response", cf_turnstyle_response);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .uri(new URI("https://challenges.cloudflare.com/turnstile/v0/siteverify"))
+                .version(HttpClient.Version.HTTP_1_1)
+                .POST(PolarAccesslinkService.getFormDataAsString(content))
+                .build();
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
 
     @GetMapping("/registrationConfirm")
     public String confirmRegistration(WebRequest request, Model model, @RequestParam("token") String token) {

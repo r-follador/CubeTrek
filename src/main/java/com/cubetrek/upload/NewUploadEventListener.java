@@ -4,9 +4,13 @@ import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
 import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
+import com.sunlocator.topolibrary.LatLon;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -19,7 +23,7 @@ import java.util.Random;
 
 
 @Component
-public class NewUploadEventListener implements ApplicationListener<OnNewUploadEvent> {
+public class NewUploadEventListener implements ApplicationListener<NewUploadEventListener.OnEvent> {
 
     Logger logger = LoggerFactory.getLogger(NewUploadEventListener.class);
 
@@ -32,20 +36,17 @@ public class NewUploadEventListener implements ApplicationListener<OnNewUploadEv
     @Async
     @Transactional
     @Override
-    public void onApplicationEvent(OnNewUploadEvent event) {
+    public void onApplicationEvent(OnEvent event) {
         this.newUploadFile(event);
     }
 
-    public void newUploadFile(OnNewUploadEvent event) {
+    public void newUploadFile(OnEvent event) {
         TrackData newUploadedActivity = trackDataRepository.getReferenceById(event.getTrackId());
-
-        //Get the final title of the activity
-        String title = storageService.createTitleFinal(event.getHighestPoint(), newUploadedActivity, event.getTimezone());
-        trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), title);
-
         ///Find matching activities of the same owner
         long time = System.currentTimeMillis();
         List<TrackData> mt = trackDataRepository.findMatchingActivities(newUploadedActivity.getOwner().getId(), newUploadedActivity.getId());
+
+        String titleSuggestion = null;
 
         if (mt.size() >= 2) {
             List<TrackData> unassignedActivities = new ArrayList<>();
@@ -63,18 +64,42 @@ public class NewUploadEventListener implements ApplicationListener<OnNewUploadEv
                 }
             }
 
+            if (!mt.get(0).getTitle().startsWith("Activity on"))
+                titleSuggestion = mt.get(0).getTitle();
+
             if (groupid==null)
                 groupid = new Random().nextLong();
 
             for (TrackData nt : unassignedActivities)
                 nt.setTrackgroup(groupid);
 
-            trackDataRepository.saveAll(unassignedActivities);
+            trackDataRepository.saveAllAndFlush(unassignedActivities);
             logger.info("Found "+mt.size()+" matched activities for TrackID '"+newUploadedActivity.getId()+"' of User ID: '"+newUploadedActivity.getOwner().getId()+"' in "+(System.currentTimeMillis()-time)+"ms");
         }
-        //
 
+        //Get the final title of the activity
+        if (titleSuggestion!= null) {
+            trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), titleSuggestion);
+        } else {
+            String title = storageService.createTitleFinal(event.getHighestPoint(), newUploadedActivity, event.getTimezone());
+            trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), title);
+        }
+    }
 
+    @Getter
+    @Setter
+    public static class OnEvent extends ApplicationEvent {
+        long trackId;
+        LatLon highestPoint;
+
+        String timezone;
+
+        public OnEvent(long trackId, LatLon highestPoint, String timezone) {
+            super(trackId);
+            this.trackId = trackId;
+            this.highestPoint = highestPoint;
+            this.timezone = timezone;
+        }
     }
 
 }

@@ -6,6 +6,7 @@ import com.sunlocator.topolibrary.GLTFDatafile;
 import com.sunlocator.topolibrary.HGTFileLoader_LocalStorage;
 import com.sunlocator.topolibrary.HGTWorker;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
+import com.sunlocator.topolibrary.MapTile.GLTFWorker;
 import com.sunlocator.topolibrary.MapTile.MapTileWorker;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
@@ -75,7 +76,7 @@ public class TrackViewerService {
     //make this function cacheable end using the id as key
     @Cacheable(cacheNames = "gltf", key = "#id")
     public String getGLTFString_cacheable(long id, LatLonBoundingBox boundingBox) throws IOException {
-        GLTFDatafile gltfDatafile = HGTWorker.getTileGLTF_3DEM(boundingBox, calculateZoomlevel(boundingBox), true, hgtFileLoader_3DEM, "map/standard/%d/%d/%d.png");
+        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_3DEM).setZoomlevel(calculateZoomlevel(boundingBox)).setEnclosement(true).setTextureUrl("map/standard/%d/%d/%d.png").build();
         return gltfDatafile.getString();
     }
 

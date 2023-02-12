@@ -29,8 +29,11 @@ import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.sql.Date;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -94,6 +97,8 @@ public class StorageService {
             throw new ExceptionHandling.FileNotAccepted("File is corrupted");
         }
     }
+
+    final static ZoneId zoneId = ZoneId.of("UTC");
 
     public UploadResponse store(Users user, byte[] filedata, String filename) {
         Track track = null;
@@ -233,7 +238,7 @@ public class StorageService {
                 for (int j = 0; j < points; j++) {
                     cs[j] = new Coordinate(segment.getPoints().get(j).getLongitude().doubleValue(), segment.getPoints().get(j).getLatitude().doubleValue());
                     altitude[j] = segment.getPoints().get(j).getElevation().get().intValue();
-                    time[j] = segment.getPoints().get(j).getTime().get();
+                    time[j] = segment.getPoints().get(j).getTime().get().atZone(zoneId);
                     if (altitude[j] > highestPointEle) {
                         highestPointEle = altitude[j];
                         highestPoint = new LatLon(cs[j].y, cs[j].x);
@@ -260,7 +265,7 @@ public class StorageService {
         trackData.setOwner(user);
         trackData.setUploadDate(new Date(System.currentTimeMillis()));
         trackData.setSegments(track.getSegments().size());
-        trackData.setDatetrack(track.getSegments().get(0).getPoints().get(0).getTime().orElse(ZonedDateTime.now()));
+        trackData.setDatetrack((track.getSegments().get(0).getPoints().get(0).getTime().orElse(Instant.now())).atZone(zoneId));
         trackData.setTimezone(user.getTimezone());
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(reduced);
@@ -293,7 +298,6 @@ public class StorageService {
 
         trackDataRepository.save(trackData);
 
-
         UploadResponse ur = new UploadResponse();
         ur.setTrackID(trackData.getId());
         ur.setTitle(trackData.getTitle());
@@ -301,13 +305,12 @@ public class StorageService {
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
         logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
-        eventPublisher.publishEvent(new OnNewUploadEvent(trackData.getId(), highestPoint, user.getTimezone()));
+        eventPublisher.publishEvent(new NewUploadEventListener.OnEvent(trackData.getId(), highestPoint, user.getTimezone()));
         return ur;
     }
 
     private TrackData.Activitytype getActivitytype(GPXWorker.ConversionOutput conversionOutput) {
         String sport = conversionOutput.sportString.trim().toLowerCase(Locale.ROOT);
-
         //See enum 22
         if (sport.isEmpty())
             return TrackData.Activitytype.Unknown;
@@ -334,8 +337,9 @@ public class StorageService {
 
     protected String createTitleFinal(LatLon highestPoint, TrackData trackData, String timeZone) {
         OsmPeaks peak = geographyService.peakWithinRadius(highestPoint, 300);
-        if (peak != null)
+        if (peak != null) {
             return peak.getName();
+        }
 
         GeographyService.OsmPeakList peak2 = geographyService.findPeaksAlongPath(trackData.getTrackgeodata().getMultiLineString(), 500);
         if (peak2 != null && peak2.getLength()>0) {
@@ -343,25 +347,35 @@ public class StorageService {
         }
 
         String reverseGeoCode = reverseGeocode(highestPoint);
-        if (reverseGeoCode!=null)
+        if (reverseGeoCode!=null) {
             return reverseGeoCode;
-
+        }
+        logger.info("@@ Reverse Geocode failed..."+trackData.getId());
         return createTitlePreliminary(trackData, timeZone);
     }
 
     private String reverseGeocode(LatLon coord) {
-        String geoFeatureText = "-";
         try {
-            JsonNode rootNode = (new ObjectMapper()).readTree(new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=Nq5vDCKAnSrurDLNgtSI", coord.getLongitude(), coord.getLatitude())).openStream());
+            String geoFeatureText = "-";
+            URL url = new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=Nq5vDCKAnSrurDLNgtSI", coord.getLongitude(), coord.getLatitude()));
+            URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(2000);
+            connection.setReadTimeout(2000);
+            InputStream is = connection.getInputStream();
+
+            JsonNode rootNode = (new ObjectMapper()).readTree(is);
             geoFeatureText = rootNode.path("features").get(0).path("text").asText("-");
+            if (geoFeatureText.equals("-")) {
+                logger.error("@@ Error reverse Geocode, received Json: "+rootNode);
+                return null;
+            }
+            else {
+                return geoFeatureText;
+            }
         } catch (Exception e) {
-            logger.error("Error reverse Geocode for "+coord.toString(), e);
+            logger.error("@@ Error reverse Geocode for "+coord.toString(), e);
             return null;
         }
-        if (geoFeatureText.equals("-"))
-            return null;
-        else
-            return geoFeatureText;
     }
 
     @Transactional

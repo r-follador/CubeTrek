@@ -5,8 +5,8 @@ plugins {
 }
 
 group = 'com.cubetrek'
-version = '1.0-SNAPSHOT'
-sourceCompatibility = '17'
+version = '1.1-SNAPSHOT'
+sourceCompatibility = '19'
 
 configurations {
     compileOnly {
@@ -29,9 +29,10 @@ dependencies {
     implementation 'org.hibernate:hibernate-spatial:5.6.3.Final'
     implementation 'net.postgis:postgis-jdbc:2021.1.0'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE'
-    implementation 'io.jenetics:jpx:2.3.0' //Upgrade to 3.0.1 uses Instant instead of ZonedDateTime
+    implementation 'io.jenetics:jpx:3.0.1'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.1'
-    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.0-SNAPSHOT.jar')
+    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.2-SNAPSHOT.jar')
+    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/libs/fit.jar')
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
     implementation 'oauth.signpost:signpost-core:2.1.1'
 
