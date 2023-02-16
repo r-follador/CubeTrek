@@ -48,7 +48,8 @@ public class TrackData implements Serializable {
         Downhillskiing("Downhill Skiing", "cubetrek_icon_downhill_skiing.svg"),
         Ebike("E-Biking", "cubetrek_icon_ebike.svg"),
         Watersports("Watersports", "cubetrek_icon_canoe.svg"),
-        Kite("Kiting", "cubetrek_icon_kite.svg");
+        Kite("Kiting", "cubetrek_icon_kite.svg"),
+        Walking("Walking", "cubetrek_icon_walk.svg");
 
         private final String displayValue;
         private final String iconName;

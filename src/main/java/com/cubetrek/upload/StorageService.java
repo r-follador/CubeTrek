@@ -311,7 +311,7 @@ public class StorageService {
 
     private TrackData.Activitytype getActivitytype(GPXWorker.ConversionOutput conversionOutput) {
         String sport = conversionOutput.sportString.trim().toLowerCase(Locale.ROOT);
-        //See enum 22
+        //See enum 22; https://www.polar.com/accesslink-api/?java#detailed-sport-info-values-in-exercise-entity
         if (sport.isEmpty())
             return TrackData.Activitytype.Unknown;
         if (sport.contains("cross_country_ski"))
@@ -328,6 +328,8 @@ public class StorageService {
             return TrackData.Activitytype.Biking;
         if (sport.contains("snowshoeing"))
             return TrackData.Activitytype.Snowshoeing;
+        if (sport.contains("walk"))
+            return TrackData.Activitytype.Walking;
         return TrackData.Activitytype.Unknown;
     }
 

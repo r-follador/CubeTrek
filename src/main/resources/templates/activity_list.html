@@ -61,6 +61,8 @@
                     <th> <a href="#" class="text-decoration-none" onclick="sortBy('duration')">Duration <span id="sort_duration"></span></a></th>
                     <th> <a href="#" class="text-decoration-none" onclick="sortBy('elevationup')">Ascent <span id="sort_elevationup"></span></a></th>
                     <th> <a href="#" class="text-decoration-none" onclick="sortBy('distance')">Distance <span id="sort_distance"></span></a></th>
+                    <th></th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody id="tbody">
@@ -295,7 +297,6 @@
         document.getElementById("successmessageedit").style.display = "none";
         selectedtrackid = id;
         var entry = entries[id.toString()];
-        console.log(entry);
         bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
         document.getElementById("inputTitle").value = (new DOMParser().parseFromString(entry.title, "text/html")).documentElement.textContent ;
         document.getElementById("inputType").value = entry.activitytype;

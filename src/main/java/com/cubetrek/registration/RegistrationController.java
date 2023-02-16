@@ -22,6 +22,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -58,14 +59,14 @@ public class RegistrationController {
 
     @PostMapping("/registration")
     public String registerUserAccount(
-            @ModelAttribute("user") @Valid UserDto userDto, @RequestParam(name="cf-turnstile-response", required = false, defaultValue = "none") String cf_turnstile_response, BindingResult bindingResult) {
+            @ModelAttribute("user") @Valid UserDto userDto, @RequestParam(name="cf-turnstile-response", required = false, defaultValue = "none") String cf_turnstile_response, BindingResult bindingResult, HttpServletRequest request) {
 
         if (bindingResult.hasErrors())
             return "registration";
 
         try {
             if (cf_turnstile_response.equals("none")) {
-                logger.error("Error Registration: no Cloudflare Turnstile transferred for Username: "+userDto.getName()+", email "+userDto.getEmail());
+                logger.error("Error Registration: no Cloudflare Turnstile transferred for Username: "+userDto.getName()+", email "+userDto.getEmail(), ", IP "+request.getRemoteAddr());
                 throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, please try again later or send an email to contact@cubetrek.com");
             }
             HttpResponse<String> response = verifyCloudflareTurnstile(cf_turnstile_response);
