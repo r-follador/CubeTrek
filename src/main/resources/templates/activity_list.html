@@ -125,7 +125,7 @@
                             ></option>
                         </select>
                     </div>
-                    <h5>Track Settings</h5>
+                    <h6 class="mt-3">Favorite</h6>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="favoriteChecked"
                                onclick="setFavorite()">
@@ -220,7 +220,7 @@
     const miles_per_km = 0.621371;
     const feet_per_m = 3.28084;
 
-    var entries = {};
+    var entries = new Map();
     var numberEntries;
 
 
@@ -229,14 +229,13 @@
     var filterBy = "none";
 
     settings();
-    init();
 
 
     function init() { //clear everything and start downloading data
         while (tablebody.firstChild) {
             tablebody.removeChild(tablebody.firstChild);
         }
-        entries = {};
+        entries = new Map();
         shownEntries = 0;
         lastPage = -1;
         document.getElementById("sort_datetrack").innerText = "";
@@ -267,7 +266,7 @@
             url+="&filterby="+filterBy;
 
         fetch(url)
-            .then(response => {
+            .then(response => {100
                 if (response.status === 200) {
                     return response.json();
                 } else {
@@ -296,7 +295,7 @@
     var menu = function(id) {
         document.getElementById("successmessageedit").style.display = "none";
         selectedtrackid = id;
-        var entry = entries[id.toString()];
+        var entry = entries.get(id);
         bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
         document.getElementById("inputTitle").value = (new DOMParser().parseFromString(entry.title, "text/html")).documentElement.textContent ;
         document.getElementById("inputType").value = entry.activitytype;
@@ -321,7 +320,7 @@
 
     function listData(data) {
         for (var entry of data) {
-            entries[entry.id] = entry;
+            entries.set(entry.id, entry);
             var newRow = tablebody.insertRow();
             newRow.id="r"+entry.id;
             addRowInfo(newRow, entry);
@@ -406,7 +405,6 @@
         if (!confirmed) {
             bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmhidden')).show();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).hide();
-            document.getElementById("hiddenChecked").checked = false;
             return;
         }
         fetch(root+"modify/id="+selectedtrackid+"&hidden=true", {
@@ -456,7 +454,7 @@
     });
 
     function saveEdit() {
-        let currentEntry = entries[selectedtrackid];
+        let currentEntry = entries.get(selectedtrackid);
         let editTitle = document.getElementById("inputTitle").value;
         let editType = document.getElementById("inputType").value;
         let editFavorite = document.getElementById("favoriteChecked").checked;
@@ -519,14 +517,14 @@
             });
         }
 
-        entries[selectedtrackid].title = editTitle;
-        entries[selectedtrackid].activitytype = editType;
-        entries[selectedtrackid].favorite = editFavorite;
-        entries[selectedtrackid].sharing = editShared;
+        entries.get(selectedtrackid).title = editTitle;
+        entries.get(selectedtrackid).activitytype = editType;
+        entries.get(selectedtrackid).favorite = editFavorite;
+        entries.get(selectedtrackid).sharing = editShared;
 
         var row = document.getElementById("r"+selectedtrackid);
         row.innerHTML="";
-        addRowInfo(row, entries[selectedtrackid]);
+        addRowInfo(row, entries.get(selectedtrackid));
         bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).hide();
     }
 

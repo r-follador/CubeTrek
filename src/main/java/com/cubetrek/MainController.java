@@ -97,7 +97,6 @@ public class MainController {
         model.addAttribute("monthlyTotalJSON", activitityService.getMonthlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("yearlyTotalJSON", activitityService.getYearlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
-        model.addAttribute("recentTracks",  activitityService.getTenRecentActivities(user));
         model.addAttribute("favoriteTracks",  activitityService.getFavoriteActivities(user));
         model.addAttribute("totalActivities", activitityService.getActivityCount(user));
         logger.info("View Dashboard by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
