@@ -59,17 +59,17 @@ public class RegistrationController {
 
     @PostMapping("/registration")
     public String registerUserAccount(
-            @ModelAttribute("user") @Valid UserDto userDto, @RequestParam(name="cf-turnstile-response", required = false, defaultValue = "none") String cf_turnstile_response, BindingResult bindingResult, HttpServletRequest request) {
+            @ModelAttribute("user") @Valid UserDto userDto, BindingResult bindingResult, @RequestParam(name="cf-turnstile-response", required = false, defaultValue = "none") String cf_turnstile_response, HttpServletRequest request) {
 
         if (bindingResult.hasErrors())
             return "registration";
 
         try {
             if (cf_turnstile_response.equals("none")) {
-                logger.error("Error Registration: no Cloudflare Turnstile transferred for Username: "+userDto.getName()+", email "+userDto.getEmail(), ", IP "+request.getRemoteAddr());
-                throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, please try again later or send an email to contact@cubetrek.com");
+                logger.error("Error Registration: no Cloudflare Turnstile transferred for Username: "+userDto.getName()+", email "+userDto.getEmail()+ ", IP "+request.getHeader("X-FORWARDED-FOR")); //"X-FORWARDED-FOR" contains the originating IP from NGINX
+                throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, you might be a bot. Did you click the Human Verification button?");
             }
-            HttpResponse<String> response = verifyCloudflareTurnstile(cf_turnstile_response);
+            HttpResponse<String> response = verifyCloudflareTurnstile(cf_turnstile_response, request.getHeader("X-FORWARDED-FOR"));
             if (response.statusCode()!=200) {
                 logger.error("Error Registration: Cloudflare Turnstile returns not 200: "+response.statusCode()+"; "+response.body());
                 throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not finalize Registration, please try again later or send an email to contact@cubetrek.com");
@@ -98,12 +98,14 @@ public class RegistrationController {
         return "successRegister";
     }
 
-    public HttpResponse<String> verifyCloudflareTurnstile(String cf_turnstyle_response) throws URISyntaxException, IOException, InterruptedException {
+    public HttpResponse<String> verifyCloudflareTurnstile(String cf_turnstyle_response, String remoteip) throws URISyntaxException, IOException, InterruptedException {
+        //See https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
         HttpClient httpClient = HttpClient.newHttpClient();
 
         Map<String, String> content = new HashMap<>();
         content.put("secret", "0x4AAAAAAACez2pOfKpLEGVmbCpkPL8n73E");
         content.put("response", cf_turnstyle_response);
+        content.put("remoteip", remoteip);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .header("Content-Type", "application/x-www-form-urlencoded")

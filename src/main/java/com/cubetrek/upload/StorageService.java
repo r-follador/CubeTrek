@@ -296,7 +296,7 @@ public class StorageService {
             //throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
         }
 
-        trackDataRepository.save(trackData);
+        trackDataRepository.saveAndFlush(trackData);
 
         UploadResponse ur = new UploadResponse();
         ur.setTrackID(trackData.getId());

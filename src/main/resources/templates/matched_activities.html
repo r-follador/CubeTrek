@@ -456,9 +456,9 @@
         }
     }
 
-    function fetchgeojson(trackid, reload) {
+    function fetchgeojson(trackid, first_load) {
         var url = "/api/geojson/"+trackid+".geojson";
-        if (!reload) {
+        if (!first_load) {
             map.removeLayer('route');
             map.removeSource('route');
         }
@@ -471,7 +471,7 @@
                     document.getElementById("errorbox").style.display = 'block';
                 }
             })
-            .then(geojson => {prepareMap2d(geojson, reload);});
+            .then(geojson => {prepareMap2d(geojson, first_load);});
     }
 
     function minToString(minutes) {
@@ -707,8 +707,8 @@
 
     var map;
 
-    function prepareMap2d(jsonData, reload) {
-        if (reload) {
+    function prepareMap2d(jsonData, first_load) {
+        if (first_load) {
             map = new maplibregl.Map({
                 container: 'map2d',
                 style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI', // stylesheet location
