@@ -12,6 +12,11 @@
     <script src='../js/maplibre-gl.js'></script>
     <link href='../css/maplibre-gl.css' rel='stylesheet'/>
     <script src="../js/d3.min.js"></script>
+    <style>
+        .hover-row:hover {
+            background-color: rgba(185, 211, 246, 0.32);
+        }
+    </style>
 </head>
 <body>
 <header th:replace="dashboard.html :: header">
@@ -45,7 +50,7 @@
                 Error fetching data
             </div>
 
-            <div class="btn-group mb-4" role="group" aria-label="Basic radio toggle button group">
+            <div class="btn-group flex-wrap mb-4" role="group" aria-label="Basic radio toggle button group">
                 <input type="radio" class="btn-check" name="btnradio" id="btnradio1" onclick="filter('none')"checked>
                 <label class="btn btn-outline-dark " for="btnradio1">All Activities: [(${numberEntries})]</label>
 
@@ -55,7 +60,7 @@
                 </th:block>
             </div>
 
-            <table class="table table-hover">
+            <table class="table">
                 <thead>
                 <tr>
                     <th></th>
@@ -70,15 +75,17 @@
                 <tbody id="tbody">
                 </tbody>
             </table>
-            <button id="buttonMore" type="button" class="btn btn-primary pt-3" onclick="loadMoreEntries()">Load more (<span id="remaining">x</span> remaining)</button>
+
+                <button id="buttonMore" type="button" class="btn btn-primary pt-3" onclick="loadMoreEntries()">Load more (<span id="remaining">x</span> remaining)</button>
         </main>
         <div class="container" id="springer" style="display:none;">
             <div class ="row">
                 <div class="col-5"><div id="map2d" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
-                <div class="col-5"><div id="graph" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
+                <div class="col-5"><div id="inlinegraph" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
                 <div class="col-2">
-                    <div class="row"><a id="springerShow3D" class="btn btn-light" href="#">Show 3D View</a></div>
-                    <div class="row"><a id="springerEdit" class="btn btn-light mt-3" href="javascript:void(0);">Edit Track</a></div>
+                    <div class="row"><a id="springerShow3D" class="btn btn-light" href="#">3D View</a></div>
+                    <div class="row"><a id="springerShowMatching" class="btn btn-light mt-1" href="#">Matching activities</a></div>
+                    <div class="row"><a id="springerEdit" class="btn btn-light mt-3" href="javascript:void(0);">Edit</a></div>
                 </div>
             </div>
         </div>
@@ -340,6 +347,7 @@
             entries.set(entry.id, entry);
             var newRow = tablebody.insertRow();
             newRow.id="r"+entry.id;
+            newRow.classList.add("hover-row");
             addRowInfo(newRow, entry);
             shownEntries++;
         }
@@ -587,6 +595,14 @@
         fetchgeojson(entryid);
         document.getElementById("springerEdit").addEventListener("click", function(){menu(entryid);});
         document.getElementById("springerShow3D").href="/view/"+entryid;
+
+        if (entries.get(entryid).trackgroup) {
+            document.getElementById("springerShowMatching").href="/matching/"+entries.get(entryid).trackgroup;
+            document.getElementById("springerShowMatching").style.display = "block";
+        } else {
+            document.getElementById("springerShowMatching").style.display = "none";
+        }
+
     }
 
 
@@ -600,7 +616,7 @@
                     document.getElementById("errorbox").style.display = 'block';
                 }
             })
-            .then(geojson => {prepareMap2d(geojson, map_firstload);drawGraph(geojson);});
+            .then(geojson => {prepareMap2d(geojson, map_firstload);drawInlineGraph(geojson);});
     }
 
     var map;
@@ -673,7 +689,7 @@
     }
 
 
-    function drawGraph(jsonData) {
+    function drawInlineGraph(jsonData) {
         var datas = [];
         let previousDistance = jsonData.geometry.coordinates[0][0][4];
         let previousElevation = jsonData.geometry.coordinates[0][0][2];
@@ -689,11 +705,11 @@
 
         this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
-        this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right,
-            this.height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
+        this.width = document.getElementById('inlinegraph').clientWidth-this.margingraph.left-this.margingraph.right,
+            this.height = document.getElementById('inlinegraph').clientHeight-this.margingraph.top-this.margingraph.bottom;
 
-        d3.select("#graph").select("svg").remove(); //clear if exists already
-        this.svg = d3.select("#graph")
+        d3.select("#inlinegraph").select("svg").remove(); //clear if exists already
+        this.svg = d3.select("#inlinegraph")
             .append("svg")
             .attr("width", this.width + this.margingraph.left + this.margingraph.right)
             .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
@@ -734,8 +750,5 @@
             .attr("class", "datapath")
             .attr("d", this.functionpath)
     }
-
-
 </script>
-
 </html>

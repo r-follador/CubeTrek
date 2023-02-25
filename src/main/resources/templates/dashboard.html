@@ -8,6 +8,13 @@
     <title>CubeTrek - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script><link href="../css/dashboard.css" rel="stylesheet">
+    <script src='../js/maplibre-gl.js'></script>
+    <link href='../css/maplibre-gl.css' rel='stylesheet'/>
+    <style>
+        .hover-row:hover {
+            background-color: rgba(185, 211, 246, 0.32);
+        }
+    </style>
 </head>
 <body>
 <header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
@@ -109,7 +116,7 @@
                 Error fetching data
             </div>
 
-            <table class="table table-hover">
+            <table class="table">
                 <thead>
                 <tr>
                     <th></th>
@@ -119,13 +126,25 @@
                     <th> Ascent </th>
                     <th> Distance </th>
                     <th></th>
-                    <th></th>
                 </tr>
                 </thead>
                 <tbody id="tbody">
                 </tbody>
             </table>
             <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
+
+            <div class="container" id="springer" style="display:none;">
+                <div class ="row">
+                    <div class="col-5"><div id="map2d" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
+                    <div class="col-5"><div id="inlinegraph" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
+                    <div class="col-2">
+                        <div class="row"><a id="springerShow3D" class="btn btn-light" href="#">3D View</a></div>
+                        <div class="row"><a id="springerShowMatching" class="btn btn-light mt-1" href="#">Matching activities</a></div>
+                        <div class="row"><a id="springerEdit" class="btn btn-light mt-3" href="javascript:void(0);">Edit</a></div>
+                    </div>
+                </div>
+            </div>
+
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Totals
@@ -535,15 +554,14 @@
     /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
     icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
     /*[/]*/
-</script>
-<script>
 
     var dataHeatmap = [(${activityHeatmapJSON})];
 
     var datamonthly = [(${monthlyTotalJSON})];
 
     var datayearly = [(${yearlyTotalJSON})];
-
+</script>
+<script th:inline="none">
     var parseDate = d3.utcParse("%Y-%m-%dT%H:%M:%S%Z");
     let metric = true;
     const miles_per_km = 0.621371;
@@ -1250,11 +1268,14 @@
             entries.set(entry.id, entry);
             var newRow = tablebody.insertRow();
             newRow.id="r"+entry.id;
+            newRow.classList.add("hover-row");
             addRowInfo(newRow, entry);
         }
+        openPane(data[0].id);
     }
 
     function addRowInfo(row, entry) {
+        row.setAttribute("onclick","openPane("+entry.id+");");
         row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
         row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
         row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
@@ -1262,7 +1283,6 @@
         row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
         row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
         row.insertCell().innerHTML = (entry.trackgroup?"<a href='/matching/"+entry.trackgroup+"'><img title='Matching Activities' src='/assets/matched.svg'></a>":"");
-        row.insertCell().innerHTML = "<div onclick='menu("+entry.id+")' style='cursor:pointer' id='c"+entry.id+"'>...</div>"
     }
 
     var menu = function(id) {
@@ -1450,6 +1470,186 @@
         row.style.opacity = 0;
         await new Promise(resolve => setTimeout(resolve, 1000));
         row.parentNode.removeChild(row);
+    }
+
+
+    var springerElement = document.getElementById("springer");
+    var lastclicked = -1;
+    function openPane(entryid) {
+        if (lastclicked === entryid) { //already open
+            springerElement.style.display = "none";
+            document.getElementById("springerRow").remove();
+            lastclicked = -1;
+            return;
+        }
+        lastclicked = entryid;
+        if (document.getElementById("springerRow"))
+            document.getElementById("springerRow").remove();
+        const newTr = document.createElement("tr"); newTr.setAttribute("id","springerRow");
+        const newTd = document.createElement("td"); newTd.setAttribute("colspan", 7);
+        newTd.appendChild(springerElement);
+        newTr.appendChild(newTd);
+
+        var row = document.getElementById("r"+entryid);
+        springerElement.style.display = "block";
+        row.parentNode.insertBefore(newTr, row.nextSibling);
+        fetchgeojson(entryid);
+        document.getElementById("springerEdit").addEventListener("click", function(){menu(entryid);});
+        document.getElementById("springerShow3D").href="/view/"+entryid;
+
+        if (entries.get(entryid).trackgroup) {
+            document.getElementById("springerShowMatching").href="/matching/"+entries.get(entryid).trackgroup;
+            document.getElementById("springerShowMatching").style.display = "block";
+        } else {
+            document.getElementById("springerShowMatching").style.display = "none";
+        }
+
+    }
+
+
+    function fetchgeojson(trackid) {
+        var url = "/api/geojson/"+trackid+".geojson";
+        fetch(url)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    document.getElementById("errorbox").style.display = 'block';
+                }
+            })
+            .then(geojson => {prepareMap2d(geojson, map_firstload);drawInlineGraph(geojson);});
+    }
+
+    var map;
+    var map_firstload = true;
+
+    function prepareMap2d(jsonData, map_firstload) {
+        if (map_firstload) {
+            map_firstload = false;
+            map = new maplibregl.Map({
+                container: 'map2d',
+                style: {
+                    'version': 8,
+                    'sources': {
+                        'raster-tiles': {
+                            'type': 'raster',
+                            'tiles': [
+                                'https://api.maptiler.com/maps/ch-swisstopo-lbm/256/{z}/{x}/{y}.png?key=Nq5vDCKAnSrurDLNgtSI '
+                            ],
+                            'tileSize': 256,
+                        }
+                    },
+                    'layers': [
+                        {
+                            'id': 'simple-tiles',
+                            'type': 'raster',
+                            'source': 'raster-tiles',
+                            'minzoom': 0,
+                            'maxzoom': 22
+                        }
+                    ]
+                },
+                bounds: [[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]],
+                touchPitch: false,
+                maxPitch: 0,
+                minZoom: 0,
+                maxZoom: 13,
+                attributionControl: false
+            });
+
+
+            map.on('load', function () {
+                map.addSource('route', {
+                        type: 'geojson',
+                        data: jsonData
+                    }
+                );
+                map.addLayer({
+                    'id': 'route',
+                    'type': 'line',
+                    'source': 'route',
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': '#ff8001',
+                        'line-width': 3
+                    }
+                });
+            });
+        } else {
+            map.getSource('route').setData({
+                    type: 'geojson',
+                    data: jsonData
+                }
+            );
+            map.fitBounds([[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]]);
+
+        }
+    }
+
+
+    function drawInlineGraph(jsonData) {
+        var datas = [];
+        let previousDistance = jsonData.geometry.coordinates[0][0][4];
+        let previousElevation = jsonData.geometry.coordinates[0][0][2];
+
+        for (var i=0; i<jsonData.geometry.coordinates[0].length; i++) {
+            let elevation = jsonData.geometry.coordinates[0][i][2];
+            let distance = jsonData.geometry.coordinates[0][i][4];
+
+            previousElevation = elevation;
+            previousDistance = distance;
+            datas.push({'altitude' : elevation, 'distance' : distance});
+        }
+
+        this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
+
+        this.width = document.getElementById('inlinegraph').clientWidth-this.margingraph.left-this.margingraph.right,
+            this.height = document.getElementById('inlinegraph').clientHeight-this.margingraph.top-this.margingraph.bottom;
+
+        d3.select("#inlinegraph").select("svg").remove(); //clear if exists already
+        this.svg = d3.select("#inlinegraph")
+            .append("svg")
+            .attr("width", this.width + this.margingraph.left + this.margingraph.right)
+            .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
+
+        this.yScale;
+        this.xScale;
+        this.functionpath = d3.line();
+
+        this.yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.altitude*(metric?1:feet_per_m)); }));
+        this.functionpath.y((d) => { return this.yScale(d.altitude*(metric?1:feet_per_m)) });
+
+        this.xScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }));
+        this.functionpath.x((d) => { return this.xScale(d.distance*(metric?1/1000:miles_per_km/1000)) });
+
+        this.xAxisLabel = d3.axisBottom(this.xScale);
+        this.yAxisLabel = d3.axisLeft(this.yScale);
+
+        this.yScale.range([this.height,0]);
+        this.xScale.range([0, this.width]);
+
+        this.svg.append("g")
+            .attr("transform", "translate(0," + this.height + ")")
+            .attr("class","myXaxis")
+            .call(this.xAxisLabel);
+
+        this.svg.append("g")
+            .attr("class","myYaxis")
+            .call(this.yAxisLabel);
+
+        this.svg.append("path")
+            .datum(datas)
+            .attr("fill", "none")
+            .attr("stroke", "#ff8001")
+            .attr("stroke-width", 2)
+            .attr("class", "datapath")
+            .attr("d", this.functionpath)
     }
 
 
