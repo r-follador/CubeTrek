@@ -1,14 +1,12 @@
 package com.cubetrek.database;
 
 import org.locationtech.jts.geom.Point;
-import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
-import org.springframework.scheduling.annotation.Scheduled;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -118,6 +116,14 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
             ORDER BY trackdata.datetrack;
             """, nativeQuery = true)
     List<TrackData.TrackMetadata> findTrackOfGivenDay(long user_id, String day, String user_timezone);
+
+    @Query(value = """ 
+            SELECT DISTINCT ON (COALESCE(trackdata.trackgroup, -trackdata.id)) trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.favorite, trackdata.trackgroup, ST_X(trackdata.center) AS longitude, ST_Y(trackdata.center) AS latitude FROM trackdata
+            WHERE trackdata.owner = :user_id AND trackdata.hidden = false
+            ORDER BY (COALESCE(trackdata.trackgroup, -trackdata.id)), trackdata.datetrack DESC;
+            """, nativeQuery = true)
+    List<TrackData.TrackMapMetadata> findAllTracksPositionByUser(long user_id);
+
 
     public interface PublicActivity {
         TrackData.Activitytype getActivitytype();

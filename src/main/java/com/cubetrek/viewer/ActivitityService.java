@@ -4,12 +4,10 @@ import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
 import com.cubetrek.database.Users;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -39,6 +37,11 @@ public class ActivitityService {
         return trackDataRepository.getActivityCounts(user.getId()).stream()
                 .map(ActivityCount::new)
                 .collect(Collectors.toList());
+    }
+
+    public List<TrackData.TrackMapMetadata> getAllTracksPosition(Users user) {
+        //get latest activity for each trackgroup (and all remaining activities for non-grouped activities)
+        return trackDataRepository.findAllTracksPositionByUser(user.getId());
     }
 
     public static class ActivityCount {

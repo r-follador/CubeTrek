@@ -5,6 +5,7 @@ import com.cubetrek.newsletter.NewsletterService;
 import com.cubetrek.registration.UserDto_minimal;
 import com.cubetrek.upload.*;
 import com.cubetrek.viewer.ActivitityService;
+import com.cubetrek.viewer.SlimTrackGeojson;
 import com.cubetrek.viewer.TrackGeojson;
 import com.cubetrek.viewer.TrackViewerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -125,6 +126,16 @@ public class MainController {
         return "activity_list";
     }
 
+    @GetMapping("/activities_map")
+    public String getActivitiesMap(Model model) throws JsonProcessingException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        model.addAttribute("numberEntries", activitityService.countNumberOfEntries(user));
+        model.addAttribute("activityCounts", activitityService.getActivityTypeCount(user));
+        model.addAttribute("activitiesPosition", (new ObjectMapper()).writeValueAsString(activitityService.getAllTracksPosition(user)));
+        return "activity_map";
+    }
+
     @ResponseBody
     @GetMapping(value="/activities_ajax", produces = "application/json")
     public List<TrackData.TrackMetadata> getActivitiesAjax(@RequestParam("size") int size, @RequestParam("page") int page, @RequestParam("sortby") String sort, @RequestParam("descending") boolean descending, @RequestParam(value = "filterby", required = false) Optional<String> activitytype) {
@@ -243,10 +254,18 @@ public class MainController {
 
     @ResponseBody
     @GetMapping(value = "/api/geojson/{itemid}.geojson", produces = "application/json")
-    public TrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {
+    public TrackGeojson getTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         response.addHeader("Cache-Control", "max-age=86400, public");
         return trackViewerService.getTrackGeojson(authentication, trackid);
+    }
+
+    @ResponseBody
+    @GetMapping(value = "/api/simple_geojson/{itemid}.geojson", produces = "application/json")
+    public SlimTrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        response.addHeader("Cache-Control", "max-age=86400, public");
+        return trackViewerService.getSlimTrackGeojson(authentication, trackid, 100);
     }
 
     @ResponseBody

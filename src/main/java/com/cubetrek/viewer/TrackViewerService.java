@@ -2,15 +2,17 @@ package com.cubetrek.viewer;
 
 import com.cubetrek.database.*;
 import com.cubetrek.ExceptionHandling;
-import com.sunlocator.topolibrary.GLTFDatafile;
-import com.sunlocator.topolibrary.HGTFileLoader_LocalStorage;
-import com.sunlocator.topolibrary.HGTWorker;
-import com.sunlocator.topolibrary.LatLonBoundingBox;
+import com.sunlocator.topolibrary.*;
+import com.sunlocator.topolibrary.GPX.GPXWorker;
 import com.sunlocator.topolibrary.MapTile.GLTFWorker;
 import com.sunlocator.topolibrary.MapTile.MapTileWorker;
+import io.jenetics.jpx.Track;
+import io.jenetics.jpx.TrackSegment;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +47,7 @@ public class TrackViewerService {
     private String hgt_3dem_files;
 
     HGTFileLoader_LocalStorage hgtFileLoader_3DEM;
+    GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
 
     @PostConstruct
     public void init() {
@@ -99,6 +102,51 @@ public class TrackViewerService {
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
         return new TrackGeojson(track);
+    }
+
+    /**
+     * get a slim geojson (only lat/lon coordinates, no altitude, no timing, no distance); only title and id as properties
+     * @param authentication to check for read privileges
+     * @param trackid
+     * @param reduceTrackEpsilon if >0 will further reduce the number of points by the given epsilon (in meters)
+     * @return
+     */
+    @Transactional
+    public SlimTrackGeojson getSlimTrackGeojson(Authentication authentication, long trackid, double reduceTrackEpsilon) {
+        TrackData trackdata = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
+        if (!isReadAccessAllowed(authentication, trackdata))
+            throw new ExceptionHandling.TrackViewerException(noAccessMessage);
+
+        if (reduceTrackEpsilon <= 0) {
+            return new SlimTrackGeojson(trackdata);
+        }
+
+        Track trackReduced = GPXWorker.reduceTrackSegments(trackdata.getTrackgeodata().getMultiLineString(), reduceTrackEpsilon);
+
+        LineString[] lineStrings = new LineString[trackReduced.getSegments().size()];
+
+        for (int i = 0; i < trackReduced.getSegments().size(); i++) {
+            TrackSegment segment = trackReduced.getSegments().get(i);
+            int points = segment.getPoints().size();
+            Coordinate[] cs = new Coordinate[points];
+
+            for (int j = 0; j < points; j++) {
+                cs[j] = new Coordinate(segment.getPoints().get(j).getLongitude().doubleValue(), segment.getPoints().get(j).getLatitude().doubleValue());
+            }
+            PackedCoordinateSequence.Float fs = new PackedCoordinateSequence.Float(cs, 2);
+            lineStrings[i] = new LineString(fs, gf);
+        }
+
+        MultiLineString multilinestring = new MultiLineString(lineStrings, gf);
+
+        TrackData out = new TrackData();
+        out.setTitle(trackdata.getTitle());
+        out.setId(trackdata.getId());
+        out.setTrackgroup(trackdata.getTrackgroup());
+        TrackGeodata tgd = new TrackGeodata();
+        tgd.setMultiLineString(multilinestring);
+        out.setTrackgeodata(tgd);
+        return new SlimTrackGeojson(out);
     }
 
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");

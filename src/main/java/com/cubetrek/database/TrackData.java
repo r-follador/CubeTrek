@@ -286,6 +286,27 @@ public class TrackData implements Serializable {
         Long getTrackgroup();
     }
 
+    public interface TrackMapMetadata {
+        Long getId();
+
+        @JsonSerialize(using = TitleSerializer.class, as=String.class)
+        String getTitle();
+
+        @JsonSerialize(using = TimestampSerializer.class)
+        java.sql.Timestamp getDatetrack();
+
+        double getLatitude();
+
+        double getLongitude();
+
+        TrackData.Activitytype getActivitytype();
+
+        boolean isFavorite();
+
+        @JsonSerialize(using= ToStringSerializer.class)
+        Long getTrackgroup();
+    }
+
     public static class TimestampSerializer extends JsonSerializer<Timestamp> {
         @Override
         public void serialize(Timestamp value, JsonGenerator gen, SerializerProvider serializers) throws IOException {

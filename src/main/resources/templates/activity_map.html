@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - Activity Map</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
+    <script src='../js/maplibre-gl.js'></script>
+    <link href='../css/maplibre-gl.css' rel='stylesheet'/>
+    <script src="../js/d3.min.js"></script>
+    <style>
+        #map { width: 100%; height: 75vh;}
+    </style>
+</head>
+<body>
+<header th:replace="dashboard.html :: header">
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav th:replace="dashboard.html :: navigation(field='activitymap')" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        </nav>
+    </div>
+
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Activity Map</h1>
+            </div>
+
+            <div th:if="${numberEntries==0}" class="card m-5" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Your Profile is empty 😔</h5>
+                    <p class="card-text">Add your Tracks to get started. Upload your files, link your Garmin and Polar account.</p>
+                    <a href="/upload" class="btn btn-primary m-1">Upload Activity Files</a>
+                    <a href="/profile" class="btn btn-primary m-1">Link Accounts</a>
+                </div>
+            </div>
+
+            <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
+                Error fetching data
+            </div>
+
+            <div class="btn-group flex-wrap mb-4" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" onclick="filter('none')"checked>
+                <label class="btn btn-outline-dark " for="btnradio1">All Activities: [(${numberEntries})]</label>
+
+                <th:block th:each="act : ${activityCounts}">
+                    <input type="radio" class="btn-check" name="btnradio" th:id="|radio${act.activitytype}|" autocomplete="off" th:onclick="|filter(${act.activitytype.ordinal()})|">
+                    <label class="btn btn-outline-primary" th:for   ="|radio${act.activitytype}|" th:text="|${act.activitytype.displayValue}: ${act.count}|">Radio</label>
+                </th:block>
+            </div>
+
+            <div class="row">
+                <div class="col-2">
+                    <div class="row">
+                        <div class="col">
+                            <svg width="50" height="20">
+                                <polygon points="0,10 50,10" style="fill:none;stroke:rgb(226, 86, 9);stroke-width:3" />
+                            </svg>
+                        </div>
+                        <div class="col">
+                            Single Activity
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <svg width="50" height="20">
+                                <polygon points="0,10 50,10" style="fill:none;stroke:rgb(47, 126, 188);stroke-width:3" />
+                            </svg>
+                        </div>
+                        <div class="col">
+                            Activity Group
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <strong><span id="act_title">
+                            Activity Title
+                        </span></strong>
+                        <div class="row" id="act_date">
+                            12 March 2023
+                        </div>
+                        <a id="springerShow3D" class="btn btn-light btn-sm" href="#">3D View</a>
+                    </div>
+
+
+                </div>
+                <div class="col-10">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script th:inline="javascript">
+    var icons = {};
+    /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
+    icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
+    /*[/]*/
+
+    var numberActivityEntries = {};
+    /*[# th:each="act : ${activityCounts}"]*/
+    numberActivityEntries[ /*[[${act.activitytype}]]*/ ] =[ /*[[${act.count}]]*/];
+    /*[/]*/
+
+    const activitiesposition = [(${activitiesPosition})];
+
+</script>
+
+<script>
+    const totalEntries = [(${numberEntries})];
+    let metric = true;
+    const miles_per_km = 0.621371;
+    const feet_per_m = 3.28084;
+    var numberEntries;
+    var filterBy = "none";
+</script>
+
+<script th:inline="none">
+    let data = {
+        "type": "FeatureCollection",
+        "features": [
+
+        ]};
+
+    settings();
+    function init() {
+        if (filterBy === "none")
+            numberEntries = totalEntries;
+        else {
+            numberEntries = numberActivityEntries[filterBy][0]
+        }
+
+        for (var entry of activitiesposition) {
+            data.features.push({ "type": "Feature", "properties": { "id": entry.id, "title": entry.title }, "geometry": { "type": "Point", "coordinates": [ entry.longitude, entry.latitude, 0.0 ] } });
+        }
+        prepareMap();
+    }
+
+    function minToString(minutes) {
+        var m = minutes % 60;
+        var h = (minutes-m)/60;
+        return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+    function settings() {
+        if (localStorage.getItem("metric") === null) {
+            localStorage.setItem("metric", true);
+        } else {
+            metric = (localStorage.getItem("metric")==="true");
+        }
+
+        if (metric) {
+            document.getElementById("metricChecked").checked = true;
+            setMetric();
+        } else {
+            document.getElementById("metricChecked").checked = false;
+            setMetric();
+        }
+    }
+
+    function clickSettingsMetric() {
+        metric = document.getElementById("metricChecked").checked;
+        localStorage.setItem("metric",metric);
+        setMetric();
+    }
+
+    function setMetric() {
+        document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        init();
+    }
+
+    function filter(value) {
+        if (value ==="none")
+            filterBy = "none";
+        else
+            filterBy = Object.keys(icons)[value];
+        init();
+    }
+
+    var map;
+    var geojsonfeatures = [];
+
+    function prepareMap() {
+        map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI',
+            center: [0,0],
+            zoom: 1,
+            touchPitch: false,
+            maxPitch: 0,
+            minZoom: 0,
+            maxZoom: 11,
+            attributionControl: false
+        });
+
+        map.on('load', function () {
+            // Add a new source from our GeoJSON data and
+            // set the 'cluster' option to true. GL-JS will
+            // add the point_count property to your source data.
+            map.addSource('activities', {
+                type: 'geojson',
+                data: data,
+                cluster: true,
+                clusterMaxZoom: 14, // Max zoom to cluster points on
+                clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+            });
+
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'activities',
+                maxzoom: 9,
+                filter: ['has', 'point_count'],
+                paint: {
+                    // Use step expressions (https://maplibre.org/maplibre-gl-js-docs/style-spec/#expressions-step)
+                    // with three steps to implement three types of circles:
+                    //   * Blue, 20px circles when point count is less than 100
+                    //   * Yellow, 30px circles when point count is between 100 and 750
+                    //   * Pink, 40px circles when point count is greater than or equal to 750
+                    'circle-color': [
+                        'step',
+                        ['get', 'point_count'],
+                        '#51bbd6',
+                        100,
+                        '#f1f075',
+                        750,
+                        '#f28cb1'
+                    ],
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        20,
+                        100,
+                        30,
+                        750,
+                        40
+                    ]
+                }
+            });
+
+            map.addSource('tracks', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: geojsonfeatures
+                    }
+                }
+            );
+
+            map.addLayer({
+                id: 'unclustered-point',
+                type: 'circle',
+                source: 'activities',
+                maxzoom: 9,
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                    'circle-color': 'rgba(17,180,218,0.47)',
+                    'circle-radius': 12,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+
+            map.addLayer({
+                id: 'tracks-layer',
+                type: 'line',
+                source: 'tracks',
+                minzoom: 8,
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': [
+                        'case',
+                        ['has', 'color'],
+                        ['get', 'color'],
+                        '#ff8001' // fallback color if the feature does not have a color property
+                    ],
+                    'line-width': 3
+                }
+            });
+
+            map.on('click', 'clusters', function (e) {
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['clusters']
+                });
+                var clusterId = features[0].properties.cluster_id;
+                map.getSource('activities').getClusterExpansionZoom(
+                    clusterId,
+                    function (err, zoom) {
+                        if (err) return;
+
+                        map.easeTo({
+                            center: features[0].geometry.coordinates,
+                            zoom: Math.min(zoom, 8)
+                        });
+                    }
+                );
+            });
+
+            map.on('render', function() {
+                if (map.getZoom() < 8)
+                    return;
+                var unclusteredPoints = map.queryRenderedFeatures({layers: ['unclustered-point']});
+                for (var point of unclusteredPoints) {
+                    fetchgeojson(point.properties.id);
+                }
+                var clusteredPoints = map.queryRenderedFeatures({layers: ['clusters']});
+
+                for (var cluster of clusteredPoints) {
+                    loadClusterChildrenRecursive(cluster.properties.cluster_id);
+                }
+            });
+
+            function loadClusterChildrenRecursive(cluster_id) {
+                map.getSource('activities').getClusterChildren(
+                    cluster_id,
+                    function (err, features) {
+                        if (err) return;
+                        for (var child of features) {
+                            if (child.properties.id !== undefined)
+                                fetchgeojson(child.properties.id);
+                            if (child.properties.cluster_id !== undefined)
+                                loadClusterChildrenRecursive(child.properties.cluster_id);
+                        }
+                    }
+                );
+            }
+
+// When a click event occurs on a feature in
+// the unclustered-point layer, open a popup at
+// the location of the feature, with
+// description HTML from its properties.
+            map.on('click', 'unclustered-point', function (e) {
+                map.easeTo({
+                    center: e.features[0].geometry.coordinates,
+                    zoom: 8
+                });
+            });
+
+            map.on('mouseenter', 'clusters', function () {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'clusters', function () {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+    }
+
+    var loadedTracks = new Set();
+
+
+    async function fetchgeojson(trackid) {
+        if (trackid === undefined) {
+            console.log("Fetchgeojson: undefined");
+            return;
+        }
+        if (loadedTracks.has(trackid))
+            return;
+        loadedTracks.add(trackid);
+        var url = "/api/simple_geojson/"+trackid+".geojson";
+        fetch(url)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    document.getElementById("errorbox").style.display = 'block';
+                }
+            })
+            .then(jsondata => {
+                if (jsondata.properties.trackgroup) {
+                    let color = d3.interpolateBlues((Math.random() / 5) + 0.6);
+                    jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
+                }
+                else {
+                    let color = d3.interpolateOranges((Math.random() / 5) + 0.6);
+                    jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
+                }
+
+                geojsonfeatures.push(jsondata);
+                map.getSource('tracks').setData({
+                        type: 'FeatureCollection',
+                        features: geojsonfeatures
+                    }
+                );
+            });
+    }
+
+
+</script>
+</html>

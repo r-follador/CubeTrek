@@ -1,7 +1,7 @@
 package com.cubetrek.viewer;
 
-import com.cubetrek.database.TrackGeodata;
 import com.cubetrek.database.TrackData;
+import com.cubetrek.database.TrackGeodata;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -21,8 +21,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-@JsonSerialize(using = TrackGeojson.GeojsonSerializer.class)
-public class TrackGeojson implements Serializable{
+@JsonSerialize(using = SlimTrackGeojson.GeojsonSerializer.class)
+public class SlimTrackGeojson implements Serializable{
 
     @Serial
     private static final long serialVersionUID = 2135L;
@@ -31,15 +31,15 @@ public class TrackGeojson implements Serializable{
     TrackGeodata data;
 
 
-    public TrackGeojson(TrackData metadata) {
+    public SlimTrackGeojson(TrackData metadata) {
         this.metadata = metadata;
         data =metadata.getTrackgeodata();
     }
 
     @Transactional
-    protected static class GeojsonSerializer extends JsonSerializer<TrackGeojson> {
+    protected static class GeojsonSerializer extends JsonSerializer<SlimTrackGeojson> {
         @Override
-        public void serialize(TrackGeojson value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(SlimTrackGeojson value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
             gen.writeStringField("type", "Feature");
 
@@ -55,21 +55,13 @@ public class TrackGeojson implements Serializable{
                     Coordinate[] cs = value.data.getMultiLineString().getGeometryN(i).getCoordinates();
                     int points = value.data.getMultiLineString().getGeometryN(i).getNumPoints();
 
-                    double dist = 0;
-                    LatLon lastPoint = new LatLon(cs[0].getY(), cs[0].getX());;
-
                     for (int j=0; j<points; j++) { //Loop over Points
                         if (j>0) {
                             LatLon currentPoint = new LatLon(cs[j].getY(), cs[j].getX());
-                            dist += HGTWorker.distanceBetweenPoints(currentPoint, lastPoint);
-                            lastPoint = currentPoint;
                         }
                         gen.writeStartArray();
                             gen.writeNumber((float)cs[j].x); //lon
                             gen.writeNumber((float)cs[j].y); //lat
-                            gen.writeNumber(value.data.getAltitudes().get(i)[j]); //elevation
-                            gen.writeObject(value.data.getTimes().get(i)[j]); //datetime
-                            gen.writeObject((int)dist);
                         gen.writeEndArray();
                     }
                     gen.writeEndArray();
@@ -78,33 +70,17 @@ public class TrackGeojson implements Serializable{
 
             gen.writeEndObject(); // \geometries
 
-
-            gen.writeFieldName("properties");
-            gen.writeStartObject();
-                gen.writeStringField("name", value.metadata.getTitle());
-                gen.writeNumberField("id", value.metadata.getId());
+            if (value.metadata != null) {
+                gen.writeFieldName("properties");
+                gen.writeStartObject();
+                if (value.metadata.getTitle()!=null)
+                    gen.writeStringField("name", value.metadata.getTitle());
+                if (value.metadata.getId()!=null)
+                    gen.writeNumberField("id", value.metadata.getId());
                 if (value.metadata.getTrackgroup() != null)
                     gen.writeStringField("trackgroup", value.metadata.getTrackgroup().toString());
-                /**gen.writeFieldName("zoneddatetime");
-                    for (ZonedDateTime[] zonedDateTimes : value.data.getTimes())
-                        gen.writeObject(zonedDateTimes);**/
-                gen.writeFieldName("bbox");
-                gen.writeStartObject();
-                    gen.writeNumberField("boundingBoxN", value.metadata.getBBox().getN_Bound());
-                    gen.writeNumberField("boundingBoxE", value.metadata.getBBox().getE_Bound());
-                    gen.writeNumberField("boundingBoxS", value.metadata.getBBox().getS_Bound());
-                    gen.writeNumberField("boundingBoxW", value.metadata.getBBox().getW_Bound());
-                    gen.writeNumberField("centerLat", value.metadata.getBBox().getCenter().getLatitude());
-                    gen.writeNumberField("centerLon", value.metadata.getBBox().getCenter().getLongitude());
-                    gen.writeNumberField("metersPerDegreeLat", (value.metadata.getBBox().getWidthLatMeters()/value.metadata.getBBox().getWidthLatDegree()));
-                    gen.writeNumberField("metersPerDegreeLon", (value.metadata.getBBox().getWidthLonMeters()/value.metadata.getBBox().getWidthLonDegree()));
-                gen.writeEndObject(); // \bbox
-                gen.writeFieldName("tileBBoxes");
-                gen.writeObject(value.getTileBBoxes());
-
-
-
-            gen.writeEndObject(); // \properties
+                gen.writeEndObject(); // \properties
+            }
             gen.writeEndObject(); // \json
             gen.close();
         }
