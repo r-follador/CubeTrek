@@ -79,6 +79,10 @@ public class SlimTrackGeojson implements Serializable{
                     gen.writeNumberField("id", value.metadata.getId());
                 if (value.metadata.getTrackgroup() != null)
                     gen.writeStringField("trackgroup", value.metadata.getTrackgroup().toString());
+                if (value.metadata.getDatetrack() != null)
+                    gen.writeObjectField("date", value.metadata.getDatetrack());
+                if (value.metadata.getActivitytype() != null)
+                    gen.writeObjectField("activitytype", value.metadata.getActivitytype());
                 gen.writeEndObject(); // \properties
             }
             gen.writeEndObject(); // \json

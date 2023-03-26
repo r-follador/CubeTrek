@@ -142,7 +142,9 @@ public class TrackViewerService {
         TrackData out = new TrackData();
         out.setTitle(trackdata.getTitle());
         out.setId(trackdata.getId());
+        out.setDatetrack(trackdata.getDatetrack());
         out.setTrackgroup(trackdata.getTrackgroup());
+        out.setActivitytype(trackdata.getActivitytype());
         TrackGeodata tgd = new TrackGeodata();
         tgd.setMultiLineString(multilinestring);
         out.setTrackgeodata(tgd);

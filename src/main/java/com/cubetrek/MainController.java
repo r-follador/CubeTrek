@@ -261,7 +261,7 @@ public class MainController {
     }
 
     @ResponseBody
-    @GetMapping(value = "/api/simple_geojson/{itemid}.geojson", produces = "application/json")
+    @GetMapping(value = "/api/slim_geojson/{itemid}.geojson", produces = "application/json")
     public SlimTrackGeojson getSimplifiedTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         response.addHeader("Cache-Control", "max-age=86400, public");

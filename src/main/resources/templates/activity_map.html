@@ -78,14 +78,19 @@
                         </div>
                     </div>
 
-                    <div class="mt-3">
-                        <strong><span id="act_title">
-                            Activity Title
-                        </span></strong>
-                        <div class="row" id="act_date">
-                            12 March 2023
+                    <div class="card mt-4" id="act_card" style="display: none">
+                            <div class="card-header">
+                                <img id="act_icon" width="25px"/> <span id="act_title">Activity Title</span>
+                            </div>
+                        <div class="card-body">
+                            <div class="card-text" id="act_date">
+                                12 March 2023
+                            </div>
                         </div>
-                        <a id="springerShow3D" class="btn btn-light btn-sm" href="#">3D View</a>
+                        <div class="card-footer">
+                            <a id="act_button" class="btn btn-primary btn-sm" href="#">3D View</a>
+                        </div>
+
                     </div>
 
 
@@ -152,8 +157,19 @@
 
         ]};
 
+    let mapZoom = 1;
+    let mapCenter = [0,0];
+
+    let geojsonfeatures = [];
+    let map;
+
     settings();
-    function init() {
+    function initData() {
+        data = {
+            "type": "FeatureCollection",
+            "features": []
+        };
+
         if (filterBy === "none")
             numberEntries = totalEntries;
         else {
@@ -161,9 +177,21 @@
         }
 
         for (var entry of activitiesposition) {
-            data.features.push({ "type": "Feature", "properties": { "id": entry.id, "title": entry.title }, "geometry": { "type": "Point", "coordinates": [ entry.longitude, entry.latitude, 0.0 ] } });
+            if (filterBy === "none")
+                data.features.push({
+                    "type": "Feature",
+                    "properties": { "id": entry.id, "title": entry.title, "activitytype" : entry.activitytype},
+                    "geometry": { "type": "Point", "coordinates": [ entry.longitude, entry.latitude, 0.0 ] }
+                });
+            else {
+                if (entry.activitytype === filterBy)
+                    data.features.push({
+                        "type": "Feature",
+                        "properties": { "id": entry.id, "title": entry.title, "activitytype" : entry.activitytype},
+                        "geometry": { "type": "Point", "coordinates": [ entry.longitude, entry.latitude, 0.0 ] }
+                    });
+            }
         }
-        prepareMap();
     }
 
     function minToString(minutes) {
@@ -196,19 +224,34 @@
 
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
-        init();
+        initData();
+        prepareMap();
     }
+
+
 
     function filter(value) {
         if (value ==="none")
             filterBy = "none";
         else
             filterBy = Object.keys(icons)[value];
-        init();
-    }
+        loadedTracks = new Set();
+        geojsonfeatures = [];
+        data = {
+            "type": "FeatureCollection",
+            "features": []};
+        initData();
+        map.getSource('activities').setData(data);
 
-    var map;
-    var geojsonfeatures = [];
+        map.getSource('tracks').setData({
+                type: 'FeatureCollection',
+                features: geojsonfeatures
+            }
+        );
+
+        if (map.getZoom()>8)
+            map.easeTo({zoom: 8});
+    }
 
     function prepareMap() {
         map = new maplibregl.Map({
@@ -242,19 +285,15 @@
                 maxzoom: 9,
                 filter: ['has', 'point_count'],
                 paint: {
-                    // Use step expressions (https://maplibre.org/maplibre-gl-js-docs/style-spec/#expressions-step)
-                    // with three steps to implement three types of circles:
-                    //   * Blue, 20px circles when point count is less than 100
-                    //   * Yellow, 30px circles when point count is between 100 and 750
-                    //   * Pink, 40px circles when point count is greater than or equal to 750
+                    // Step expressions (https://maplibre.org/maplibre-gl-js-docs/style-spec/#expressions-step)
                     'circle-color': [
                         'step',
                         ['get', 'point_count'],
-                        '#51bbd6',
+                        'rgba(84,148,164,0.8)',
                         100,
-                        '#f1f075',
+                        'rgba(52,109,126,0.8)',
                         750,
-                        '#f28cb1'
+                        'rgba(40,59,112,0.8)'
                     ],
                     'circle-radius': [
                         'step',
@@ -267,15 +306,6 @@
                     ]
                 }
             });
-
-            map.addSource('tracks', {
-                    type: 'geojson',
-                    data: {
-                        type: 'FeatureCollection',
-                        features: geojsonfeatures
-                    }
-                }
-            );
 
             map.addLayer({
                 id: 'unclustered-point',
@@ -290,6 +320,44 @@
                     'circle-stroke-color': '#fff'
                 }
             });
+
+            map.addSource('tracks', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: geojsonfeatures
+                    }
+                }
+            );
+
+            map.addLayer({
+                id: 'tracks-layer',
+                type: 'line',
+                source: 'tracks',
+                minzoom: 8,
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': [
+                        'case',
+                        ['has', 'color'],
+                        ['get', 'color'],
+                        '#ff8001' // fallback color if the feature does not have a color property
+                    ],
+                    'line-width': 3
+                }
+            });
+
+            map.addSource('tracks', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: geojsonfeatures
+                    }
+                }
+            );
 
             map.addLayer({
                 id: 'tracks-layer',
@@ -332,14 +400,17 @@
             map.on('render', function() {
                 if (map.getZoom() < 8)
                     return;
-                var unclusteredPoints = map.queryRenderedFeatures({layers: ['unclustered-point']});
-                for (var point of unclusteredPoints) {
-                    fetchgeojson(point.properties.id);
+                if (map.getLayer("unclustered-point")) {
+                    var unclusteredPoints = map.queryRenderedFeatures({layers: ['unclustered-point']});
+                    for (var point of unclusteredPoints) {
+                        fetchgeojson(point.properties.id);
+                    }
                 }
-                var clusteredPoints = map.queryRenderedFeatures({layers: ['clusters']});
-
-                for (var cluster of clusteredPoints) {
-                    loadClusterChildrenRecursive(cluster.properties.cluster_id);
+                if (map.getLayer("clusters")) {
+                    var clusteredPoints = map.queryRenderedFeatures({layers: ['clusters']});
+                    for (var cluster of clusteredPoints) {
+                        loadClusterChildrenRecursive(cluster.properties.cluster_id);
+                    }
                 }
             });
 
@@ -376,6 +447,42 @@
                 map.getCanvas().style.cursor = '';
             });
         });
+
+        map.on('click', 'tracks-layer', function (e) {
+            var features = map.queryRenderedFeatures(e.point, {
+                layers: ['tracks-layer']
+            });
+
+            if (features[0].properties.name !== undefined) {
+                document.getElementById("act_card").style.display = "block";
+                document.getElementById("act_title").innerText = features[0].properties.name;
+                var stringdate = (new Date(Date.parse(features[0].properties.date))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+                if (features[0].properties.trackgroup === undefined) {
+                    document.getElementById("act_date").innerText = stringdate;
+                    document.getElementById("act_button").innerText = "3D View";
+                    document.getElementById("act_button").setAttribute("href", "/view/"+features[0].properties.id);
+                }
+                else {
+                    document.getElementById("act_date").innerHTML = "Last activity:<br>" + stringdate;
+                    document.getElementById("act_button").innerText = "Matching Activities";
+                    document.getElementById("act_button").setAttribute("href", "/matching/"+features[0].properties.trackgroup);
+                }
+                if (features[0].properties.activitytype===undefined) {
+                    document.getElementById("act_icon").setAttribute("src", "../assets/" + icons['Unknown'][0]);
+                    document.getElementById("act_icon").setAttribute("alt", icons['Unknown'][1]);
+                } else {
+                    document.getElementById("act_icon").setAttribute("src", "../assets/" + icons[features[0].properties.activitytype][0]);
+                    document.getElementById("act_icon").setAttribute("alt", icons[features[0].properties.activitytype][1]);
+                }
+            }
+        });
+
+        map.on('mouseenter', 'tracks-layer', function () {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'tracks-layer', function () {
+            map.getCanvas().style.cursor = '';
+        });
     }
 
     var loadedTracks = new Set();
@@ -389,7 +496,7 @@
         if (loadedTracks.has(trackid))
             return;
         loadedTracks.add(trackid);
-        var url = "/api/simple_geojson/"+trackid+".geojson";
+        var url = "/api/slim_geojson/"+trackid+".geojson";
         fetch(url)
             .then(response => {
                 if (response.status === 200) {
@@ -399,6 +506,8 @@
                 }
             })
             .then(jsondata => {
+                if (filterBy !== "none" && filterBy !== jsondata.properties.activitytype)
+                    return;
                 if (jsondata.properties.trackgroup) {
                     let color = d3.interpolateBlues((Math.random() / 5) + 0.6);
                     jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
