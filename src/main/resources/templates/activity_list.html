@@ -80,7 +80,7 @@
         </main>
         <div class="container" id="springer" style="display:none;">
             <div class ="row">
-                <div class="col-5"><div id="map2d" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
+                <div class="col-5"><img id="map2d" height="200px" width="500px"></div>
                 <div class="col-5"><div id="inlinegraph" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
                 <div class="col-2">
                     <div class="row"><a id="springerShow3D" class="btn btn-light" href="#">3D View</a></div>
@@ -592,7 +592,9 @@
         var row = document.getElementById("r"+entryid);
         springerElement.style.display = "block";
         row.parentNode.insertBefore(newTr, row.nextSibling);
+        document.getElementById("map2d").src="/api/static_map/"+entryid+"/750x300.png";
         fetchgeojson(entryid);
+
         document.getElementById("springerEdit").addEventListener("click", function(){menu(entryid);});
         document.getElementById("springerShow3D").href="/view/"+entryid;
 
@@ -616,78 +618,11 @@
                     document.getElementById("errorbox").style.display = 'block';
                 }
             })
-            .then(geojson => {prepareMap2d(geojson, map_firstload);drawInlineGraph(geojson);});
+            .then(geojson => {drawInlineGraph(geojson);});
     }
 
     var map;
     var map_firstload = true;
-
-    function prepareMap2d(jsonData, map_firstload) {
-        if (map_firstload) {
-            map_firstload = false;
-            map = new maplibregl.Map({
-                container: 'map2d',
-                style: {
-                    'version': 8,
-                    'sources': {
-                        'raster-tiles': {
-                            'type': 'raster',
-                            'tiles': [
-                                'https://api.maptiler.com/maps/ch-swisstopo-lbm/256/{z}/{x}/{y}.png?key=Nq5vDCKAnSrurDLNgtSI '
-                            ],
-                            'tileSize': 256,
-                        }
-                    },
-                    'layers': [
-                        {
-                            'id': 'simple-tiles',
-                            'type': 'raster',
-                            'source': 'raster-tiles',
-                            'minzoom': 0,
-                            'maxzoom': 22
-                        }
-                    ]
-                },
-                bounds: [[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]],
-                touchPitch: false,
-                maxPitch: 0,
-                minZoom: 0,
-                maxZoom: 13,
-                attributionControl: false
-            });
-
-
-            map.on('load', function () {
-                map.addSource('route', {
-                        type: 'geojson',
-                        data: jsonData
-                    }
-                );
-                map.addLayer({
-                    'id': 'route',
-                    'type': 'line',
-                    'source': 'route',
-                    'layout': {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    'paint': {
-                        'line-color': '#ff8001',
-                        'line-width': 3
-                    }
-                });
-            });
-        } else {
-            map.getSource('route').setData({
-                    type: 'geojson',
-                    data: jsonData
-                }
-            );
-            map.fitBounds([[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]]);
-
-        }
-    }
-
 
     function drawInlineGraph(jsonData) {
         var datas = [];

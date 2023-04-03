@@ -123,17 +123,19 @@ public class MainController {
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("numberEntries", activitityService.countNumberOfEntries(user));
         model.addAttribute("activityCounts", activitityService.getActivityTypeCount(user));
+        logger.info("View Activity List by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "activity_list";
     }
 
-    @GetMapping("/activities_map")
-    public String getActivitiesMap(Model model) throws JsonProcessingException {
+    @GetMapping("/trekmapper")
+    public String getTrekMapper(Model model) throws JsonProcessingException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("numberEntries", activitityService.countNumberOfEntries(user));
         model.addAttribute("activityCounts", activitityService.getActivityTypeCount(user));
         model.addAttribute("activitiesPosition", (new ObjectMapper()).writeValueAsString(activitityService.getAllTracksPosition(user)));
-        return "activity_map";
+        logger.info("View TrekMapper by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
+        return "trekmapper";
     }
 
     @ResponseBody
@@ -336,6 +338,17 @@ public class MainController {
         };
 
         response.setHeader("Location", mapaccession);
+        response.addHeader("Cache-Control", "max-age=864000, public");
+        response.setStatus(302);
+    }
+
+    @RequestMapping(value = "/api/static_map/{id}/{width}x{height}.png", produces = "image/png")
+    public void getGLTF(@PathVariable("id") Long id, @PathVariable("width") Long width, @PathVariable("height") Long height, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String pathenc = trackViewerService.getEncodedPolyline(authentication, id, 50);
+        final String color = "rgba(255,128,1,1)";
+        String maptilerUrl = String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/static/auto/%dx%d.png?key=Nq5vDCKAnSrurDLNgtSI&attribution=false&scale=@2x&path=stroke:%s|width:3|fill:none|enc:%s",width, height, color, pathenc);
+        response.setHeader("Location", maptilerUrl);
         response.addHeader("Cache-Control", "max-age=864000, public");
         response.setStatus(302);
     }

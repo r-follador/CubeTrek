@@ -28,6 +28,7 @@ import org.springframework.ui.Model;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
@@ -149,6 +150,16 @@ public class TrackViewerService {
         tgd.setMultiLineString(multilinestring);
         out.setTrackgeodata(tgd);
         return new SlimTrackGeojson(out);
+    }
+
+    public String getEncodedPolyline(Authentication authentication, long trackid, double reduceTrackEpsilon) {
+        TrackData trackdata = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
+        if (!isReadAccessAllowed(authentication, trackdata))
+            throw new ExceptionHandling.TrackViewerException(noAccessMessage);
+
+        Track trackReduced = GPXWorker.reduceTrackSegments(trackdata.getTrackgeodata().getMultiLineString(), reduceTrackEpsilon);
+
+        return GPXWorker.encode2EPA(trackReduced.getSegments().get(0));
     }
 
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");

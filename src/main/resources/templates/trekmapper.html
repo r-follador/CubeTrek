@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <link rel="icon" type="image/svg" href="/assets/logo.svg">
-    <title>CubeTrek - Activity Map</title>
+    <title>CubeTrek - TrekMapper</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <link href="../css/dashboard.css" rel="stylesheet">
@@ -29,7 +29,7 @@
     <div class="row">
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Activity Map</h1>
+                <h1 class="h2">TrekMapper</h1>
             </div>
 
             <div th:if="${numberEntries==0}" class="card m-5" style="width: 18rem;">
@@ -55,48 +55,20 @@
                 </th:block>
             </div>
 
-            <div class="row">
-                <div class="col-2">
-                    <div class="row">
-                        <div class="col">
-                            <svg width="50" height="20">
-                                <polygon points="0,10 50,10" style="fill:none;stroke:rgb(226, 86, 9);stroke-width:3" />
-                            </svg>
-                        </div>
-                        <div class="col">
-                            Single Activity
+            <div class="position-relative" style="height: 100%; min-height: 500px">
+                <div id="map" style="height: 100%; width: 100%; min-width: 100px;"></div>
+                <div class="card col-2 position-absolute top-0 start-0 p-0 m-4" id="act_card" style="display: none">
+                    <div class="card-header">
+                        <img id="act_icon" width="25px"/> <span id="act_title">Activity Title</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-text" id="act_date">
+                            12 March 2023
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col">
-                            <svg width="50" height="20">
-                                <polygon points="0,10 50,10" style="fill:none;stroke:rgb(47, 126, 188);stroke-width:3" />
-                            </svg>
-                        </div>
-                        <div class="col">
-                            Activity Group
-                        </div>
+                    <div class="card-footer">
+                        <a id="act_button" class="btn btn-primary btn-sm" href="#">3D View</a>
                     </div>
-
-                    <div class="card mt-4" id="act_card" style="display: none">
-                            <div class="card-header">
-                                <img id="act_icon" width="25px"/> <span id="act_title">Activity Title</span>
-                            </div>
-                        <div class="card-body">
-                            <div class="card-text" id="act_date">
-                                12 March 2023
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <a id="act_button" class="btn btn-primary btn-sm" href="#">3D View</a>
-                        </div>
-
-                    </div>
-
-
-                </div>
-                <div class="col-10">
-                    <div id="map"></div>
                 </div>
             </div>
         </main>
@@ -231,6 +203,7 @@
 
 
     function filter(value) {
+        deselectTrack();
         if (value ==="none")
             filterBy = "none";
         else
@@ -262,7 +235,7 @@
             touchPitch: false,
             maxPitch: 0,
             minZoom: 0,
-            maxZoom: 11,
+            maxZoom: 13,
             attributionControl: false
         });
 
@@ -289,11 +262,11 @@
                     'circle-color': [
                         'step',
                         ['get', 'point_count'],
-                        'rgba(84,148,164,0.8)',
+                        'rgba(84,148,164,0.7)',
                         100,
-                        'rgba(52,109,126,0.8)',
+                        'rgba(52,109,126,0.7)',
                         750,
-                        'rgba(40,59,112,0.8)'
+                        'rgba(40,59,112,0.7)'
                     ],
                     'circle-radius': [
                         'step',
@@ -314,39 +287,34 @@
                 maxzoom: 9,
                 filter: ['!', ['has', 'point_count']],
                 paint: {
-                    'circle-color': 'rgba(17,180,218,0.47)',
+                    'circle-color': 'rgba(17,180,218,0.4)',
                     'circle-radius': 12,
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#fff'
                 }
             });
 
-            map.addSource('tracks', {
+            map.addSource('mouseover-source', {
                     type: 'geojson',
                     data: {
                         type: 'FeatureCollection',
-                        features: geojsonfeatures
+                        features: []
                     }
                 }
             );
 
             map.addLayer({
-                id: 'tracks-layer',
+                id: 'mouseover-layer',
                 type: 'line',
-                source: 'tracks',
-                minzoom: 8,
+                source: 'mouseover-source',
+                minzoom: 3,
                 layout: {
                     'line-join': 'round',
                     'line-cap': 'round'
                 },
                 paint: {
-                    'line-color': [
-                        'case',
-                        ['has', 'color'],
-                        ['get', 'color'],
-                        '#ff8001' // fallback color if the feature does not have a color property
-                    ],
-                    'line-width': 3
+                    'line-color': 'rgba(255,201,21,0.66)',
+                    'line-width': 7
                 }
             });
 
@@ -376,6 +344,30 @@
                         '#ff8001' // fallback color if the feature does not have a color property
                     ],
                     'line-width': 3
+                }
+            });
+
+            map.addSource('selected-source', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                }
+            );
+
+            map.addLayer({
+                id: 'selected-layer',
+                type: 'line',
+                source: 'selected-source',
+                minzoom: 3,
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': 'rgb(255,196,0)',
+                    'line-width': 4
                 }
             });
 
@@ -398,8 +390,10 @@
             });
 
             map.on('render', function() {
-                if (map.getZoom() < 8)
+                if (map.getZoom() < 8) {
+                    deselectTrack();
                     return;
+                }
                 if (map.getLayer("unclustered-point")) {
                     var unclusteredPoints = map.queryRenderedFeatures({layers: ['unclustered-point']});
                     for (var point of unclusteredPoints) {
@@ -429,10 +423,6 @@
                 );
             }
 
-// When a click event occurs on a feature in
-// the unclustered-point layer, open a popup at
-// the location of the feature, with
-// description HTML from its properties.
             map.on('click', 'unclustered-point', function (e) {
                 map.easeTo({
                     center: e.features[0].geometry.coordinates,
@@ -446,6 +436,9 @@
             map.on('mouseleave', 'clusters', function () {
                 map.getCanvas().style.cursor = '';
             });
+
+
+
         });
 
         map.on('click', 'tracks-layer', function (e) {
@@ -474,6 +467,12 @@
                     document.getElementById("act_icon").setAttribute("src", "../assets/" + icons[features[0].properties.activitytype][0]);
                     document.getElementById("act_icon").setAttribute("alt", icons[features[0].properties.activitytype][1]);
                 }
+
+                map.getSource('selected-source').setData({
+                        type: 'FeatureCollection',
+                        features: [trackCache.get(features[0].properties.id)]
+                    }
+                );
             }
         });
 
@@ -483,9 +482,33 @@
         map.on('mouseleave', 'tracks-layer', function () {
             map.getCanvas().style.cursor = '';
         });
+
+        map.on('mouseenter', 'tracks-layer', function (e) {
+            var features = map.queryRenderedFeatures(e.point, {
+                layers: ['tracks-layer']
+            });
+
+            if (features[0].properties.name !== undefined) {
+                map.getSource('mouseover-source').setData({
+                        type: 'FeatureCollection',
+                        features: [trackCache.get(features[0].properties.id)]
+                    }
+                );
+            }
+        });
+
+        map.on('mouseleave', 'tracks-layer', function (e) {
+            map.getSource('mouseover-source').setData({
+                    type: 'FeatureCollection',
+                    features: []
+                }
+            );
+        });
     }
 
     var loadedTracks = new Set();
+
+    var trackCache = new Map();
 
 
     async function fetchgeojson(trackid) {
@@ -496,35 +519,57 @@
         if (loadedTracks.has(trackid))
             return;
         loadedTracks.add(trackid);
-        var url = "/api/slim_geojson/"+trackid+".geojson";
-        fetch(url)
-            .then(response => {
-                if (response.status === 200) {
-                    return response.json();
-                } else {
-                    document.getElementById("errorbox").style.display = 'block';
-                }
-            })
-            .then(jsondata => {
-                if (filterBy !== "none" && filterBy !== jsondata.properties.activitytype)
-                    return;
-                if (jsondata.properties.trackgroup) {
-                    let color = d3.interpolateBlues((Math.random() / 5) + 0.6);
-                    jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
-                }
-                else {
-                    let color = d3.interpolateOranges((Math.random() / 5) + 0.6);
-                    jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
-                }
 
-                geojsonfeatures.push(jsondata);
-                map.getSource('tracks').setData({
-                        type: 'FeatureCollection',
-                        features: geojsonfeatures
+        if (trackCache.has(trackid)) {
+            console.log(trackid + "in cache");
+            showgeojson(trackCache.get(trackid));
+        } else {
+            var url = "/api/slim_geojson/" + trackid + ".geojson";
+            fetch(url)
+                .then(response => {
+                    if (response.status === 200) {
+                        return response.json();
+                    } else {
+                        document.getElementById("errorbox").style.display = 'block';
                     }
-                );
-            });
+                })
+                .then(jsondata => {
+                    trackCache.set(trackid, jsondata);
+                    showgeojson(jsondata)
+                });
+        }
     }
+
+    function showgeojson(jsondata) {
+        if (filterBy !== "none" && filterBy !== jsondata.properties.activitytype)
+            return;
+        if (jsondata.properties.trackgroup) {
+            let color = d3.interpolateBlues((Math.random() / 5) + 0.6);
+            jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
+        }
+        else {
+            let color = d3.interpolateOranges((Math.random() / 5) + 0.6);
+            jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
+        }
+
+        geojsonfeatures.push(jsondata);
+        map.getSource('tracks').setData({
+                type: 'FeatureCollection',
+                features: geojsonfeatures
+            }
+        );
+    }
+
+    function deselectTrack() {
+        map.getSource('selected-source').setData({
+                type: 'FeatureCollection',
+                features: []
+            }
+        );
+        document.getElementById("act_card").style.display = "none";
+    }
+
+
 
 
 </script>
