@@ -62,8 +62,8 @@ public class UserRegistrationService {
         else
             userField.setTimezone("Etc/UTC");
         userField.setSharing(TrackData.Sharing.PRIVATE);
+        userField.setRegisterDate(new java.sql.Date(System.currentTimeMillis()));
         return usersRepository.save(userField);
-
     }
 
     private boolean emailExist(String email) {

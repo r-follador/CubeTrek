@@ -12,6 +12,7 @@
     <script src='../js/maplibre-gl.js'></script>
     <link href='../css/maplibre-gl.css' rel='stylesheet'/>
     <script src="../js/d3.min.js"></script>
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
     <style>
         #map { width: 100%; height: 75vh;}
     </style>
@@ -28,10 +29,6 @@
 
     <div class="row">
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">TrekMapper</h1>
-            </div>
-
             <div th:if="${numberEntries==0}" class="card m-5" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">Your Profile is empty 😔</h5>
@@ -45,7 +42,7 @@
                 Error fetching data
             </div>
 
-            <div class="btn-group flex-wrap mb-4" role="group" aria-label="Basic radio toggle button group">
+            <div class="btn-group flex-wrap mb-4 pt-2" role="group" aria-label="Basic radio toggle button group">
                 <input type="radio" class="btn-check" name="btnradio" id="btnradio1" onclick="filter('none')"checked>
                 <label class="btn btn-outline-dark " for="btnradio1">All Activities: [(${numberEntries})]</label>
 
@@ -57,13 +54,16 @@
 
             <div class="position-relative" style="height: 100%; min-height: 500px">
                 <div id="map" style="height: 100%; width: 100%; min-width: 100px;"></div>
-                <div class="card col-2 position-absolute top-0 start-0 p-0 m-4" id="act_card" style="display: none">
-                    <div class="card-header">
-                        <img id="act_icon" width="25px"/> <span id="act_title">Activity Title</span>
+                <div class="card col-xxl-2 position-absolute top-0 start-0 p-0 m-4" id="act_card" style="display: none">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <img id="act_icon" width="25px" /> <span id="act_title">Activity Title</span>
+                        </div>
+                        <button type="button" class="btn-close" aria-label="Close" onclick="deselectTrack()"></button>
                     </div>
                     <div class="card-body">
                         <div class="card-text" id="act_date">
-                            12 March 2023
+                            Activity date
                         </div>
                     </div>
                     <div class="card-footer">
@@ -83,12 +83,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
                     <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
                 </div>
-
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -441,36 +439,49 @@
 
         });
 
-        map.on('click', 'tracks-layer', function (e) {
-            var features = map.queryRenderedFeatures(e.point, {
+        map.on('click', function (e) {
+            if (map.getZoom()<8)
+                return;
+            const boundingSize = 50;
+            const boundingBox = [
+                [e.point.x - boundingSize, e.point.y - boundingSize],
+                [e.point.x + boundingSize, e.point.y + boundingSize]
+            ];
+
+            var features = map.queryRenderedFeatures(boundingBox, {
                 layers: ['tracks-layer']
             });
 
-            if (features[0].properties.name !== undefined) {
+            if (features.length < 1)
+                return;
+
+            var closestFeature = findClosestLineString(turf.point([e.lngLat.lng, e.lngLat.lat]), features);
+
+            if (closestFeature.properties.name !== undefined) {
                 document.getElementById("act_card").style.display = "block";
-                document.getElementById("act_title").innerText = features[0].properties.name;
-                var stringdate = (new Date(Date.parse(features[0].properties.date))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
-                if (features[0].properties.trackgroup === undefined) {
+                document.getElementById("act_title").innerText = closestFeature.properties.name;
+                var stringdate = (new Date(Date.parse(closestFeature.properties.date))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+                if (closestFeature.properties.trackgroup === undefined) {
                     document.getElementById("act_date").innerText = stringdate;
                     document.getElementById("act_button").innerText = "3D View";
-                    document.getElementById("act_button").setAttribute("href", "/view/"+features[0].properties.id);
+                    document.getElementById("act_button").setAttribute("href", "/view/"+closestFeature.properties.id);
                 }
                 else {
                     document.getElementById("act_date").innerHTML = "Last activity:<br>" + stringdate;
                     document.getElementById("act_button").innerText = "Matching Activities";
-                    document.getElementById("act_button").setAttribute("href", "/matching/"+features[0].properties.trackgroup);
+                    document.getElementById("act_button").setAttribute("href", "/matching/"+closestFeature.properties.trackgroup);
                 }
-                if (features[0].properties.activitytype===undefined) {
+                if (closestFeature.properties.activitytype===undefined) {
                     document.getElementById("act_icon").setAttribute("src", "../assets/" + icons['Unknown'][0]);
                     document.getElementById("act_icon").setAttribute("alt", icons['Unknown'][1]);
                 } else {
-                    document.getElementById("act_icon").setAttribute("src", "../assets/" + icons[features[0].properties.activitytype][0]);
-                    document.getElementById("act_icon").setAttribute("alt", icons[features[0].properties.activitytype][1]);
+                    document.getElementById("act_icon").setAttribute("src", "../assets/" + icons[closestFeature.properties.activitytype][0]);
+                    document.getElementById("act_icon").setAttribute("alt", icons[closestFeature.properties.activitytype][1]);
                 }
 
                 map.getSource('selected-source').setData({
                         type: 'FeatureCollection',
-                        features: [trackCache.get(features[0].properties.id)]
+                        features: [trackCache.get(closestFeature.properties.id)]
                     }
                 );
             }
@@ -506,6 +517,20 @@
         });
     }
 
+    function findClosestLineString(point, lineStrings) {
+        let closestLineString = null;
+        let minDistance = Infinity;
+
+        lineStrings.forEach(lineString => {
+            const nearestPointOnLine = turf.nearestPointOnLine(lineString, point);
+            if (nearestPointOnLine.properties.dist < minDistance) {
+                minDistance = nearestPointOnLine.properties.dist;
+                closestLineString = lineString;
+            }
+        });
+        return closestLineString;
+    }
+
     var loadedTracks = new Set();
 
     var trackCache = new Map();
@@ -521,7 +546,6 @@
         loadedTracks.add(trackid);
 
         if (trackCache.has(trackid)) {
-            console.log(trackid + "in cache");
             showgeojson(trackCache.get(trackid));
         } else {
             var url = "/api/slim_geojson/" + trackid + ".geojson";
@@ -568,9 +592,5 @@
         );
         document.getElementById("act_card").style.display = "none";
     }
-
-
-
-
 </script>
 </html>

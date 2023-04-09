@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
+import java.sql.Date;
 import java.util.*;
 
 @Entity(name = "users")
@@ -60,6 +61,11 @@ public class Users implements UserDetails {
     @Setter
     @Column(name = "enabled")
     private boolean enabled;
+
+    @Getter
+    @Setter
+    @Column(name = "register_date")
+    private Date registerDate;
 
     @Getter
     @Setter
