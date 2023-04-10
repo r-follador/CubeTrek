@@ -13,9 +13,6 @@
     <link href='../css/maplibre-gl.css' rel='stylesheet'/>
     <script src="../js/d3.min.js"></script>
     <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
-    <style>
-        #map { width: 100%; height: 75vh;}
-    </style>
 </head>
 <body>
 <header th:replace="dashboard.html :: header">
@@ -27,7 +24,7 @@
         </nav>
     </div>
 
-    <div class="row">
+    <div class="row" style="height: 100vh;">
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div th:if="${numberEntries==0}" class="card m-5" style="width: 18rem;">
                 <div class="card-body">
@@ -42,19 +39,23 @@
                 Error fetching data
             </div>
 
-            <div class="btn-group flex-wrap mb-4 pt-2" role="group" aria-label="Basic radio toggle button group">
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" onclick="filter('none')"checked>
-                <label class="btn btn-outline-dark " for="btnradio1">All Activities: [(${numberEntries})]</label>
-
-                <th:block th:each="act : ${activityCounts}">
-                    <input type="radio" class="btn-check" name="btnradio" th:id="|radio${act.activitytype}|" autocomplete="off" th:onclick="|filter(${act.activitytype.ordinal()})|">
-                    <label class="btn btn-outline-primary" th:for   ="|radio${act.activitytype}|" th:text="|${act.activitytype.displayValue}: ${act.count}|">Radio</label>
-                </th:block>
-            </div>
-
             <div class="position-relative" style="height: 100%; min-height: 500px">
                 <div id="map" style="height: 100%; width: 100%; min-width: 100px;"></div>
-                <div class="card col-xxl-2 position-absolute top-0 start-0 p-0 m-4" id="act_card" style="display: none">
+                <div class="dropdown position-absolute top-0 start-0 p-0 m-4">
+                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownfilter"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        All Activities: [(${numberEntries})]
+                    </button>
+
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" id="btnradio1" onclick="filter('none')">All Activities: [(${numberEntries})]</a></li>
+                        <th:block th:each="act : ${activityCounts}">
+                            <li><a class="dropdown-item" href="#" th:id="|radio${act.activitytype}|" th:onclick="|filter(${act.activitytype.ordinal()})|" th:text="|${act.activitytype.displayValue}: ${act.count}|">Radio</a></li>
+                        </th:block>
+                    </ul>
+                </div>
+
+                <div class="card col-xxl-2 position-absolute top-0 end-0 p-0 m-4" id="act_card" style="display: none">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <img id="act_icon" width="25px" /> <span id="act_title">Activity Title</span>
@@ -150,14 +151,14 @@
             if (filterBy === "none")
                 data.features.push({
                     "type": "Feature",
-                    "properties": { "id": entry.id, "title": entry.title, "activitytype" : entry.activitytype},
+                    "properties": { "id": entry.id, "title": entry.title, "activitytype" : entry.activitytype, "trackgroupentrycount": entry.trackgroupentrycount},
                     "geometry": { "type": "Point", "coordinates": [ entry.longitude, entry.latitude, 0.0 ] }
                 });
             else {
                 if (entry.activitytype === filterBy)
                     data.features.push({
                         "type": "Feature",
-                        "properties": { "id": entry.id, "title": entry.title, "activitytype" : entry.activitytype},
+                        "properties": { "id": entry.id, "title": entry.title, "activitytype" : entry.activitytype, "trackgroupentrycount": entry.trackgroupentrycount},
                         "geometry": { "type": "Point", "coordinates": [ entry.longitude, entry.latitude, 0.0 ] }
                     });
             }
@@ -198,14 +199,16 @@
         prepareMap();
     }
 
-
-
     function filter(value) {
         deselectTrack();
-        if (value ==="none")
+        if (value ==="none") {
             filterBy = "none";
-        else
+            document.getElementById("dropdownfilter").innerText="All Activities";
+        }
+        else {
             filterBy = Object.keys(icons)[value];
+            document.getElementById("dropdownfilter").innerText=Object.values(icons)[value][1];
+        }
         loadedTracks = new Set();
         geojsonfeatures = [];
         data = {
@@ -217,8 +220,7 @@
         map.getSource('tracks').setData({
                 type: 'FeatureCollection',
                 features: geojsonfeatures
-            }
-        );
+            });
 
         if (map.getZoom()>8)
             map.easeTo({zoom: 8});
@@ -243,54 +245,72 @@
             // add the point_count property to your source data.
             map.addSource('activities', {
                 type: 'geojson',
-                data: data,
-                cluster: true,
-                clusterMaxZoom: 14, // Max zoom to cluster points on
-                clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+                data: data
             });
 
-            map.addLayer({
-                id: 'clusters',
-                type: 'circle',
-                source: 'activities',
-                maxzoom: 9,
-                filter: ['has', 'point_count'],
-                paint: {
-                    // Step expressions (https://maplibre.org/maplibre-gl-js-docs/style-spec/#expressions-step)
-                    'circle-color': [
-                        'step',
-                        ['get', 'point_count'],
-                        'rgba(84,148,164,0.7)',
-                        100,
-                        'rgba(52,109,126,0.7)',
-                        750,
-                        'rgba(40,59,112,0.7)'
-                    ],
-                    'circle-radius': [
-                        'step',
-                        ['get', 'point_count'],
-                        20,
-                        100,
-                        30,
-                        750,
-                        40
-                    ]
-                }
-            });
 
-            map.addLayer({
-                id: 'unclustered-point',
-                type: 'circle',
-                source: 'activities',
-                maxzoom: 9,
-                filter: ['!', ['has', 'point_count']],
-                paint: {
-                    'circle-color': 'rgba(17,180,218,0.4)',
-                    'circle-radius': 12,
-                    'circle-stroke-width': 1,
-                    'circle-stroke-color': '#fff'
+            map.addLayer(
+                {
+                    'id': 'heatmap',
+                    'type': 'heatmap',
+                    'source': 'activities',
+                    'maxzoom': 9,
+                    'paint': {
+// Increase the heatmap weight based on frequency and property magnitude
+                        'heatmap-weight': [
+                            'interpolate',
+                            ['linear'],
+                            ['get', 'trackgroupentrycount'],
+                            0, 0,
+                            4, 1
+                        ],
+// Increase the heatmap color weight by zoom level
+// heatmap-intensity is a multiplier on top of heatmap-weight
+                        'heatmap-intensity': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            0, 1,
+                            9, 3
+                        ],
+// Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+// Begin color ramp at 0-stop with a 0-transparancy color
+// to create a blur-like effect.
+                        'heatmap-color': [
+                            'interpolate',
+                            ['linear'],
+                            ['heatmap-density'],
+                            0,
+                            'rgba(255,255,204,0)',
+                            0.2,
+                            "rgb(254, 224, 135)" ,
+                            0.4,
+                            'rgb(254, 171, 75)',
+                            0.6,
+                            'rgb(250, 92, 46)',
+                            0.8,
+                            'rgb(211, 17, 33)',
+                            1,
+                            'rgb(128, 0, 38)'
+                        ],
+// Adjust the heatmap radius by zoom level
+                        'heatmap-radius': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            1, 10,
+                            9, 20
+                        ],
+// Transition from heatmap to circle layer by zoom level
+                        'heatmap-opacity': [
+                            'interpolate',
+                            ['linear'],['zoom'],
+                            7.5, 1,
+                            9, 0
+                        ]
+                    }
                 }
-            });
+            );
 
             map.addSource('mouseover-source', {
                     type: 'geojson',
@@ -300,21 +320,6 @@
                     }
                 }
             );
-
-            map.addLayer({
-                id: 'mouseover-layer',
-                type: 'line',
-                source: 'mouseover-source',
-                minzoom: 3,
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': 'rgba(255,201,21,0.66)',
-                    'line-width': 7
-                }
-            });
 
             map.addSource('tracks', {
                     type: 'geojson',
@@ -341,7 +346,27 @@
                         ['get', 'color'],
                         '#ff8001' // fallback color if the feature does not have a color property
                     ],
-                    'line-width': 3
+                    'line-width': [
+                        'case',
+                        ['has', 'width'],
+                        ['get', 'width'],
+                        3 // fallback color if the feature does not have a color property
+                    ]
+                }
+            });
+
+            map.addLayer({
+                id: 'mouseover-layer',
+                type: 'line',
+                source: 'mouseover-source',
+                minzoom: 3,
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': 'rgba(77,112,255,0.25)',
+                    'line-width': 8
                 }
             });
 
@@ -364,79 +389,33 @@
                     'line-cap': 'round'
                 },
                 paint: {
-                    'line-color': 'rgb(255,196,0)',
+                    'line-color': 'rgb(143,122,229)',
                     'line-width': 4
                 }
             });
 
-            map.on('click', 'clusters', function (e) {
-                var features = map.queryRenderedFeatures(e.point, {
-                    layers: ['clusters']
-                });
-                var clusterId = features[0].properties.cluster_id;
-                map.getSource('activities').getClusterExpansionZoom(
-                    clusterId,
-                    function (err, zoom) {
-                        if (err) return;
-
-                        map.easeTo({
-                            center: features[0].geometry.coordinates,
-                            zoom: Math.min(zoom, 8)
-                        });
-                    }
-                );
-            });
-
-            map.on('render', function() {
+            map.on('moveend', function() {
                 if (map.getZoom() < 8) {
                     deselectTrack();
-                    return;
                 }
-                if (map.getLayer("unclustered-point")) {
-                    var unclusteredPoints = map.queryRenderedFeatures({layers: ['unclustered-point']});
-                    for (var point of unclusteredPoints) {
-                        fetchgeojson(point.properties.id);
+
+                if (map.getZoom() > 5
+                ) {
+                    const bounds = map.getBounds();
+                    const boundingBox = [
+                        bounds.getWest(),
+                        bounds.getSouth(),
+                        bounds.getEast(),
+                        bounds.getNorth()
+                    ];
+                    const boundingBoxPolygon = turf.bboxPolygon(boundingBox);
+                    const featuresWithinBoundingBox = turf.pointsWithinPolygon(data, boundingBoxPolygon);
+
+                    for (var feature of featuresWithinBoundingBox.features) {
+                        fetchgeojson(feature.properties.id);
                     }
                 }
-                if (map.getLayer("clusters")) {
-                    var clusteredPoints = map.queryRenderedFeatures({layers: ['clusters']});
-                    for (var cluster of clusteredPoints) {
-                        loadClusterChildrenRecursive(cluster.properties.cluster_id);
-                    }
-                }
             });
-
-            function loadClusterChildrenRecursive(cluster_id) {
-                map.getSource('activities').getClusterChildren(
-                    cluster_id,
-                    function (err, features) {
-                        if (err) return;
-                        for (var child of features) {
-                            if (child.properties.id !== undefined)
-                                fetchgeojson(child.properties.id);
-                            if (child.properties.cluster_id !== undefined)
-                                loadClusterChildrenRecursive(child.properties.cluster_id);
-                        }
-                    }
-                );
-            }
-
-            map.on('click', 'unclustered-point', function (e) {
-                map.easeTo({
-                    center: e.features[0].geometry.coordinates,
-                    zoom: 8
-                });
-            });
-
-            map.on('mouseenter', 'clusters', function () {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-            map.on('mouseleave', 'clusters', function () {
-                map.getCanvas().style.cursor = '';
-            });
-
-
-
         });
 
         map.on('click', function (e) {
@@ -467,8 +446,8 @@
                     document.getElementById("act_button").setAttribute("href", "/view/"+closestFeature.properties.id);
                 }
                 else {
-                    document.getElementById("act_date").innerHTML = "Last activity:<br>" + stringdate;
-                    document.getElementById("act_button").innerText = "Matching Activities";
+                    document.getElementById("act_date").innerHTML = closestFeature.properties.trackgroupentrycount +" Activities; Most recent:<br>" + stringdate;
+                    document.getElementById("act_button").innerText = "Show All Activities";
                     document.getElementById("act_button").setAttribute("href", "/matching/"+closestFeature.properties.trackgroup);
                 }
                 if (closestFeature.properties.activitytype===undefined) {
@@ -568,12 +547,15 @@
         if (filterBy !== "none" && filterBy !== jsondata.properties.activitytype)
             return;
         if (jsondata.properties.trackgroup) {
-            let color = d3.interpolateBlues((Math.random() / 5) + 0.6);
+            jsondata.properties.trackgroupentrycount = activitiesposition.find((entry) => entry.trackgroup === jsondata.properties.trackgroup).trackgroupentrycount;
+            let color = d3.interpolateOranges(Math.min(5, jsondata.properties.trackgroupentrycount)*0.4 + 0.7);
             jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
+            jsondata.properties.width = Math.min(Math.max(3, jsondata.properties.trackgroupentrycount),5);
         }
         else {
-            let color = d3.interpolateOranges((Math.random() / 5) + 0.6);
+            let color = d3.interpolateOranges((Math.random() / 3) + 0.4);
             jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
+            jsondata.properties.width = 3;
         }
 
         geojsonfeatures.push(jsondata);

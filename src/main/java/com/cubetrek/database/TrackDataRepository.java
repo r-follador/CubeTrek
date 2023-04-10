@@ -118,11 +118,19 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     List<TrackData.TrackMetadata> findTrackOfGivenDay(long user_id, String day, String user_timezone);
 
     @Query(value = """ 
-            SELECT DISTINCT ON (COALESCE(trackdata.trackgroup, -trackdata.id)) trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.favorite, trackdata.trackgroup, ST_X(trackdata.center) AS longitude, ST_Y(trackdata.center) AS latitude FROM trackdata
-            WHERE trackdata.owner = :user_id AND trackdata.hidden = false
-            ORDER BY (COALESCE(trackdata.trackgroup, -trackdata.id)), trackdata.datetrack DESC;
+            SELECT DISTINCT ON (COALESCE(t.trackgroup, -t.id)) t.activitytype, t.id, t.title, t.datetrack, t.favorite, t.trackgroup, ST_X(t.center) AS longitude, ST_Y(t.center) AS latitude, coalesce(aggregated_counts.num_entries, 1) as trackgroupentrycount
+           FROM trackdata t
+           LEFT JOIN (
+               SELECT COALESCE(trackdata.trackgroup, -trackdata.id) AS track_group, COUNT(*) as num_entries
+               FROM trackdata
+               WHERE trackdata.owner = 2 AND trackdata.hidden = false
+               GROUP BY track_group
+           ) aggregated_counts
+           ON COALESCE(t.trackgroup, -t.id) = aggregated_counts.track_group
+           WHERE t.owner = 2 AND t.hidden = false
+           ORDER BY (COALESCE(t.trackgroup, -t.id)), t.datetrack DESC;
             """, nativeQuery = true)
-    List<TrackData.TrackMapMetadata> findAllTracksPositionByUser(long user_id);
+    List<TrackData.TrekmapperData> findAllTracksPositionByUser(long user_id);
 
 
     public interface PublicActivity {

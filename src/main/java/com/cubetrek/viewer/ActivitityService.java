@@ -4,7 +4,6 @@ import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
 import com.cubetrek.database.Users;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -39,7 +38,7 @@ public class ActivitityService {
                 .collect(Collectors.toList());
     }
 
-    public List<TrackData.TrackMapMetadata> getAllTracksPosition(Users user) {
+    public List<TrackData.TrekmapperData> getAllTracksPosition(Users user) {
         //get latest activity for each trackgroup (and all remaining activities for non-grouped activities)
         return trackDataRepository.findAllTracksPositionByUser(user.getId());
     }

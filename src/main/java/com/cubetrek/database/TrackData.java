@@ -286,7 +286,7 @@ public class TrackData implements Serializable {
         Long getTrackgroup();
     }
 
-    public interface TrackMapMetadata {
+    public interface TrekmapperData {
         Long getId();
 
         @JsonSerialize(using = TitleSerializer.class, as=String.class)
@@ -305,6 +305,8 @@ public class TrackData implements Serializable {
 
         @JsonSerialize(using= ToStringSerializer.class)
         Long getTrackgroup();
+
+        int getTrackgroupentrycount();
     }
 
     public static class TimestampSerializer extends JsonSerializer<Timestamp> {
