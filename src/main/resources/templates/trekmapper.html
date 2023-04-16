@@ -25,7 +25,7 @@
     </div>
 
     <div class="row" style="height: 100vh;">
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-0">
             <div th:if="${numberEntries==0}" class="card m-5" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">Your Profile is empty 😔</h5>
@@ -41,7 +41,7 @@
 
             <div class="position-relative" style="height: 100%; min-height: 500px">
                 <div id="map" style="height: 100%; width: 100%; min-width: 100px;"></div>
-                <div class="dropdown position-absolute top-0 start-0 p-0 m-4">
+                <div th:unless="${numberEntries==0}" class="dropdown position-absolute top-0 start-0 p-0 m-4">
                     <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownfilter"
                             data-bs-toggle="dropdown" aria-expanded="false">
                         All Activities: [(${numberEntries})]
@@ -239,6 +239,9 @@
             attributionControl: false
         });
 
+        map.dragRotate.disable();
+        map.touchZoomRotate.disableRotation();
+
         map.on('load', function () {
             // Add a new source from our GeoJSON data and
             // set the 'cluster' option to true. GL-JS will
@@ -365,8 +368,8 @@
                     'line-cap': 'round'
                 },
                 paint: {
-                    'line-color': 'rgba(77,112,255,0.25)',
-                    'line-width': 8
+                    'line-color': 'rgba(143,122,229,0.44)',
+                    'line-width': 6
                 }
             });
 
@@ -389,7 +392,7 @@
                     'line-cap': 'round'
                 },
                 paint: {
-                    'line-color': 'rgb(143,122,229)',
+                    'line-color': 'rgb(0,130,255)',
                     'line-width': 4
                 }
             });
@@ -548,12 +551,12 @@
             return;
         if (jsondata.properties.trackgroup) {
             jsondata.properties.trackgroupentrycount = activitiesposition.find((entry) => entry.trackgroup === jsondata.properties.trackgroup).trackgroupentrycount;
-            let color = d3.interpolateOranges(Math.min(5, jsondata.properties.trackgroupentrycount)*0.4 + 0.7);
+            let color = d3.interpolateOranges(Math.min(5, jsondata.properties.trackgroupentrycount)*0.04 + 0.7);
             jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
             jsondata.properties.width = Math.min(Math.max(3, jsondata.properties.trackgroupentrycount),5);
         }
         else {
-            let color = d3.interpolateOranges((Math.random() / 3) + 0.4);
+            let color = d3.interpolateOranges((Math.random() / 3) + 0.35);
             jsondata.properties.color = color.replace('rgb(', 'rgba(').replace(')', `, 0.7)`);
             jsondata.properties.width = 3;
         }
