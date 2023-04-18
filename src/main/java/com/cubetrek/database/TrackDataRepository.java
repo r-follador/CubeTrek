@@ -127,7 +127,7 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
                GROUP BY track_group
            ) aggregated_counts
            ON COALESCE(t.trackgroup, -t.id) = aggregated_counts.track_group
-           WHERE t.owner = 2 AND t.hidden = false
+           WHERE t.owner = :user_id AND t.hidden = false
            ORDER BY (COALESCE(t.trackgroup, -t.id)), t.datetrack DESC;
             """, nativeQuery = true)
     List<TrackData.TrekmapperData> findAllTracksPositionByUser(long user_id);

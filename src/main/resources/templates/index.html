@@ -198,8 +198,7 @@
       <div class="col-md-5  order-md-2">
         <h2 class="featurette-heading fw-normal lh-1">All Tracks in One Place.</h2>
         <p class="lead">Visualize your adventures with <strong>TrekMapper</strong>, revealing your most frequented spots
-          across the globe. Zoom in to unveil each activity and click to uncover the details behind every activity.<br>
-          Embark on your next expedition with TrekMapper!
+          across the globe. Zoom in to unveil each track and click to uncover the details behind every activity.
         </p>
       </div>
       <div class="col-md-7">
@@ -229,7 +228,7 @@
 
     <div class="row featurette">
       <div class="col-md-5 order-md-2">
-        <h2 class="featurette-heading fw-normal lh-1">Your Personal Heatmap.</h2>
+        <h2 class="featurette-heading fw-normal lh-1">Your Personal Calendar.</h2>
         <p class="lead">Track your progress on <strong>CubeTrek</strong>'s Calendar Heatmap.
           Reach your goals, record activity streaks.</p>
       </div>
@@ -433,6 +432,15 @@
               A custom script than draws the track on top of the texture of the 3D model.<br>
               The script also handles the D3.js graph data conversion from the GeoJSON file, the mouse interaction etc.<br>
                 The 2D map is very straightforward: just show the GeoJSON data in a MapLibre map (again using Maptiler as source for the map data).</p>
+
+              <p><strong>When you view your heatmap (TrekMapper):</strong> The server provides a list of the center coordinates for every track associated to your account, which in turn is rendered by MapLibre GL JS
+                to a heatmap. See <a href="https://maplibre.org/maplibre-gl-js-docs/example/heatmap-layer/">MapLibre's Heatmap example</a> for details.<br>
+                In high zoom levels, the script requests a simplified GeoJSON for each track within the view, which are displayed in their own layer.
+                Simplified means that the track resolution is downsampled quite significantly and no further information (i.e. no altitude data) is provided.<br>
+                This makes the number of displayed coordinates on the user device more manageable, with the downside of noticeably
+                simplified tracks when completely zoomed in.<br>
+                After clicking on the map, <a href="https://turfjs.org/">Turf.js</a> is used to determine the closest track.
+              </p>
             </div>
           </div>
         </div>
