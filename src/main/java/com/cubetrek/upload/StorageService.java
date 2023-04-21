@@ -198,8 +198,11 @@ public class StorageService {
             throw new ExceptionHandling.FileNotAccepted("Track does not contain Timing data.");
         }
 
+        boolean allWayPointsHaveElevation = reduced.getSegments().get(0).getPoints().stream()
+                .allMatch(wayPoint -> wayPoint.getElevation().isPresent());
+
         //check if elevation data is provided
-        if (reduced.getSegments().get(0).getPoints().get(0).getElevation().isEmpty()) {
+        if (!allWayPointsHaveElevation) {
             try {
                 reduced = GPXWorker.replaceElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
                 trackData.setHeightSource(TrackData.Heightsource.CALCULATED);
