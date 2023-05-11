@@ -25,8 +25,19 @@ const viewer = new Cesium.Viewer('renderCanvas', {
     baseLayerPicker: false,
     geocoder: false,
     globe: false,
+    skyAtmosphere: false,
     requestRenderMode: true,
-});
+    animation: false,
+    fullscreenButton: false,
+    homeButton: false,
+    infoBox: false,
+    sceneModePicker: false,
+    selectionIndicator: false,
+    timeline: false,
+    navigationHelpButton: false
+})
+viewer.scene.pickTranslucentDepth = true;
+
 
 const tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
     url: "https://tile.googleapis.com/v1/3dtiles/root.json?key=AIzaSyCIB6KWctsDcbcGmOqQoWYg_Uh1eO0muAg",
@@ -49,6 +60,7 @@ var getJSON = function(url) {
         xhr.send();
     });
 };
+var blueSphere;
 
 Promise.all([
     getJSON(root + "geojson/"+trackid+".geojson")
@@ -65,11 +77,57 @@ Promise.all([
     prepareGraph(jsonData);
     coordinateSystem.centerLat = jsonData.properties.bbox.centerLat;
     coordinateSystem.centerLon = jsonData.properties.bbox.centerLon;
+    coordinateSystem.boundingBoxN = jsonData.properties.bbox.boundingBoxN;
+    coordinateSystem.boundingBoxE = jsonData.properties.bbox.boundingBoxE;
+    coordinateSystem.boundingBoxS = jsonData.properties.bbox.boundingBoxS;
+    coordinateSystem.boundingBoxW = jsonData.properties.bbox.boundingBoxW;
     coordinateSystem.metersPerDegreeLat = jsonData.properties.bbox.metersPerDegreeLat;
     coordinateSystem.metersPerDegreeLon = jsonData.properties.bbox.metersPerDegreeLon;
     width_y = (jsonData.properties.bbox.boundingBoxN-jsonData.properties.bbox.boundingBoxS)*jsonData.properties.bbox.metersPerDegreeLat;
     width_x = (jsonData.properties.bbox.boundingBoxE-jsonData.properties.bbox.boundingBoxW)*jsonData.properties.bbox.metersPerDegreeLon;
     zoomfactor = jsonData.properties.tileBBoxes[0].tile_zoom;
+
+
+    const dataSource = new Cesium.GeoJsonDataSource("geojson");
+// Load the GeoJSON data
+    dataSource.load(jsonData, {
+        clampToGround: true  // Optional: Clamps the polyline to the terrain surface
+    }).then(() => {
+        // Get the entities created from the GeoJSON data
+        const entities = dataSource.entities.values;
+
+        // Iterate over the entities and add them to the viewer
+        for (let i = 0; i < entities.length; i++) {
+            const entity = entities[i];
+            entity.polyline.material = new Cesium.Color.fromCssColorString('#ff8001');
+            entity.polyline.width = 4.0;
+
+            viewer.entities.add(entity);
+        }
+
+        var west = Cesium.Math.toRadians(coordinateSystem.boundingBoxW);
+        var south = Cesium.Math.toRadians(coordinateSystem.boundingBoxS);
+        var east = Cesium.Math.toRadians(coordinateSystem.boundingBoxE);
+        var north = Cesium.Math.toRadians(coordinateSystem.boundingBoxN);
+        var rectangle = new Cesium.Rectangle(west, south, east, north);
+
+        blueSphere = viewer.entities.add({
+            position: new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromDegrees(0, 0, 0)),
+            name : 'Blue sphere',
+            ellipsoid : {
+                radii : new Cesium.Cartesian3(200.0, 200.0, 200.0), // Sizes in meters
+                material : Cesium.Color.LIGHTBLUE.withAlpha(0.5), // Light blue color with 50% transparency
+            }
+        });
+
+
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(coordinateSystem.centerLon, coordinateSystem.centerLat, 10000),
+            orientation: new Cesium.HeadingPitchRange(0, -Math.PI / 2, 0)
+        });
+
+        document.getElementById("progressdiv").style.display = "none";
+    })
 })
 
 var marker;
@@ -549,8 +607,8 @@ function moveMapMarker(lat, lon) {
 }
 
 function hideMapMarker() {
-    scene.particleSystems[0].stop();
     marker.setLngLat([0, 0]); //2D map
+    blueSphere.position = new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromDegrees(0, 0, -500));
 }
 
 function mapstyle(style) {

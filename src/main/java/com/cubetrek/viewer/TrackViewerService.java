@@ -190,6 +190,32 @@ public class TrackViewerService {
     }
 
     @Transactional(readOnly  = true)
+    public String mapViewHighRes(Authentication authentication, long trackid, Model model) {
+        logger.info("View Track-HighRes ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
+        TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
+        if (!isReadAccessAllowed(authentication, track))
+            throw new ExceptionHandling.TrackAccessException(noAccessMessage);
+
+        model.addAttribute("trackmetadata", track);
+        int hours = track.getDuration() / 60;
+        int minutes = track.getDuration() % 60;
+        model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
+        model.addAttribute("dateCreatedString", track.getDatetrack().toLocalDateTime().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
+        model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
+        model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
+        model.addAttribute("owner", track.getOwner().getName());
+        model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
+
+        //check if too big for 3D view (more than 100x100km)
+        if (track.getBBox().getWidthLatMeters() > 100000 || track.getBBox().getWidthLonMeters() > 100000) {
+            model.addAttribute("tracktoobig", true);
+            return "trackview2d";
+        }
+        return "trackviewhighres";
+    }
+
+
+    @Transactional(readOnly  = true)
     public String mapView2D(Authentication authentication, long trackid, Model model) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CubeTrek - High Res Mode</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+  <link rel="icon" type="image/svg" href="../assets/logo.svg">
+<meta name="theme-color" content="#712cf9">
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+
+      .b-example-divider {
+        height: 3rem;
+        background-color: rgba(0, 0, 0, .1);
+        border: solid rgba(0, 0, 0, .15);
+        border-width: 1px 0;
+        box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+      }
+
+      .b-example-vr {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 100vh;
+      }
+
+      .bi {
+        vertical-align: -.125em;
+        fill: currentColor;
+      }
+
+      .nav-scroller {
+        position: relative;
+        z-index: 2;
+        height: 2.75rem;
+        overflow-y: hidden;
+      }
+
+      .nav-scroller .nav {
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 1rem;
+        margin-top: -1px;
+        overflow-x: auto;
+        text-align: center;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
+
+    <link href="carousel.css" rel="stylesheet">
+  </head>
+  <body>
+    
+<header>
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="../index"><img class="me-2" width="30" src="../assets/logo.svg">CubeTrek</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="../registration">Get your Account</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="container marketing mt-5">
+
+    <div class="row">
+        <div class="col-md-7">
+            <h2 class="h1 fw-normal lh-1 pb-2"><strong>High Resolution Mode</strong><br>Using Google Map's Photorealistic 3D Tiles</h2>
+            <p>During I/O 2023, <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Google announced
+            the availability of their 3D Earth Model</a> as an Experimental Release.</p>
+            <p>
+                Here's a first implementation of these model in conjunction with <strong>CubeTrek</strong>, your favorite home for all your GPS tracks.<br>
+                And thanks to <a href="https://cesium.com/platform/cesiumjs/">Cesium.js</a> for all the heavy lifting.
+            </p>
+            <p>
+                Please note: this is experimental, free, and full of bugs (I assume). Have fun.
+            </p>
+        </div>
+        <div class="col-md-5">
+        </div>
+    </div><!-- /.row -->
+
+      <p>
+          See some Examples
+
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+
+          <div class="col">
+              <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/cima.jpg'); background-size: cover;">
+                  <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/viewhighres/6338">Cima di Fiorina</a>
+                      <ul class="d-flex list-unstyled mt-auto">
+                          <li class="d-flex align-content-end me-3">
+                              <small>Hike</small>
+                          </li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+
+          <div class="col">
+              <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/mat.jpg'); background-size: cover;">
+                  <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/viewhighres/4967">Mattjisch Horn</a>
+                      <ul class="d-flex list-unstyled mt-auto">
+                          <li class="d-flex align-content-end me-3">
+                              <small>Ski Mountaineering</small>
+                          </li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+
+          <div class="col">
+              <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/stmo.jpg'); background-size: cover;">
+                  <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/viewhighres/6638">St. Moritz Run</a>
+                      <ul class="d-flex list-unstyled mt-auto">
+                          <li class="d-flex align-content-end me-3">
+                              <small>Run</small>
+                          </li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+    <!-- START THE FEATURETTES -->
+
+    <hr class="featurette-divider">
+  </div>
+
+      <div class="container mt-5">
+          <div class="row">
+              <div class="col">
+                  <h2 class="mb-4">Upload your own GPS Tracks</h2>
+                  <ul class="list-group">
+                      <li class="list-group-item">
+                          <h4 class="mb-2">Step 1: Get a CubeTrek account</h4>
+                          <p><a href="/registration" target="_blank">Register for a new account</a>. It's free, and you only need to provide a username and email address.</p>
+                      </li>
+                      <li class="list-group-item">
+                          <h4 class="mb-2">Step 2: Get your Activity Files</h4>
+                          <p>CubeTrek accepts FIT files (e.g. from Garmin, Polar, Suunto devices) and GPX files.</p>
+                          <p>See <a href="/static/bulkdownload.html" target="_blank">here for instructions</a> on how to
+                          download all your files from your Strava or Garmin account (<a href="/static/bulkdownload.html" target="_blank">bulk download</a>).</p>
+                          <p>You can also connect your <strong>Garmin or Polar account</strong> to CubeTrek to automatically sync from your device.<br>
+                              <i>Please note:</i> this will only sync future activities, past activities need to be uploaded to CubeTrek manually.</p>
+                      </li>
+                      <li class="list-group-item">
+                          <h4 class="mb-2">Step 3: Upload your files</h4>
+                          <p>Login to CubeTrek and <a href="/upload" target="_blank">upload your files</a>, one by one
+                          or upload an entire ZIP archive.</p>
+                      </li>
+                      <li class="list-group-item">
+                          <h4 class="mb-2">Done</h4>
+                          <p>Open your track and click on the well hidden <strong>High Res button</strong> to the bottom left of the "traditional" 3D view.</p>
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
+
+    <div class="container mt-5">
+
+        <div id="techdeeds" class="py-5">
+            <div class="container">
+                <div class="accordion" id="tech-exposition">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed fw-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                Tech Stack Rundown for the Interested
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#exposition">
+                            <div class="accordion-body">
+                                <p>For the technically inclined people, here's a <strong>short summary of the underlying tech stack</strong> used by CubeTrek.</p>
+                                <p>The Back End is constructed with <a href="https://i.imgur.com/oCqmcnE.jpeg">Java</a> and <a href="https://spring.io/projects/spring-boot">Spring Boot</a> backed with <a href="https://www.postgresql.org/">Postgresql</a> (and <a href="https://postgis.net/">Postgis</a>), the Front End is based on <a href="https://getbootstrap.com/">Bootstrap</a>. <a href="http://vanilla-js.com/">Good old plain JavaScript</a> is used for interaction with the server.</p>
+                                <p>The actual 3D magic is performed by the awesome <a href="https://www.babylonjs.com/">Babylon.js</a> library (check it out, if you've never heard of it), the graph is handled by <a href="https://d3js.org/">D3.js</a> (very versatile, but a steep learning curve), the 2D map is rendered with <a href="https://maplibre.org/">MapLibre GL JS</a> (which is very straightforward to use in this particular case).</p>
+
+                                <p><strong>So here's what happens when you upload a FIT or GPX file:</strong> the server reads the tracks, downsamples them to a reasonable resolution and calculates some descriptive values (such as the geographical bounding box, distance, time, etc.).<br>
+                                    The elevation data is cross-checked with the elevation model on the server. This is done to check if the device's height sensors were propely calibrated and a simple correction is applied if necessary. If elevation data is completely absent in the file (because the recording device doesn't have a height sensor) the elevation data is interpolated completely from the model.<br>
+                                    The elevation model consists of <a href="https://wiki.openstreetmap.org/wiki/SRTM#Format">HGT files</a> retrieved from the <a href="https://lpdaac.usgs.gov/products/srtmgl1v003/">NASA SRTM</a> dataset.</p>
+
+                                <p>To guess the activity name, we take the highest point in the track data (making the assumption that this is the most prominent point of the whole activity, e.g. the summit). This is cross-checked against a peak database on the server. The data comes from <a href="https://www.openstreetmap.org">OpenStreetMap</a> and contains all OSM features annotated as '<a href="https://wiki.openstreetmap.org/wiki/Tag:natural%3Dpeak">Peak</a>', and contains >520k entries.<br>
+                                    If there's no peak in the vicinity, a reverse geocoding request is sent to <a href="https://www.maptiler.com/">Maptiler</a>.</p>
+
+                                <p>Once all the data is gathered, it's stored in a PostGIS extended PostgreSQL database and the activity is ready be to put on the spotlight.</p>
+
+                                <p><strong>When you view the activity in the 3D viewer:</strong> the server provides two key files for each activity. An extended <a href="https://en.wikipedia.org/wiki/GeoJSON">GeoJSON</a> file, describing the track latitude/longitude data, time, and elevation data. A <a href="https://kcoley.github.io/glTF/">gLTF</a> file which contains the 3D Model of the topography. Babylon.js is used to display the gLTF file and loads the texture (map tiles) from Maptiler.<br>
+                                    A custom script than draws the track on top of the texture of the 3D model.<br>
+                                    The script also handles the D3.js graph data conversion from the GeoJSON file, the mouse interaction etc.<br>
+                                    The 2D map is very straightforward: just show the GeoJSON data in a MapLibre map (again using Maptiler as source for the map data).</p>
+
+                                <p><strong>When you view your heatmap (TrekMapper):</strong> The server provides a list of the center coordinates for every track associated to your account, which in turn is rendered by MapLibre GL JS
+                                    to a heatmap. See <a href="https://maplibre.org/maplibre-gl-js-docs/example/heatmap-layer/">MapLibre's Heatmap example</a> for details.<br>
+                                    In high zoom levels, the script requests a simplified GeoJSON for each track within the view, which are displayed in their own layer.
+                                    Simplified means that the track resolution is downsampled quite significantly and no further information (i.e. no altitude data) is provided.<br>
+                                    This makes the number of displayed coordinates on the user device more manageable, with the downside of noticeably
+                                    simplified tracks when completely zoomed in.<br>
+                                    After clicking on the map, <a href="https://turfjs.org/">Turf.js</a> is used to determine the closest track.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      <div class="row">
+          <h2 class="h1 fw-normal lh-1">Get <strong>CubeTrek</strong> now</h2>
+          <p><a class="btn btn-secondary" href="../registration">Sign up</a></p>
+      </div>
+
+  </div><!-- /.container -->
+
+
+  <!-- FOOTER -->
+  <footer class="container">
+    <p class="float-end"><a href="#">Back to top</a></p>
+    <p>© 2023 CubeTrek · <a href="../static/privacy.html">Privacy</a></p>
+  </footer>
+</main>
+</body></html>
