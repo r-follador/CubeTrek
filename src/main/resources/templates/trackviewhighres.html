@@ -68,17 +68,6 @@
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
             <div class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;"
                     id="renderCanvas" touch-action="none"></div>
-            <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked
-                       onchange="mapstyle('summer')">
-                <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off"
-                       onchange="mapstyle('winter')">
-                <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off"
-                       onchange="mapstyle('satellite')">
-                <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
-            </div>
             <div class="btn-group-vertical position-absolute bottom-0 start-0 p-3 pb-5">
                 <a th:href="${'../view2d/'+trackmetadata.id}" class="btn btn-outline-primary btn-sm">2D Map</a>
             </div>

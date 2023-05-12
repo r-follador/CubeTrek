@@ -26,7 +26,8 @@ const viewer = new Cesium.Viewer('renderCanvas', {
     geocoder: false,
     globe: false,
     skyAtmosphere: false,
-    requestRenderMode: true,
+    skyBox: false,
+    requestRenderMode: false,
     animation: false,
     fullscreenButton: false,
     homeButton: false,
@@ -36,13 +37,31 @@ const viewer = new Cesium.Viewer('renderCanvas', {
     timeline: false,
     navigationHelpButton: false
 })
-viewer.scene.pickTranslucentDepth = true;
 
 
 const tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
     url: "https://tile.googleapis.com/v1/3dtiles/root.json?key=AIzaSyCIB6KWctsDcbcGmOqQoWYg_Uh1eO0muAg",
     showCreditsOnScreen: true,
 }));
+
+var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+handler.setInputAction(function (event) {
+    var canvas = viewer.canvas;
+    if (event.endPosition.x < 0 || event.endPosition.y < 0 ||
+        event.endPosition.x > canvas.clientWidth ||
+        event.endPosition.y > canvas.clientHeight) {
+        // Mouse is outside the canvas
+        return;
+    }
+
+    var pickedPosition = viewer.scene.pickPosition(event.endPosition);
+    if (Cesium.defined(pickedPosition)) {
+        var cartographic = Cesium.Cartographic.fromCartesian(pickedPosition);
+        findLine(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+    } else {
+        findLine(false);
+    }
+}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
 var getJSON = function(url) {
     return new Promise(function(resolve, reject) {
@@ -61,6 +80,7 @@ var getJSON = function(url) {
     });
 };
 var blueSphere;
+var blueSpherePosition;
 
 Promise.all([
     getJSON(root + "geojson/"+trackid+".geojson")
@@ -71,7 +91,6 @@ Promise.all([
     console.error(error);
 }).then((values) => {
     jsonData = values[0]; //returned from getJSON
-    console.log(jsonData);
     kdtree = new kdTree(jsonData.geometry.coordinates[0]);
     prepareMap2d(jsonData);
     prepareGraph(jsonData);
@@ -111,12 +130,30 @@ Promise.all([
         var north = Cesium.Math.toRadians(coordinateSystem.boundingBoxN);
         var rectangle = new Cesium.Rectangle(west, south, east, north);
 
-        blueSphere = viewer.entities.add({
-            position: new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromDegrees(0, 0, 0)),
-            name : 'Blue sphere',
+        blueSpherePosition = Cesium.Cartesian3.fromDegrees(0, 0);
+
+        /**blueSphere = viewer.entities.add({
+            position : new Cesium.CallbackProperty(function(time, result) {
+                return blueSpherePosition;
+            }, false),
+            name : 'bluemarker',
             ellipsoid : {
-                radii : new Cesium.Cartesian3(200.0, 200.0, 200.0), // Sizes in meters
-                material : Cesium.Color.LIGHTBLUE.withAlpha(0.5), // Light blue color with 50% transparency
+                radii : new Cesium.Cartesian3(50.0, 50.0, 50.0), // Sizes in meters
+                material : Cesium.Color.LIGHTBLUE.withAlpha(0.8), // Light blue color with 50% transparency
+                clampToGround: true
+            }
+        });**/
+
+        blueSphere = viewer.entities.add({
+            name : 'Ground clamped circle',
+            position: new Cesium.CallbackProperty(function(time, result) {
+                return blueSpherePosition;
+            }, false),
+            ellipse : {
+                semiMinorAxis : 70.0,
+                semiMajorAxis : 70.0,
+                material : Cesium.Color.LIGHTBLUE.withAlpha(0.8),
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             }
         });
 
@@ -600,43 +637,17 @@ function findLine(lat, lon) {
 
 function moveMapMarker(lat, lon) {
     marker.setLngLat([lon, lat]); //2D map
-    var x = (coordinateSystem.centerLon-lon)*coordinateSystem.metersPerDegreeLon;
-    var y = (lat-coordinateSystem.centerLat)*coordinateSystem.metersPerDegreeLat;
+
+    blueSpherePosition = Cesium.Cartesian3.fromDegrees(lon, lat, 500);
+    viewer.scene.requestRender();
+
 
     return false;
 }
 
 function hideMapMarker() {
     marker.setLngLat([0, 0]); //2D map
-    blueSphere.position = new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromDegrees(0, 0, -500));
-}
-
-function mapstyle(style) {
-    let styletype;
-    switch(style) {
-        case 'summer':
-            styletype = 'standard';
-            helperLight.intensity=0.6;
-            break;
-        case 'winter':
-            styletype = 'winter';
-            helperLight.intensity=0.6;
-            break;
-        case 'satellite':
-            styletype = 'satellite';
-            helperLight.intensity=0.8;
-            break;
-        default:
-            styletype = 'standard';
-    }
-
-    for (let i =0; i < meshes.length; i++ ) {
-        meshes[i].material.albedoTexture.dispose();
-        let url = root + `gltf/map/${styletype}/${jsonData.properties.tileBBoxes[i].tile_zoom}/${jsonData.properties.tileBBoxes[i].tile_x}/${jsonData.properties.tileBBoxes[i].tile_y}.png`;
-        meshes[i].material.albedoTexture = new BABYLON.Texture(url, scene);
-        meshes[i].material.albedoTexture.vScale = -1;
-        jsonData.properties.tileBBoxes[i];
-    }
+    blueSpherePosition = Cesium.Cartesian3.fromDegrees(0, 0, -500);
 }
 
 function clickSettingsMetric() {
