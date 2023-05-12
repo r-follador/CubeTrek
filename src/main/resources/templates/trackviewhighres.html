@@ -71,6 +71,10 @@
             <div class="btn-group-vertical position-absolute bottom-0 start-0 p-3 pb-5">
                 <a th:href="${'../view2d/'+trackmetadata.id}" class="btn btn-outline-primary btn-sm">2D Map</a>
             </div>
+
+            <div class="btn-group-vertical position-absolute top-0 end-0 p-3">
+                <a id="cesiumrunButton"  onclick="startCesiumWalkthrough()" class="btn btn-success btn-sm" style="display: none;">Run</a>
+            </div>
         </div>
 
         <div class="col-xl-4 d-flex flex-xl-column p-0">

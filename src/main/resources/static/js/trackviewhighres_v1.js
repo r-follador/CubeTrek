@@ -44,6 +44,20 @@ const tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
     showCreditsOnScreen: true,
 }));
 
+tileset.readyPromise.then(function() {
+    document.getElementById("cesiumrunButton").style.display = "block";
+    document.getElementById("progressdiv").style.display = "none";
+}).catch(function(error) {
+    document.getElementById("errormessage").innerText = "Error Loading Assets; Try again.";
+    document.getElementById("errormessage").style.display = "block";
+    document.getElementById("progressdiv").style.display = "none";
+});
+
+var terrainProvider = Cesium.createWorldTerrain();
+viewer.scene.screenSpaceCameraController.minimumCollisionTerrainHeight = 1.5;
+
+
+
 var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 handler.setInputAction(function (event) {
     var canvas = viewer.canvas;
@@ -128,11 +142,10 @@ Promise.all([
         var south = Cesium.Math.toRadians(coordinateSystem.boundingBoxS);
         var east = Cesium.Math.toRadians(coordinateSystem.boundingBoxE);
         var north = Cesium.Math.toRadians(coordinateSystem.boundingBoxN);
-        var rectangle = new Cesium.Rectangle(west, south, east, north);
 
         blueSpherePosition = Cesium.Cartesian3.fromDegrees(0, 0);
 
-        /**blueSphere = viewer.entities.add({
+        blueSphere = viewer.entities.add({
             position : new Cesium.CallbackProperty(function(time, result) {
                 return blueSpherePosition;
             }, false),
@@ -140,12 +153,11 @@ Promise.all([
             ellipsoid : {
                 radii : new Cesium.Cartesian3(50.0, 50.0, 50.0), // Sizes in meters
                 material : Cesium.Color.LIGHTBLUE.withAlpha(0.8), // Light blue color with 50% transparency
-                clampToGround: true
             }
-        });**/
+        });
 
-        blueSphere = viewer.entities.add({
-            name : 'Ground clamped circle',
+        /**blueSphere = viewer.entities.add({
+            name : 'bluecircle',
             position: new Cesium.CallbackProperty(function(time, result) {
                 return blueSpherePosition;
             }, false),
@@ -155,15 +167,13 @@ Promise.all([
                 material : Cesium.Color.LIGHTBLUE.withAlpha(0.8),
                 heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             }
-        });
+        });**/
 
 
         viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(coordinateSystem.centerLon, coordinateSystem.centerLat, 10000),
             orientation: new Cesium.HeadingPitchRange(0, -Math.PI / 2, 0)
         });
-
-        document.getElementById("progressdiv").style.display = "none";
     })
 })
 
@@ -238,6 +248,12 @@ function changeGraphY(type) {
     graph = new drawGraph(graphYAxis, graphXAxis);
 }
 
+let cesiumProperty;
+
+//Set bounds of our simulation time
+let cesiumStart;
+let cesiumStop;
+
 let horizontal_average;
 let vertical_down_average;
 let vertical_up_average;
@@ -254,10 +270,16 @@ function prepareGraph(jsonData) {
     let verticalDistSumDown = 0;
     let verticalTimeSumDown = 0;
 
+    cesiumProperty = new Cesium.SampledPositionProperty();
+
+
     for (var i=0; i<jsonData.geometry.coordinates[0].length; i++) {
         let time = parseDate(jsonData.geometry.coordinates[0][i][3]);
         let elevation = jsonData.geometry.coordinates[0][i][2];
         let distance = jsonData.geometry.coordinates[0][i][4];
+
+
+        cesiumProperty.addSample(Cesium.JulianDate.fromDate(time), Cesium.Cartesian3.fromDegrees(jsonData.geometry.coordinates[0][i][0],jsonData.geometry.coordinates[0][i][1]));
 
         let time_diff_hour = (time-previousTime)/3600000;
         let verticalSpeed_m_per_h = (elevation-previousElevation)/time_diff_hour;
@@ -284,6 +306,39 @@ function prepareGraph(jsonData) {
         datas.push({'time' : time, 'altitude' : elevation, 'distance' : distance, 'vertical_speed' : verticalSpeed_m_per_h, 'horizontal_speed' : horizontalSpeed_km_per_h, 'moving_time' : movingTime});
     }
 
+    cesiumStart = cesiumProperty._property._times[0];
+    cesiumStop = cesiumProperty._property._times[cesiumProperty._property._times.length - 1];
+
+    // Extract the positions and the corresponding times from the property
+    var oldPositions = cesiumProperty._property._values;
+    var times = cesiumProperty._property._times;
+
+    // Convert positions to Cartesian3 objects
+    var cartesian3Positions = [];
+    for (var i = 0; i < oldPositions.length; i += 3) {
+        cartesian3Positions.push(new Cesium.Cartesian3(oldPositions[i], oldPositions[i + 1], oldPositions[i + 2]));
+    }
+
+    // Convert positions to Cartographic
+    var cartographicPositions = cartesian3Positions.map(pos => Cesium.Cartographic.fromCartesian(pos));
+
+
+    // Use sampleTerrainMostDetailed to get the correct heights
+    Cesium.sampleTerrainMostDetailed(terrainProvider, cartographicPositions)
+        .then(function(updatedPositions) {
+            // Create a new SampledPositionProperty with the updated positions
+            var newcesiumProperty = new Cesium.SampledPositionProperty();
+
+            for (var i = 0; i < updatedPositions.length; i++) {
+                var updatedPosition = Cesium.Cartographic.toCartesian(updatedPositions[i]);
+                newcesiumProperty.addSample(times[i], updatedPosition);
+            }
+
+            // Replace the old property with the new one
+            cesiumProperty = newcesiumProperty;
+        });
+
+
     horizontal_average = ((previousDistance)/(movingTime/3600));
     vertical_down_average = (verticalDistSumDown)/(verticalTimeSumDown/3600000);
     vertical_up_average = (verticalDistSumUp)/(verticalTimeSumUp/3600000);
@@ -298,6 +353,52 @@ function prepareGraph(jsonData) {
 
     let movingTimeMinutes = movingTime/60000;
     document.getElementById("movingtime").innerText = Math.floor(movingTimeMinutes/60)+":"+Math.floor(movingTimeMinutes%60).toString().padStart(2,"0");
+}
+
+var redSphere;
+function startCesiumWalkthrough() {
+
+
+    if (!viewer.clock.shouldAnimate) {
+
+        redSphere = viewer.entities.add({
+            availability: new Cesium.TimeIntervalCollection([
+                new Cesium.TimeInterval({
+                    start: cesiumStart,
+                    stop: cesiumStop,
+                }),
+            ]),
+            name: 'redCircle',
+            position: cesiumProperty,
+            /**ellipse : {
+            semiMinorAxis : 50.0,
+            semiMajorAxis : 50.0,
+            material : Cesium.Color.RED,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        }**/
+            ellipsoid: {
+                radii: new Cesium.Cartesian3(5.0, 5.0, 5.0), // Sizes in meters
+                material: Cesium.Color.RED.withAlpha(0.8), // Light blue color with 50% transparency
+            }
+        });
+
+        viewer.clock.startTime = cesiumStart.clone();
+        viewer.clock.stopTime = cesiumStop.clone();
+        viewer.clock.currentTime = cesiumStart.clone();
+        viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+        viewer.clock.multiplier = 10;
+
+        viewer.trackedEntity = redSphere;
+
+        viewer.clock.shouldAnimate = true;
+        document.getElementById("cesiumrunButton").innerText="Stop";
+    } else {
+
+        viewer.clock.shouldAnimate = false;
+        viewer.trackedEntity = undefined;
+        viewer.entities.remove(redSphere);
+        document.getElementById("cesiumrunButton").innerText="Run";
+    }
 }
 
 function drawGraph(yaxis, xaxis) {
@@ -638,7 +739,20 @@ function findLine(lat, lon) {
 function moveMapMarker(lat, lon) {
     marker.setLngLat([lon, lat]); //2D map
 
-    blueSpherePosition = Cesium.Cartesian3.fromDegrees(lon, lat, 500);
+    let newblueSpherePosition = Cesium.Cartesian3.fromDegrees(lon, lat, 600);
+
+    var terrainSamplePositions = [Cesium.Cartographic.fromCartesian(newblueSpherePosition)];
+    Cesium.sampleTerrainMostDetailed(terrainProvider, terrainSamplePositions)
+        .then(function(updatedPositions) {
+            // Update the sphere's position with the new position and the terrain height
+            blueSpherePosition = Cesium.Cartesian3.fromRadians(
+                updatedPositions[0].longitude,
+                updatedPositions[0].latitude,
+                updatedPositions[0].height
+            );
+        });
+
+
     viewer.scene.requestRender();
 
 
