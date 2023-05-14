@@ -14,7 +14,6 @@ const miles_per_km = 0.621371;
 const feet_per_m = 3.28084;
 var kdtree;
 var graph;
-var helperLight;
 
 
 Cesium.RequestScheduler.requestsByServer["tile.googleapis.com:443"] = 18;
@@ -54,9 +53,12 @@ tileset.readyPromise.then(function() {
 });
 
 var terrainProvider = Cesium.createWorldTerrain();
-viewer.scene.screenSpaceCameraController.minimumCollisionTerrainHeight = 1.5;
+viewer.scene.screenSpaceCameraController.minimumCollisionTerrainHeight = 1500;
 
-
+var elements = document.getElementsByClassName('cesium-credit-logoContainer');
+for (var i = 0; i < elements.length; i++) {
+    elements[i].style.display = 'none';
+}
 
 var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 handler.setInputAction(function (event) {
@@ -67,6 +69,9 @@ handler.setInputAction(function (event) {
         // Mouse is outside the canvas
         return;
     }
+
+    if (isCesiumRunning)
+        return;
 
     var pickedPosition = viewer.scene.pickPosition(event.endPosition);
     if (Cesium.defined(pickedPosition)) {
@@ -137,43 +142,45 @@ Promise.all([
 
             viewer.entities.add(entity);
         }
-
-        var west = Cesium.Math.toRadians(coordinateSystem.boundingBoxW);
-        var south = Cesium.Math.toRadians(coordinateSystem.boundingBoxS);
-        var east = Cesium.Math.toRadians(coordinateSystem.boundingBoxE);
-        var north = Cesium.Math.toRadians(coordinateSystem.boundingBoxN);
+        var rectangle = Cesium.Rectangle.fromDegrees(coordinateSystem.boundingBoxW, coordinateSystem.boundingBoxS, coordinateSystem.boundingBoxE, coordinateSystem.boundingBoxN);
 
         blueSpherePosition = Cesium.Cartesian3.fromDegrees(0, 0);
+
+
+        var svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50">
+                   <circle cx="25" cy="25" r="10" fill="rgba(68,146,220,0.85)" />
+               </svg>`;
+
+        var svgDataURI = 'data:image/svg+xml,' + encodeURIComponent(svgData);
+
 
         blueSphere = viewer.entities.add({
             position : new Cesium.CallbackProperty(function(time, result) {
                 return blueSpherePosition;
             }, false),
             name : 'bluemarker',
-            ellipsoid : {
-                radii : new Cesium.Cartesian3(50.0, 50.0, 50.0), // Sizes in meters
-                material : Cesium.Color.LIGHTBLUE.withAlpha(0.8), // Light blue color with 50% transparency
-            }
-        });
-
-        /**blueSphere = viewer.entities.add({
-            name : 'bluecircle',
-            position: new Cesium.CallbackProperty(function(time, result) {
-                return blueSpherePosition;
-            }, false),
+            /**billboard : {
+                image : svgDataURI,
+                scale : 1.0, // Adjust size as needed
+                disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                heightReference : Cesium.HeightReference.CLAMP_TO_GROUND
+            }**/
             ellipse : {
                 semiMinorAxis : 70.0,
                 semiMajorAxis : 70.0,
-                material : Cesium.Color.LIGHTBLUE.withAlpha(0.8),
-                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                material : new Cesium.Color.fromCssColorString('rgba(68,146,220,0.85)'),
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
             }
-        });**/
-
+        });
 
         viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(coordinateSystem.centerLon, coordinateSystem.centerLat, 10000),
+            destination: rectangle,
             orientation: new Cesium.HeadingPitchRange(0, -Math.PI / 2, 0)
         });
+    }).then(() => {
+        console.log("NOWW??????????");
     })
 })
 
@@ -303,7 +310,7 @@ function prepareGraph(jsonData) {
         previousTime = time;
         previousElevation = elevation;
         previousDistance = distance;
-        datas.push({'time' : time, 'altitude' : elevation, 'distance' : distance, 'vertical_speed' : verticalSpeed_m_per_h, 'horizontal_speed' : horizontalSpeed_km_per_h, 'moving_time' : movingTime});
+        datas.push({'time' : time, 'altitude' : elevation, 'distance' : distance, 'vertical_speed' : verticalSpeed_m_per_h, 'horizontal_speed' : horizontalSpeed_km_per_h, 'moving_time' : movingTime, 'lon' : jsonData.geometry.coordinates[0][i][0], 'lat': jsonData.geometry.coordinates[0][i][1]});
     }
 
     cesiumStart = cesiumProperty._property._times[0];
@@ -356,11 +363,12 @@ function prepareGraph(jsonData) {
 }
 
 var redSphere;
-function startCesiumWalkthrough() {
+var visibleCircle;
+var isCesiumRunning = false;
 
-
+function startCesiumWalkthrough(juliandate) {
     if (!viewer.clock.shouldAnimate) {
-
+        findLine(null);
         redSphere = viewer.entities.add({
             availability: new Cesium.TimeIntervalCollection([
                 new Cesium.TimeInterval({
@@ -370,37 +378,97 @@ function startCesiumWalkthrough() {
             ]),
             name: 'redCircle',
             position: cesiumProperty,
-            /**ellipse : {
-            semiMinorAxis : 50.0,
-            semiMajorAxis : 50.0,
-            material : Cesium.Color.RED,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        }**/
             ellipsoid: {
-                radii: new Cesium.Cartesian3(5.0, 5.0, 5.0), // Sizes in meters
-                material: Cesium.Color.RED.withAlpha(0.8), // Light blue color with 50% transparency
+                radii: new Cesium.Cartesian3(200.0, 200.0, 200.0),
+                material: Cesium.Color.LIGHTBLUE.withAlpha(0),
+            }
+            /**
+             * cylinder: {
+             *                 length: 40.0,
+             *                 topRadius: 15.0,
+             *                 bottomRadius: 15.0,
+             *                 material: Cesium.Color.LIGHTBLUE.withAlpha(0.8), // Light blue color with 50% transparency
+             *             }
+             */
+        });
+
+        visibleCircle = viewer.entities.add({
+            availability: new Cesium.TimeIntervalCollection([
+                new Cesium.TimeInterval({
+                    start: cesiumStart,
+                    stop: cesiumStop,
+                }),
+            ]),
+            name: 'visibleCircle',
+            position: cesiumProperty,
+            ellipse : {
+                semiMinorAxis : 30.0,
+                semiMajorAxis : 30.0,
+                material : new Cesium.Color.fromCssColorString('rgba(68,146,220,0.6)'),
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
             }
         });
 
+
         viewer.clock.startTime = cesiumStart.clone();
         viewer.clock.stopTime = cesiumStop.clone();
-        viewer.clock.currentTime = cesiumStart.clone();
+
+        if (juliandate === undefined)
+            viewer.clock.currentTime = cesiumStart.clone();
+        else
+            viewer.clock.currentTime = juliandate.clone();
         viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
         viewer.clock.multiplier = 10;
 
-        viewer.trackedEntity = redSphere;
+        viewer.flyTo(redSphere).then(function() {
+            // This function will be called when the flyTo operation is complete
+            viewer.trackedEntity = redSphere;
+            viewer.clock.shouldAnimate = true;
+        });
 
-        viewer.clock.shouldAnimate = true;
-        document.getElementById("cesiumrunButton").innerText="Stop";
+
+        isCesiumRunning = true;
+
+        document.getElementById('cesiumrunButton').classList.remove('btn-success');
+        document.getElementById('cesiumrunButton').classList.add('btn-danger');
+        document.getElementById("cesiumspeed").style.display = "block";
+        viewer.clock.onTick.addEventListener(onTick);
+
+
     } else {
-
+        viewer.clock.onTick.removeEventListener(onTick);
         viewer.clock.shouldAnimate = false;
         viewer.trackedEntity = undefined;
         viewer.entities.remove(redSphere);
-        document.getElementById("cesiumrunButton").innerText="Run";
+        viewer.entities.remove(visibleCircle);
+        document.getElementById('cesiumrunButton').classList.remove('btn-danger');
+        document.getElementById('cesiumrunButton').classList.add('btn-success');
+        document.getElementById("cesiumrunButton").innerText="Start";
+        document.getElementById("cesiumspeed").style.display = "none";
+        isCesiumRunning = false;
+        findLine(null);
     }
 }
 
+function setSpeed(speed) {
+    viewer.clock.multiplier = speed;
+}
+
+function onTick(clock) {
+    var currentTime = clock.currentTime;
+    var currentPosition = cesiumProperty.getValue(currentTime);
+    var cartographicPosition = Cesium.Cartographic.fromCartesian(currentPosition);
+    var longitude = Cesium.Math.toDegrees(cartographicPosition.longitude);
+    var latitude = Cesium.Math.toDegrees(cartographicPosition.latitude);
+
+    var date = Cesium.JulianDate.toDate(currentTime);
+    var timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+
+
+    document.getElementById("cesiumrunButton").innerText=timeString;
+
+    findByTime(date);
+}
 function drawGraph(yaxis, xaxis) {
     this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
@@ -620,6 +688,15 @@ function drawGraph(yaxis, xaxis) {
         moveMapMarker(jsonData.geometry.coordinates[0][i][1], jsonData.geometry.coordinates[0][i][0]);
     }
 
+    this.click = function() {
+        var x0 = that.xScale.invert(d3.pointer(event, this)[0]);
+        var i = that.bisect(datas, x0, 1);
+        selectedData = datas[i]
+        if (selectedData=== undefined)
+            return;
+        startCesiumWalkthrough(Cesium.JulianDate.fromDate(selectedData.time));
+    }
+
     this.moveGraphMarker = function(selectedData) {
         this.xtext;
         this.ytext
@@ -693,7 +770,8 @@ function drawGraph(yaxis, xaxis) {
         .attr('height', this.height)
         .on('mouseover', this.mouseover)
         .on('mousemove', this.mousemove)
-        .on('mouseout', this.mouseout);
+        .on('mouseout', this.mouseout)
+        .on('click' ,this.click);
 }
 
 function settings() {
@@ -736,25 +814,48 @@ function findLine(lat, lon) {
     graph.moveGraphMarker(datas[index]);
 }
 
+function findByTime(targetDate) {
+    if (targetDate == null) {
+        hideMapMarker();
+        graph.hideGraphMarker();
+        return;
+    }
+
+    var closestItem = datas.reduce(function(prev, curr) {
+        var currDate = new Date(curr.time);
+        var prevDate = new Date(prev.time);
+
+        // Calculate the absolute difference between the current date and the target date
+        var currDiff = Math.abs(currDate - targetDate);
+        var prevDiff = Math.abs(prevDate - targetDate);
+
+        // If the current difference is smaller, return the current item, else return the previous one
+        return (currDiff < prevDiff) ? curr : prev;
+    });
+
+    moveMapMarker(closestItem.lat, closestItem.lon);
+    graph.showGraphMarker();
+    graph.moveGraphMarker(closestItem);
+}
+
 function moveMapMarker(lat, lon) {
     marker.setLngLat([lon, lat]); //2D map
 
-    let newblueSpherePosition = Cesium.Cartesian3.fromDegrees(lon, lat, 600);
+    if (isCesiumRunning)
+        return false;
 
+    let newblueSpherePosition = Cesium.Cartesian3.fromDegrees(lon, lat, 600);
     var terrainSamplePositions = [Cesium.Cartographic.fromCartesian(newblueSpherePosition)];
     Cesium.sampleTerrainMostDetailed(terrainProvider, terrainSamplePositions)
         .then(function(updatedPositions) {
             // Update the sphere's position with the new position and the terrain height
             blueSpherePosition = Cesium.Cartesian3.fromRadians(
                 updatedPositions[0].longitude,
-                updatedPositions[0].latitude,
-                updatedPositions[0].height
+                updatedPositions[0].latitude
+                //updatedPositions[0].height
             );
         });
-
-
     viewer.scene.requestRender();
-
 
     return false;
 }
