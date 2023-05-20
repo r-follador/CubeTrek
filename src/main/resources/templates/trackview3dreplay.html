@@ -70,6 +70,7 @@
             <div class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;"
                     id="renderCanvas" touch-action="none"></div>
             <div class="btn-group-vertical position-absolute bottom-0 start-0 p-3 pb-4">
+                <a th:href="${'../view/'+trackmetadata.id}" class="btn btn-primary btn-sm">Classic 3D</a>
                 <a th:href="${'../view2d/'+trackmetadata.id}" class="btn btn-primary btn-sm">2D Map</a>
             </div>
 
@@ -455,7 +456,7 @@
     var sharing = "[[${trackmetadata.sharing}]]";
 </script>
 <script src="../js/kd-tree.js"></script>
-<script src="../js/trackviewhighres_v1.js"></script>
+<script src="../js/trackview3dreplay_v3.js"></script>
 
 </body>
 </html>

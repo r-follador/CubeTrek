@@ -233,11 +233,11 @@ public class MainController {
         return trackViewerService.mapView2D(authentication, trackid, model);
     }
 
-    @GetMapping(value="/viewhighres/{itemid}")
-    public String viewTrackHighRes(@PathVariable("itemid") long trackid, Model model)
+    @GetMapping(value="/replay/{itemid}")
+    public String viewTrack3dReplay(@PathVariable("itemid") long trackid, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return trackViewerService.mapViewHighRes(authentication, trackid, model);
+        return trackViewerService.mapView3dReplay(authentication, trackid, model);
     }
 
     @GetMapping(value="/download/{itemid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)

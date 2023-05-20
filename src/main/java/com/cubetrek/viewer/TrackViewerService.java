@@ -28,7 +28,6 @@ import org.springframework.ui.Model;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
@@ -190,8 +189,8 @@ public class TrackViewerService {
     }
 
     @Transactional(readOnly  = true)
-    public String mapViewHighRes(Authentication authentication, long trackid, Model model) {
-        logger.info("View Track-HighRes ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
+    public String mapView3dReplay(Authentication authentication, long trackid, Model model) {
+        logger.info("View Track-3dReplay ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
@@ -211,7 +210,7 @@ public class TrackViewerService {
             model.addAttribute("tracktoobig", true);
             return "trackview2d";
         }
-        return "trackviewhighres";
+        return "trackview3dreplay";
     }
 
 

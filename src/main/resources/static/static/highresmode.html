@@ -3,7 +3,7 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CubeTrek - High Res Mode</title>
+    <title>CubeTrek - Replay Mode</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
   <link rel="icon" type="image/svg" href="../assets/logo.svg">
@@ -90,15 +90,17 @@
 
     <div class="row">
         <div class="col-md-7">
-            <h2 class="h1 fw-normal lh-1 pb-2"><strong>Track Simulation</strong><br>Using Google Earth's 3D Tiles</h2>
+            <h2 class="h1 fw-normal lh-1 pb-2">CubeTrek's <strong>Replay Mode</strong></h2>
             <p>During I/O 2023, <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Google announced
             the availability of their 3D Earth Model</a> as an Experimental Release.</p>
             <p>
-                Here's an implementation of these model in conjunction with <strong>CubeTrek</strong>, your favorite home for all your GPS tracks.<br>
-                And thanks to <a href="https://cesium.com/platform/cesiumjs/">Cesium.js</a> for all the heavy lifting.
+                The experimental <strong>Replay Mode</strong> let's you relive and share your activity in an interactive 3D mode.
+                Replay your hike/run/bike/mountainneering adventure, zoom into the terrain, scroll around.
             </p>
             <p>
-                Please note: this is experimental, free, and full of bugs (I assume). Have fun.
+                <strong>Please note</strong>: this is experimental, free, and still full of bugs (I assume). <br>
+                As this relies on Google Map data, I will likely need to pull the plug as soon as the costs are gonna explode.<br>
+                Have fun.
             </p>
         </div>
         <div class="col-md-5">
@@ -106,7 +108,7 @@
     </div><!-- /.row -->
 
       <p>
-          See some Examples<br>
+          See some Examples below or upload your own activity data.<br>
           Don't forget to click on <span class="btn btn-success btn-sm">Start</span> for the full experience.
 
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
@@ -114,7 +116,7 @@
           <div class="col">
               <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/cima.jpg'); background-size: cover;">
                   <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/viewhighres/6338">Cima di Fiorina</a>
+                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/replay/6338">Cima di Fiorina</a>
                       <ul class="d-flex list-unstyled mt-auto">
                           <li class="d-flex align-content-end me-3">
                               <small>Hike</small>
@@ -127,7 +129,7 @@
           <div class="col">
               <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/mat.jpg'); background-size: cover;">
                   <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/viewhighres/4967">Mattjisch Horn</a>
+                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/replay/4967">Mattjisch Horn</a>
                       <ul class="d-flex list-unstyled mt-auto">
                           <li class="d-flex align-content-end me-3">
                               <small>Ski Mountaineering</small>
@@ -140,7 +142,7 @@
           <div class="col">
               <div class="card card-cover h-100 overflow-hidden text-white bg-dark rounded-4 shadow-lg" style="background-image: url('/assets/pics/stmo.jpg'); background-size: cover;">
                   <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/viewhighres/6638">St. Moritz Run</a>
+                      <a class="h2 pt-5 mt-5 mb-4 display-6 lh-1 fw-bold stretched-link text-decoration-none " href="/replay/6638">St. Moritz Run</a>
                       <ul class="d-flex list-unstyled mt-auto">
                           <li class="d-flex align-content-end me-3">
                               <small>Run</small>

@@ -25,7 +25,7 @@ const viewer = new Cesium.Viewer('renderCanvas', {
     geocoder: false,
     globe: false,
     skyAtmosphere: false,
-    skyBox: false,
+    skyBox: true,
     requestRenderMode: false,
     animation: false,
     fullscreenButton: false,
@@ -37,6 +37,17 @@ const viewer = new Cesium.Viewer('renderCanvas', {
     navigationHelpButton: false
 })
 
+viewer.scene.skyBox = new Cesium.SkyBox({
+    sources: {
+        positiveX: '../assets/bkgrd.png',
+        negativeX: '../assets/bkgrd.png',
+        positiveY: '../assets/bkgrd.png',
+        negativeY: '../assets/bkgrd.png',
+        positiveZ: '../assets/bkgrd.png',
+        negativeZ: '../assets/bkgrd.png',
+    }
+});
+
 
 const tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
     url: "https://tile.googleapis.com/v1/3dtiles/root.json?key=AIzaSyCIB6KWctsDcbcGmOqQoWYg_Uh1eO0muAg",
@@ -44,12 +55,28 @@ const tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
 }));
 
 tileset.readyPromise.then(function() {
-    document.getElementById("cesiumrunButton").style.display = "block";
     document.getElementById("progressdiv").style.display = "none";
 }).catch(function(error) {
-    document.getElementById("errormessage").innerText = "Error Loading Assets; Try again.";
+    document.getElementById("errormessage").innerText = "Error Loading Assets; Maybe we're out of Google Map Credits or Try again.";
     document.getElementById("errormessage").style.display = "block";
     document.getElementById("progressdiv").style.display = "none";
+});
+
+onceOnly = false;
+tileset.loadProgress.addEventListener(function(numberOfPendingRequests, numberOfTilesProcessing) {
+    if ((numberOfPendingRequests === 0) && (numberOfTilesProcessing === 0)) {
+        document.getElementById("cesiumrunButton").style.display = "block";
+        if (onceOnly)
+            return;
+        setTimeout(() => {
+            if (!isCesiumRunning) {
+                onceOnly = true;
+                startCesiumWalkthrough();
+            }
+        }, 3000);
+        return;
+    }
+    //console.log(`Loading: requests: ${numberOfPendingRequests}, processing: ${numberOfTilesProcessing}`);
 });
 
 var terrainProvider = Cesium.createWorldTerrain();
@@ -81,6 +108,11 @@ handler.setInputAction(function (event) {
         findLine(false);
     }
 }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+var ellipsoid = viewer.scene.mapProjection.ellipsoid;
+viewer.scene.postRender.addEventListener(function () {
+    //console.log("postrender");
+});
 
 var getJSON = function(url) {
     return new Promise(function(resolve, reject) {
@@ -180,7 +212,7 @@ Promise.all([
             orientation: new Cesium.HeadingPitchRange(0, -Math.PI / 2, 0)
         });
     }).then(() => {
-        console.log("NOWW??????????");
+
     })
 })
 
@@ -221,6 +253,15 @@ function prepareMap2d(jsonData) {
 
     map.on('mousemove', function (e) {
         findLine(e.lngLat.lat, e.lngLat.lng);
+    });
+
+    map.on('click', function (e) {
+        var closest = kdtree.nearest([e.lngLat.lng, e.lngLat.lat], 1, 0.00001);
+        if (closest.length<1) {
+            return;
+        }
+        var index = jsonData.geometry.coordinates[0].indexOf(closest[0][0]);
+        startCesiumWalkthrough(Cesium.JulianDate.fromDate(datas[index].time));
     });
 
     var el = document.createElement('div');
@@ -391,6 +432,11 @@ function startCesiumWalkthrough(juliandate) {
              *             }
              */
         });
+
+        /**redSphere.position.setInterpolationOptions({
+            interpolationDegree: 5,
+            interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
+        });**/
 
         visibleCircle = viewer.entities.add({
             availability: new Cesium.TimeIntervalCollection([

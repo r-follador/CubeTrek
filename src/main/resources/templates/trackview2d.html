@@ -63,7 +63,8 @@
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
             <div id="map2d" style="height: 100%; width: 100%; min-width: 100px;"></div>
             <div th:unless="${tracktoobig}" class="btn-group-vertical position-absolute bottom-0 start-0 p-3">
-                <a th:href="${'../view/'+trackmetadata.id}" class="btn btn-outline-primary btn-sm">3D Map</a>
+                <a th:href="${'../replay/'+trackmetadata.id}" class="btn btn-outline-primary btn-sm">3D Replay</a>
+                <a th:href="${'../view/'+trackmetadata.id}" class="btn btn-outline-primary btn-sm">Classic 3D</a>
             </div>
         </div>
 
