@@ -70,7 +70,7 @@
 <header>
   <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="../index"><img class="me-2" width="30" src="../assets/logo.svg">CubeTrek</a>
+      <a class="navbar-brand" href="/"><img class="me-2" width="30" src="../assets/logo.svg">CubeTrek</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -91,25 +91,28 @@
     <div class="row">
         <div class="col-md-7">
             <h2 class="h1 fw-normal lh-1 pb-2">CubeTrek's <strong>Replay Mode</strong></h2>
-            <p>During I/O 2023, <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Google announced
-            the availability of their 3D Earth Model</a> as an Experimental Release.</p>
             <p>
-                The experimental <strong>Replay Mode</strong> let's you relive and share your activity in an interactive 3D mode.
+                The experimental <strong>Replay Mode</strong> let's you relive and share your activity in an interactive 3D mode.<br>
+                Replay mode makes use of Google Earth's 3D model, as presented at <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">
+                Google's I/O 2023 event</a>.
                 Replay your hike/run/bike/mountainneering adventure, zoom into the terrain, scroll around.
             </p>
             <p>
                 <strong>Please note</strong>: this is experimental, free, and still full of bugs (I assume). <br>
-                As this relies on Google Map data, I will likely need to pull the plug as soon as the costs are gonna explode.<br>
+                As this relies on Google Map data, access is limited depending on available quotas.<br>
                 Have fun.
             </p>
         </div>
         <div class="col-md-5">
+            <video autoplay muted loop playsinline class="featurette-image img-fluid mx-auto">
+                <source src="../assets/pics/replay.mp4" type="video/mp4">
+            </video>
         </div>
     </div><!-- /.row -->
 
       <p>
-          See some Examples below or upload your own activity data.<br>
-          Don't forget to click on <span class="btn btn-success btn-sm">Start</span> for the full experience.
+          See some Examples below or upload your own activity data.
+      </p>
 
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
 
@@ -182,7 +185,7 @@
                       </li>
                       <li class="list-group-item">
                           <h4 class="mb-2">Done</h4>
-                          <p>Open your track and click on the well hidden <strong>Animate button</strong> to the bottom left of the "traditional" 3D view.</p>
+                          <p>Open your track and click on the well hidden <strong>3D Replay button</strong> to the bottom left of the classic 3D view.</p>
                       </li>
                   </ul>
               </div>
