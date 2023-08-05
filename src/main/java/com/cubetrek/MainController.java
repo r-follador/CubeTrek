@@ -262,6 +262,15 @@ public class MainController {
     }
 
     @ResponseBody
+    @GetMapping("/api/matching/{groupid}")
+    public List<TrackData.TrackMetadata> getActivitiesForGivenDay(@PathVariable("groupid") long groupid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+
+        return activitityService.getMatchingActivities(user, groupid);
+    }
+
+    @ResponseBody
     @GetMapping(value = "/api/geojson/{itemid}.geojson", produces = "application/json")
     public TrackGeojson getTrackGeoJson(@PathVariable("itemid") long trackid, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
