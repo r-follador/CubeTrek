@@ -6,8 +6,9 @@
     <meta name="description" content="">
     <link rel="icon" type="image/svg" href="/assets/logo.svg">
     <title>CubeTrek - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script><link href="../css/dashboard.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
     <script src='../js/maplibre-gl.js'></script>
     <link href='../css/maplibre-gl.css' rel='stylesheet'/>
     <style>
@@ -127,34 +128,11 @@
                 Error fetching data
             </div>
 
-            <table class="table">
-                <thead>
-                <tr>
-                    <th></th>
-                    <th> Date</th>
-                    <th> Title </th>
-                    <th> Duration</th>
-                    <th> Ascent </th>
-                    <th> Distance </th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody id="tbody">
-                </tbody>
-            </table>
-            <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
 
-            <div class="container" id="springer" style="display:none;">
-                <div class ="row">
-                    <div class="col-5"><div id="map2d" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
-                    <div class="col-5"><div id="inlinegraph" style="height: 200px; width: 100%; min-height: 150px; min-width: 150px;"></div></div>
-                    <div class="col-2">
-                        <div class="row"><a id="springerShow3D" class="btn btn-light" href="#">3D View</a></div>
-                        <div class="row"><a id="springerShowMatching" class="btn btn-light mt-1" href="#">Matching activities</a></div>
-                        <div class="row"><a id="springerEdit" class="btn btn-light mt-3" href="javascript:void(0);">Edit</a></div>
-                    </div>
-                </div>
+            <div id="recenttablebody" class="d-flex flex-wrap">
+
             </div>
+            <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
 
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
@@ -192,14 +170,14 @@
                     <h6 class="h6">Furthest Distances</h6>
                     <ul class="nav nav-tabs" id="TabFurthest" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="furthest-recent-tab" data-bs-toggle="tab" data-bs-target="#furthest-recent-pane" type="button" role="tab" aria-controls="furthest-recent-pane" aria-selected="true">Last 3 Month</button>
+                            <button class="nav-link active" id="furthest-recent-tab" data-bs-toggle="tab" data-bs-target="#furthest-recent-pane" type="button" role="tab" aria-controls="furthest-recent-pane" aria-selected="true">Last 3 Month</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="furthest-alltime-tab" data-bs-toggle="tab" data-bs-target="#furthest-alltime-pane" type="button" role="tab" aria-controls="furthest-alltime-pane" aria-selected="false">All-Time</button>
+                            <button class="nav-link" id="furthest-alltime-tab" data-bs-toggle="tab" data-bs-target="#furthest-alltime-pane" type="button" role="tab" aria-controls="furthest-alltime-pane" aria-selected="false">All-Time</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="TabFurthestContent">
-                        <div class="tab-pane fade" id="furthest-recent-pane" role="tabpanel" aria-labelledby="furthest-recent-tab" tabindex="0">
+                        <div class="tab-pane fade show active" id="furthest-recent-pane" role="tabpanel" aria-labelledby="furthest-recent-tab" tabindex="0">
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
@@ -223,7 +201,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="tab-pane fade show active" id="furthest-alltime-pane" role="tabpanel" aria-labelledby="furthest-alltime-tab" tabindex="0">
+                        <div class="tab-pane fade" id="furthest-alltime-pane" role="tabpanel" aria-labelledby="furthest-alltime-tab" tabindex="0">
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
@@ -254,14 +232,14 @@
                     <h6 class="h6">Furthest Climbs</h6>
                     <ul class="nav nav-tabs" id="TabAscent" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="ascent-recent-tab" data-bs-toggle="tab" data-bs-target="#ascent-recent-pane" type="button" role="tab" aria-controls="ascent-recent-pane" aria-selected="true">Last 3 Month</button>
+                            <button class="nav-link active" id="ascent-recent-tab" data-bs-toggle="tab" data-bs-target="#ascent-recent-pane" type="button" role="tab" aria-controls="ascent-recent-pane" aria-selected="true">Last 3 Month</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="ascent-alltime-tab" data-bs-toggle="tab" data-bs-target="#ascent-alltime-pane" type="button" role="tab" aria-controls="ascent-alltime-pane" aria-selected="false">All-Time</button>
+                            <button class="nav-link" id="ascent-alltime-tab" data-bs-toggle="tab" data-bs-target="#ascent-alltime-pane" type="button" role="tab" aria-controls="ascent-alltime-pane" aria-selected="false">All-Time</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="TabAscentContent">
-                        <div class="tab-pane fade" id="ascent-recent-pane" role="tabpanel" aria-labelledby="ascent-recent-tab" tabindex="0">
+                        <div class="tab-pane fade show active" id="ascent-recent-pane" role="tabpanel" aria-labelledby="ascent-recent-tab" tabindex="0">
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
@@ -285,7 +263,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="tab-pane fade  show active" id="ascent-alltime-pane" role="tabpanel" aria-labelledby="ascent-alltime-tab" tabindex="0">
+                        <div class="tab-pane fade" id="ascent-alltime-pane" role="tabpanel" aria-labelledby="ascent-alltime-tab" tabindex="0">
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
@@ -316,14 +294,14 @@
                     <h6 class="h6">Highest Peaks</h6>
                     <ul class="nav nav-tabs" id="TabPeaks" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="peaks-recent-tab" data-bs-toggle="tab" data-bs-target="#peaks-recent-pane" type="button" role="tab" aria-controls="peaks-recent-pane" aria-selected="true">Last 3 Month</button>
+                            <button class="nav-link active" id="peaks-recent-tab" data-bs-toggle="tab" data-bs-target="#peaks-recent-pane" type="button" role="tab" aria-controls="peaks-recent-pane" aria-selected="true">Last 3 Month</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="peaks-alltime-tab" data-bs-toggle="tab" data-bs-target="#peaks-alltime-pane" type="button" role="tab" aria-controls="peaks-alltime-pane" aria-selected="false">All-Time</button>
+                            <button class="nav-link" id="peaks-alltime-tab" data-bs-toggle="tab" data-bs-target="#peaks-alltime-pane" type="button" role="tab" aria-controls="peaks-alltime-pane" aria-selected="false">All-Time</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="TabPeaksContent">
-                        <div class="tab-pane fade" id="peaks-recent-pane" role="tabpanel" aria-labelledby="peaks-recent-tab" tabindex="0">
+                        <div class="tab-pane fade show active" id="peaks-recent-pane" role="tabpanel" aria-labelledby="peaks-recent-tab" tabindex="0">
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
@@ -347,7 +325,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="tab-pane fade  show active" id="peaks-alltime-pane" role="tabpanel" aria-labelledby="peaks-alltime-tab" tabindex="0">
+                        <div class="tab-pane fade" id="peaks-alltime-pane" role="tabpanel" aria-labelledby="peaks-alltime-tab" tabindex="0">
                             <table class="table">
                                 <thead class="table-header">
                                 <tr>
@@ -581,7 +559,7 @@
     const bargraphdatasMonthly = [];
     const bargraphdatasYearly = [];
 
-    const tablebody = document.getElementById("tbody");
+    const recenttablebody = document.getElementById("recenttablebody");
     var entries = new Map();
 
 
@@ -1257,10 +1235,10 @@
 
     function fetchData() {
         entries = new Map();
-        while (tablebody.firstChild) {
-            tablebody.removeChild(tablebody.firstChild);
+        while (recenttablebody.firstChild) {
+            recenttablebody.removeChild(recenttablebody.firstChild);
         }
-        const entriesPerFetch = 10;
+        const entriesPerFetch = 12;
         var url = "/activities_ajax?page=0&size="+entriesPerFetch+"&sortby=datetrack&descending=true";
 
         fetch(url)
@@ -1277,15 +1255,52 @@
     function listData(data) {
         for (var entry of data) {
             entries.set(entry.id, entry);
-            var newRow = tablebody.insertRow();
+            let newRow = document.createElement('div');
             newRow.id="r"+entry.id;
-            newRow.classList.add("hover-row");
+            newRow.classList.add("shadow-sm", "col-12", "col-sm-12", "col-md-12", "col-lg-6", "col-xxl-4", "p-1", "mb-1","bg-body-tertiary", "rounded", "position-relative");
+            recenttablebody.appendChild(newRow);
             addRowInfo(newRow, entry);
         }
-        openPane(data[0].id);
     }
 
-    function addRowInfo(row, entry) {
+    async function addRowInfo(row, entry) {
+        row.innerHTML =
+            `
+                <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
+                 <div class='row display-6 ms-1' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
+                    ${entry.title}
+                 </div>
+                 <div class='row'>
+                    <div class="col fs-6">
+                        <img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height=30>${(entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='20px'>":"")}
+                        ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                    </div>
+                 </div>
+                 <div class='row'>
+                     <div class="col-5">
+                        <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/200x200.png' width='200' height='200'></a>
+                     </div>
+                     <div class="col-3">
+                        <div class='row'><span class='fw-light ms-2'>Duration</span> <span class='fs-5'>${minToString(parseInt(entry.duration))} h</span></div>
+                        <div class='row mt-1'><span class='fw-light ms-2'>Ascent</span> <span class='fs-5'>${(entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft")}</span></div>
+                        <div class='row mt-1'><span class='fw-light ms-2'>Distance</span>  <span class='fs-5'>${(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi")}</span></div>
+                     </div>
+                     <div class="col-4 position-relative justify-content-center">
+                        <a href="${entry.trackgroup?'/matching/'+entry.trackgroup:'/view/'+entry.id}"><div class="p-1 m-0" id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;" ></div></a>
+                        ${entry.trackgroup?'<div class="fs-6 position-absolute bottom-0 start-0 end-0 text-center" id="trackgroupRank'+entry.id+'"></div>':''}
+                     </div>
+                 </div>
+            `;
+
+        if (entry.trackgroup) {
+            const matchingGraph = new MatchingGraph("graph"+entry.id, entry.trackgroup, entry.id);
+            document.getElementById("trackgroupRank"+entry.id).innerText = await matchingGraph.initialize();
+        } else {
+            const altitudeGraph = new AltitudeGraph("graph"+entry.id, entry.id);
+            altitudeGraph.initialize();
+        }
+
+/**
         row.setAttribute("onclick","openPane("+entry.id+");");
         row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
         row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
@@ -1294,6 +1309,7 @@
         row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
         row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
         row.insertCell().innerHTML = (entry.trackgroup?"<a href='/matching/"+entry.trackgroup+"'><img title='Matching Activities' src='/assets/matched.svg'></a>":"");
+ **/
     }
 
     var menu = function(id) {
@@ -1483,185 +1499,241 @@
         row.parentNode.removeChild(row);
     }
 
-
-    var springerElement = document.getElementById("springer");
-    var lastclicked = -1;
-    function openPane(entryid) {
-        if (lastclicked === entryid) { //already open
-            springerElement.style.display = "none";
-            document.getElementById("springerRow").remove();
-            lastclicked = -1;
-            return;
+    async function fetchgeojson(trackid) {
+        var url = "/api/geojson/" + trackid + ".geojson";
+        try {
+            let response = await fetch(url);
+            if (response.status === 200) {
+                return await response.json();
+            } else {
+                document.getElementById("errorbox").style.display = 'block';
+                // Optionally, you can reject the promise or throw an error here
+                throw new Error("Failed to fetch GeoJSON");
+            }
+        } catch (error) {
+            console.error(error);
+            // Handle the error as needed
         }
-        lastclicked = entryid;
-        if (document.getElementById("springerRow"))
-            document.getElementById("springerRow").remove();
-        const newTr = document.createElement("tr"); newTr.setAttribute("id","springerRow");
-        const newTd = document.createElement("td"); newTd.setAttribute("colspan", 7);
-        newTd.appendChild(springerElement);
-        newTr.appendChild(newTd);
-
-        var row = document.getElementById("r"+entryid);
-        springerElement.style.display = "block";
-        row.parentNode.insertBefore(newTr, row.nextSibling);
-        fetchgeojson(entryid);
-        document.getElementById("springerEdit").addEventListener("click", function(){menu(entryid);});
-        document.getElementById("springerShow3D").href="/view/"+entryid;
-
-        if (entries.get(entryid).trackgroup) {
-            document.getElementById("springerShowMatching").href="/matching/"+entries.get(entryid).trackgroup;
-            document.getElementById("springerShowMatching").style.display = "block";
-        } else {
-            document.getElementById("springerShowMatching").style.display = "none";
-        }
-
     }
 
+    class AltitudeGraph {
 
-    function fetchgeojson(trackid) {
-        var url = "/api/geojson/"+trackid+".geojson";
-        fetch(url)
-            .then(response => {
-                if (response.status === 200) {
-                    return response.json();
-                } else {
-                    document.getElementById("errorbox").style.display = 'block';
-                }
-            })
-            .then(geojson => {prepareMap2d(geojson, map_firstload);drawInlineGraph(geojson);});
-    }
+        async initialize() {
+            var jsonData = await fetchgeojson(this.trackid);
 
-    var map;
-    var map_firstload = true;
+            this.datas = [];
+            let previousDistance = jsonData.geometry.coordinates[0][0][4];
+            let previousElevation = jsonData.geometry.coordinates[0][0][2];
 
-    function prepareMap2d(jsonData, map_firstload) {
-        if (map_firstload) {
-            map_firstload = false;
-            map = new maplibregl.Map({
-                container: 'map2d',
-                style: {
-                    'version': 8,
-                    'sources': {
-                        'raster-tiles': {
-                            'type': 'raster',
-                            'tiles': [
-                                'https://api.maptiler.com/maps/ch-swisstopo-lbm/256/{z}/{x}/{y}.png?key=Nq5vDCKAnSrurDLNgtSI '
-                            ],
-                            'tileSize': 256,
-                        }
-                    },
-                    'layers': [
-                        {
-                            'id': 'simple-tiles',
-                            'type': 'raster',
-                            'source': 'raster-tiles',
-                            'minzoom': 0,
-                            'maxzoom': 22
-                        }
-                    ]
-                },
-                bounds: [[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]],
-                touchPitch: false,
-                maxPitch: 0,
-                minZoom: 0,
-                maxZoom: 13,
-                attributionControl: false
+            for (var i = 0; i < jsonData.geometry.coordinates[0].length; i++) {
+                let elevation = jsonData.geometry.coordinates[0][i][2];
+                let distance = jsonData.geometry.coordinates[0][i][4];
+
+                previousElevation = elevation;
+                previousDistance = distance;
+                this.datas.push({'altitude': elevation, 'distance': distance});
+            }
+
+            this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function (d) {
+                return (d.altitude * (metric ? 1 : feet_per_m));
+            }));
+            this.functionpath.y((d) => {
+                return this.yScale(d.altitude * (metric ? 1 : feet_per_m))
             });
 
+            this.xScale = d3.scaleLinear().domain(d3.extent(this.datas, function (d) {
+                return (d.distance * (metric ? 1 / 1000 : miles_per_km / 1000));
+            }));
+            this.functionpath.x((d) => {
+                return this.xScale(d.distance * (metric ? 1 / 1000 : miles_per_km / 1000))
+            });
 
-            map.on('load', function () {
-                map.addSource('route', {
-                        type: 'geojson',
-                        data: jsonData
-                    }
-                );
-                map.addLayer({
-                    'id': 'route',
-                    'type': 'line',
-                    'source': 'route',
-                    'layout': {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    'paint': {
-                        'line-color': '#ff8001',
-                        'line-width': 3
-                    }
+            //this.xAxisLabel = d3.axisBottom(this.xScale);
+            //this.yAxisLabel = d3.axisLeft(this.yScale);
+
+            this.yScale.range([this.height, 0]);
+            this.xScale.range([0, this.width]);
+            this.defineGradient();
+            this.svg.append("path")
+                .datum(this.datas)
+                .attr("fill", "url(#altitude-gradient)") // Use the defined gradient
+                .attr("stroke", "#ff8001")
+                .attr("stroke-width", 2)
+                .attr("class", "datapath")
+                //.attr("d", this.functionpath)
+                .attr("d", this.areaPath); // Use the area generator
+
+
+
+        }
+
+        constructor(divname, trackid) {
+            this.trackid = trackid;
+
+            this.margingraph = {top: 0, right: 10, bottom: 0, left: 0};
+
+            this.width = document.getElementById(divname).clientWidth - this.margingraph.left - this.margingraph.right,
+                this.height = document.getElementById(divname).clientHeight - this.margingraph.top - this.margingraph.bottom;
+
+            d3.select("#" + divname).select("svg").remove(); //clear if exists already
+            this.svg = d3.select("#" + divname)
+                .append("svg")
+                .attr("width", this.width + this.margingraph.left + this.margingraph.right)
+                .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
+                .append("g")
+                .attr("transform",
+                    "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
+
+            this.functionpath = d3.line();
+
+            this.areaPath = d3.area()
+                .x((d) => {
+                    return this.xScale(d.distance * (metric ? 1 / 1000 : miles_per_km / 1000));
+                })
+                .y0(this.height) // Bottom of the graph
+                .y1((d) => {
+                    return this.yScale(d.altitude * (metric ? 1 : feet_per_m));
                 });
-            });
-        } else {
-            map.getSource('route').setData({
-                    type: 'geojson',
-                    data: jsonData
-                }
-            );
-            map.fitBounds([[jsonData.properties.bbox.boundingBoxW - 0.005, jsonData.properties.bbox.boundingBoxS - 0.005], [jsonData.properties.bbox.boundingBoxE + 0.005, jsonData.properties.bbox.boundingBoxN + 0.005]]);
+        }
 
+        defineGradient() {
+            // Define a linear gradient with id "altitude-gradient"
+            // that goes from green at the bottom to white at the top
+            var gradient = this.svg.append("defs")
+                .append("linearGradient")
+                .attr("id", "altitude-gradient")
+                .attr("x1", "0%")
+                .attr("y1", "0%") // Start at the bottom
+                .attr("x2", "0%")
+                .attr("y2", "100%"); // Go to the top
+
+            // Define the start color (green)
+            gradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "#ff8001");
+
+            // Define the end color (white)
+            gradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "#ffb468");
         }
     }
 
 
-    function drawInlineGraph(jsonData) {
-        var datas = [];
-        let previousDistance = jsonData.geometry.coordinates[0][0][4];
-        let previousElevation = jsonData.geometry.coordinates[0][0][2];
+    async function fetchmatchingActivities(groupid) {
+        var url = "/api/matching/" + groupid;
+        try {
+            let response = await fetch(url);
+            if (response.status === 200) {
+                return await response.json();
+            } else {
+                document.getElementById("errorbox").style.display = 'block';
+                // Optionally, you can reject the promise or throw an error here
+                throw new Error("Failed to fetch matching activities");
+            }
+        } catch (error) {
+            console.error(error);
+            // Handle the error as needed
+        }
+    }
 
-        for (var i=0; i<jsonData.geometry.coordinates[0].length; i++) {
-            let elevation = jsonData.geometry.coordinates[0][i][2];
-            let distance = jsonData.geometry.coordinates[0][i][4];
+    class MatchingGraph {
 
-            previousElevation = elevation;
-            previousDistance = distance;
-            datas.push({'altitude' : elevation, 'distance' : distance});
+        async initialize() {
+            var jsonData = await fetchmatchingActivities(this.groupid);
+
+            this.datas = [];
+            let count = 0;
+            for (const entry of jsonData) {
+                this.datas.push({'id' : entry.id, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack),  'xpos' : count++});
+            }
+            const pace = this.datas.find(entry => entry.id === this.trackid).pace;
+            const sortedPaces = this.datas.map(d => d.pace).sort(d3.ascending);
+            const rank = (d3.bisectLeft(sortedPaces, pace));// / sortedPaces.length * 100;
+            this.textRank = "Rank "+(rank+1)+" of "+sortedPaces.length+" ("+Math.round(((rank+1)/ sortedPaces.length * 100)) + "%)";
+
+
+            this.datas.splice(15);
+
+            this.colorScale = d3.scaleSequential(d3.interpolatePlasma)
+                .domain(d3.extent(this.datas, function (d) { return d.pace; }).reverse());
+
+            this.xscale = d3.scaleLinear()
+                .domain(d3.extent(this.datas, function(d) { return d.xpos}))
+                .range([ this.width, 0]);
+
+            this.yscale = d3.scaleLinear()
+                .domain(d3.extent(this.datas, function(d) { return d.pace}))
+                .range([ 0, this.height ]);
+
+            this.path = this.svg.append("path")
+                .datum(this.datas)
+                .attr("fill", "none")
+                .attr("stroke", "#ff8001")
+                .attr("stroke-width", 1.5)
+                .transition()
+                .attr("d", d3.line()
+                    .curve(d3.curveBasis) // Just add that to have a curve instead of segments
+                    .x(function (d) {
+                        return this.xscale(d.xpos);
+                    }.bind(this))
+                    .y(function (d) {
+                        return this.yscale(d.pace)
+                    }.bind(this))
+                )
+
+            this.circles = this.svg.append("g").selectAll("dot").data(this.datas).enter().append("circle")
+                .attr("id", function (d) {
+                    return "c" + d.id
+                })
+                .attr("cy", function (d) {
+                    return this.yscale(d.pace)
+                }.bind(this))
+                .transition()
+                .attr("cx", function (d) {
+                    return this.xscale(d.xpos);
+                }.bind(this))
+                .attr("r", 5)
+                .attr("stroke", "#101010")
+                .attr("stroke-width", 1)
+                .style("fill", function (d) {
+                    return this.colorScale(d.pace); // Using pace value to determine color
+                }.bind(this))
+                .filter(function (d) {
+                    return d.id === this.trackid
+                }.bind(this))
+                .attr("stroke", "#fa7c7c")
+                .attr("stroke-width", 5)
+                .style("fill", "#000000");
+
+
+
+            return this.textRank;
         }
 
-        this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
+        constructor(divname, groupid, trackid) {
+            this.groupid = groupid;
+            this.trackid = trackid;
 
-        this.width = document.getElementById('inlinegraph').clientWidth-this.margingraph.left-this.margingraph.right,
-            this.height = document.getElementById('inlinegraph').clientHeight-this.margingraph.top-this.margingraph.bottom;
+            this.margingraph = {top: 5, right: 10, bottom: 20, left: 5};
 
-        d3.select("#inlinegraph").select("svg").remove(); //clear if exists already
-        this.svg = d3.select("#inlinegraph")
-            .append("svg")
-            .attr("width", this.width + this.margingraph.left + this.margingraph.right)
-            .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
-            .append("g")
-            .attr("transform",
-                "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
+            this.width = document.getElementById(divname).clientWidth - this.margingraph.left - this.margingraph.right,
+                this.height = document.getElementById(divname).clientHeight - this.margingraph.top - this.margingraph.bottom;
 
-        this.yScale;
-        this.xScale;
-        this.functionpath = d3.line();
+            d3.select("#" + divname).select("svg").remove(); //clear if exists already
+            this.svg = d3.select("#" + divname)
+                .append("svg")
+                .attr("width", this.width + this.margingraph.left + this.margingraph.right)
+                .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
+                .append("g")
+                .attr("transform",
+                    "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
 
-        this.yScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.altitude*(metric?1:feet_per_m)); }));
-        this.functionpath.y((d) => { return this.yScale(d.altitude*(metric?1:feet_per_m)) });
+        }
 
-        this.xScale = d3.scaleLinear().domain(d3.extent(datas, function(d) { return (d.distance*(metric?1/1000:miles_per_km/1000)); }));
-        this.functionpath.x((d) => { return this.xScale(d.distance*(metric?1/1000:miles_per_km/1000)) });
-
-        this.xAxisLabel = d3.axisBottom(this.xScale);
-        this.yAxisLabel = d3.axisLeft(this.yScale);
-
-        this.yScale.range([this.height,0]);
-        this.xScale.range([0, this.width]);
-
-        this.svg.append("g")
-            .attr("transform", "translate(0," + this.height + ")")
-            .attr("class","myXaxis")
-            .call(this.xAxisLabel);
-
-        this.svg.append("g")
-            .attr("class","myYaxis")
-            .call(this.yAxisLabel);
-
-        this.svg.append("path")
-            .datum(datas)
-            .attr("fill", "none")
-            .attr("stroke", "#ff8001")
-            .attr("stroke-width", 2)
-            .attr("class", "datapath")
-            .attr("d", this.functionpath)
     }
+
+
 
 
 </script>
