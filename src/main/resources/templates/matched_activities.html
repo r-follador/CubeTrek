@@ -17,7 +17,7 @@
     <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
-    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <div class="w-100"></div>
     <ul class="navbar-nav px-3">
         <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
             <img src="../assets/cubetrek_settings.svg" height="20px"></a>
@@ -52,11 +52,14 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-xl-8">
+                    <div class="col-8 col-lg-7">
                       <div class="p-0 m-0" id="graph" style="width: 100%; height: 100%; min-height: 60px;" ></div>
                     </div>
-                    <div class="col-xl-4 ps-5">
-                        <div class="row" id="map2d" style="height: 100%; width: 100%; min-height: 60px; min-width: 60px;"></div>
+                    <div class="col-4 col-lg-2">
+                        <div class="p-0 m-0" id="histo" style="width: 100%; height: 100%; min-height: 60px;" ></div>
+                    </div>
+                    <div class="col-12 col-lg-3 ps-1">
+                        <div class="row" id="map2d" style="width: 100%; height: 100%; min-height: 60px; min-width: 60px;"></div>
                         <div class="row" id="map2dlegend"></div>
                     </div>
                 </div>
@@ -253,6 +256,7 @@
     const feet_per_m = 3.28084;
     const tablebody = document.getElementById("tbody");
     let graph;
+    let histo;
 
     function addRowInfo(row, entry) {
         row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
@@ -267,6 +271,7 @@
         row.onclick = (event) => {clickactivity(entry.id, false)};
     }
 
+
     function initData() {
         while (tablebody.firstChild) {
             tablebody.removeChild(tablebody.firstChild);
@@ -279,7 +284,8 @@
             addRowInfo(newRow, entry);
         }
 
-        graph = Graph();
+        graph = new Graph();
+        histo = new Histo();
         const firstentry = entries.values().next().value;
         fetchgeojson(firstentry.id, true);
         document.getElementById("entrysize").innerText = entries.size;
@@ -492,56 +498,74 @@
 
     let sequentialGraph = true;
 
-    function Graph() {
+    class Graph {
 
-        let count = 0;
-        for (const [id, entry] of entries) {
-            datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack)});
-        }
+        constructor() {
+            let count = 0;
+            for (const [id, entry] of entries) {
+                datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack)});
+            }
+            this.margingraph = {top: 10, right: 20, bottom: 20, left: 30};
 
-        this.width = document.getElementById('graph').clientWidth * 0.8;
-        this.width = Math.max(500, this.width);
-        margingraph = {top: 10, right: 30, bottom: 25, left: 40};
+            this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
+            this.height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
 
-        width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
-        height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
+            d3.select("#graph").select("svg").remove(); //clear if exists already
+            this.svgcontainer = d3.select("#graph")
+                .append("svg")
+                .attr("width", this.width + this.margingraph.left + this.margingraph.right)
+                .attr("height", this.height + this.margingraph.top + this.margingraph.bottom);
+            this.svg = this.svgcontainer.append("g")
+                .attr("transform",
+                    "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
 
-        d3.select("#graph").select("svg").remove(); //clear if exists already
-        this.svg = d3.select("#graph")
-            .append("svg")
-            .attr("width", this.width + this.margingraph.left + this.margingraph.right)
-            .attr("height", this.height + this.margingraph.top + this.margingraph.bottom)
-            .append("g")
-            .attr("transform",
-                "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
+            this.xscale = d3.scaleLinear()
+                .domain(d3.extent(datas, function(d) { return d.xpos}))
+                .range([ this.width, 0]);
+            this.xAxis = this.svg.append("g")
+                .attr("transform", `translate(0,${this.height})`)
+                .call(d3.axisBottom(this.xscale));
 
-        var xscale = d3.scaleLinear()
-            .domain(d3.extent(datas, function(d) { return d.xpos}))
-            .range([ width, 0]);
-        var xAxis = svg.append("g")
-            .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(xscale));
+            this.yscale = d3.scaleLinear()
+                .domain(d3.extent(datas, function(d) { return d.pace}))
+                .range([ 0, this.height ]);
+            this.yAxis = this.svg.append("g")
+                .call(d3.axisLeft(this.yscale).ticks(6));
 
-        var yscale = d3.scaleLinear()
-            .domain(d3.extent(datas, function(d) { return d.pace}))
-            .range([ 0, height ]);
-        var yAxis = svg.append("g")
-            .call(d3.axisLeft(yscale).ticks(6));
+            tooltip = d3.select("body")
+                .append("div")
+                .style("position", "absolute")
+                .style("z-index", "10")
+                .style("visibility", "hidden")
+                .style("background", "rgba(245, 245, 255, 0.6)");
 
+            this.path = this.svg.append("path")
+                .datum(datas);
 
-        tooltip = d3.select("body")
-            .append("div")
-            .style("position", "absolute")
-            .style("z-index", "10")
-            .style("visibility", "hidden")
-            .style("background", "rgba(245, 245, 255, 0.6)");
+            this.minmax = d3.extent(datas, function(d) {return d.pace});
 
-        const path = svg.append("path")
-            .datum(datas);
+            this.circles = this.svg.append("g").selectAll("dot").data(datas).enter().append("circle")
+                .attr("id", function (d) {
+                    return "c" + d.id
+                })
+                .on("mouseover", function (e, i) {
+                    highlight(i.id, true);
+                })
+                .on("mouseout", function (d, i) {
+                    unhighlight(i.id);
+                })
+                .on("click", function (d, i) {
+                    clickactivity(i.id);
+                });
 
-        drawPath();
-        function drawPath() {
-            path
+            this.colorScale = d3.scaleSequential(d3.interpolatePlasma)
+                .domain(d3.extent(datas, function (d) { return d.pace; }).reverse());
+
+            this.updateWindowSize();
+
+        };
+        drawPath() {
+            this.path
                 .attr("fill", "none")
                 .attr("stroke", "#ff8001")
                 .attr("stroke-width", 1.5)
@@ -550,96 +574,228 @@
                     .curve(d3.curveBasis) // Just add that to have a curve instead of segments
                     .x(function (d) {
                         if (sequentialGraph)
-                            return xscale(d.xpos);
+                            return this.xscale(d.xpos);
                         else
-                            return xscale(d.date);
-                    })
+                            return this.xscale(d.date);
+                    }.bind(this))
                     .y(function (d) {
-                        return yscale(d.pace)
-                    })
+                        return this.yscale(d.pace)
+                    }.bind(this))
                 )
         }
 
-        const minmax = d3.extent(datas, function(d) {return d.pace});
-
-        const circles = svg.append("g").selectAll("dot").data(datas).enter().append("circle")
-            .attr("id", function (d) {
-                return "c" + d.id
-            })
-            .on("mouseover", function (e, i) {
-                highlight(i.id, true);
-            })
-            .on("mouseout", function (d, i) {
-                unhighlight(i.id);
-            })
-            .on("click", function (d, i) {
-                clickactivity(i.id);
-            });
-
-        drawCircles();
-        function drawCircles() {
-            circles
+        drawCircles() {
+            this.circles
                 .attr("cy", function (d) {
-                    return yscale(d.pace)
-                })
+                    return this.yscale(d.pace)
+                }.bind(this))
                 .transition()
                 .attr("cx", function (d) {
                     if (sequentialGraph)
-                        return xscale(d.xpos);
+                        return this.xscale(d.xpos);
                     else
-                        return xscale(d.date);
-                })
+                        return this.xscale(d.date);
+                }.bind(this))
                 .attr("r", 5)
                 .attr("stroke", "#101010")
                 .attr("stroke-width", 1)
-                .attr("fill", "white")
+                .style("fill", function (d) {
+                    return this.colorScale(d.pace); // Using pace value to determine color
+                }.bind(this))
                 .filter(function (d) {
-                    return d.pace === minmax[0] || d.pace === minmax[1]
-                })
+                    return d.pace === this.minmax[0] || d.pace === this.minmax[1]
+                }.bind(this))
                 .attr("stroke", "#fa7c7c")
                 .attr("stroke-width", 3);
         }
 
-
-        return Object.assign(svg.node(), {
-            update() {
-                if (sequentialGraph) {
-                    xscale = d3.scaleLinear()
-                        .domain(d3.extent(datas, function (d) {
-                            return d.xpos
-                        }))
-                        .range([width, 0]);
-                    xAxis.call(d3.axisBottom(xscale)).style('opacity', 0);;
-                    drawCircles();
-                    drawPath();
-                } else {
-                    xscale = d3.scaleTime()
-                        .domain(d3.extent(datas, function (d) {
-                            return d.date
-                        }))
-                        .range([0, width]);
-                    xAxis.call(d3.axisBottom(xscale)).transition().style('opacity', 1);
-                    drawCircles();
-                    drawPath();
-                }
-            },
-            updateWindowSize() {
-                let count = 0;
-                datas = [];
-                for (const [id, entry] of entries) {
-                    datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack)});
-                }
-
-                width = document.getElementById('graph').clientWidth-margingraph.left-margingraph.right;
-                height = document.getElementById('graph').clientHeight-margingraph.top-margingraph.bottom;
-                svg.attr("width", width + margingraph.left + margingraph.right)
-                    .attr("height", height + margingraph.top + margingraph.bottom);
-
-                yAxis.call(d3.axisLeft(yscale).ticks(6));
-
-                graph.update();
+        update() {
+            if (sequentialGraph) {
+                this.xscale = d3.scaleLinear()
+                    .domain(d3.extent(datas, function (d) {
+                        return d.xpos
+                    }))
+                    .range([this.width, 0]);
+                this.xAxis.call(d3.axisBottom(this.xscale)).style('opacity', 0);
+                this.drawCircles();
+                this.drawPath();
+            } else {
+                this.xscale = d3.scaleTime()
+                    .domain(d3.extent(datas, function (d) {
+                        return d.date
+                    }))
+                    .range([0, this.width]);
+                this.xAxis.attr("transform", `translate(0,${this.height})`).call(d3.axisBottom(this.xscale)).transition().style('opacity', 1);
+                this.drawCircles();
+                this.drawPath();
             }
-        });
+        }
+        updateWindowSize() {
+            let count = 0;
+            datas = [];
+            for (const [id, entry] of entries) {
+                datas.push({'id' : entry.id, 'xpos' : count++, 'pace' : ((entry.duration/entry.distance)*1000)*(metric?1:miles_per_km), 'date' : new Date(entry.datetrack)});
+            }
+
+            this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
+            this.height = document.getElementById('graph').clientHeight-this.margingraph.top-this.margingraph.bottom;
+
+            this.svgcontainer.attr("width", this.width + this.margingraph.left + this.margingraph.right)
+                .attr("height", this.height + this.margingraph.top + this.margingraph.bottom);
+            this.svg.attr("width", this.width)
+                .attr("height", this.height);
+
+            this.yscale.range([ 0, this.height ]);
+
+            this.yAxis.call(d3.axisLeft(this.yscale).ticks(6));
+
+            this.update();
+        }
+    }
+
+    class Histo {
+        constructor() {
+            this.margingraph = {top: 5, right: 10, bottom: 20, left: 20};
+
+            this.width = document.getElementById('histo').clientWidth-this.margingraph.left-this.margingraph.right;
+            this.height = document.getElementById('histo').clientHeight-this.margingraph.top-this.margingraph.bottom;
+
+            d3.select("#histo").select("svg").remove(); //clear if exists already
+            this.containersvg = d3.select("#histo")
+                .append("svg");
+            this.svg = this.containersvg.append("g")
+                .attr("transform", "translate(" + this.margingraph.left + "," + this.margingraph.top + ")");
+
+            this.xscale = d3.scaleLinear()
+                .domain(d3.extent(datas, function (d) {
+                    return d.pace
+                }))
+                .range([this.width, 0]);
+            this.xAxis = this.svg.append("g");
+
+            this.histogram = d3.histogram()
+                .value(function (d) {
+                    return d.pace;
+                })
+                .domain(this.xscale.domain())
+                .thresholds(this.xscale.ticks(Math.ceil(Math.sqrt(datas.length))));
+
+            this.bins = this.histogram(datas);
+
+            this.yscale = d3.scaleLinear()
+                .range([this.height, 0]);
+            this.yscale.domain([0, d3.max(this.bins, function (d) {
+                return d.length;
+            })]);
+            this.yAxis = this.svg.append("g");
+
+            this.colorScale = d3.scaleSequential(d3.interpolatePlasma)
+                .domain(d3.extent(datas, function (d) { return d.pace; }).reverse());
+
+            this.bars = this.svg.selectAll("rect")
+                .data(this.bins)
+                .enter()
+                .append("rect")
+                .attr("x", 1)
+                .attr("transform", function (d) {
+                    return "translate(" + this.xscale(d.x0) + "," + this.yscale(d.length) + ")";
+                }.bind(this))
+                .attr("width", function (d) {
+                    return this.xscale(d.x1) - this.xscale(d.x0) - 1;
+                }.bind(this))
+                .attr("height", function (d) {
+                    return this.height - this.yscale(d.length);
+                }.bind(this))
+                .style("fill", function (d) {
+                    return this.colorScale(d.x0); // Using pace value to determine color
+                }.bind(this));
+        }
+
+        update() {
+            this.xscale.range([this.width, 0]);
+            this.xAxis.attr("transform", "translate(0," + this.height + ")").call(d3.axisBottom(this.xscale).ticks(5));
+            this.histogram.domain(this.xscale.domain());
+            this.yscale.range([this.height, 0]);
+            if (Math.abs(this.yscale.domain()[0]-this.yscale.domain()[1])>5) {
+                this.yAxis.call(
+                    d3.axisLeft(this.yscale).ticks(6)
+                )
+            } else {
+                this.yAxis.call(
+                    d3.axisLeft(this.yscale)
+                        .tickValues(d3.range(Math.ceil(this.yscale.domain()[0]), Math.floor(this.yscale.domain()[1]) + 1, 1))
+                        .tickFormat(d3.format("d"))
+                )
+            }
+
+
+
+            this.bins = this.histogram(datas);
+            this.bars = this.svg.selectAll("rect").data(this.bins);
+
+            this.bars
+                .attr("transform", function (d) {
+                    return "translate(" + Math.min(this.xscale(d.x0),this.xscale(d.x1)) + "," + this.yscale(d.length) + ")";
+                }.bind(this))
+                .attr("width", function (d) {
+                    return Math.abs(this.xscale(d.x1) - this.xscale(d.x0));
+                }.bind(this))
+                .attr("height", function (d) {
+                    return this.height - this.yscale(d.length);
+                }.bind(this));
+        }
+
+        updateWindowSize() {
+            this.width = document.getElementById('histo').clientWidth-this.margingraph.left-this.margingraph.right;
+            this.height = document.getElementById('histo').clientHeight-this.margingraph.top-this.margingraph.bottom;
+            this.containersvg.attr("width", this.width+this.margingraph.left+this.margingraph.right)
+                .attr("height", this.height+this.margingraph.top+this.margingraph.bottom);
+            this.svg.attr("width", this.width)
+                .attr("height", this.height);
+            this.update();
+        }
+
+        showLineAt(pace) {
+            this.paceline = this.svg.append("line")
+                .attr("class", "paceLine")  // assign a class to the line
+                .style("stroke", "rgba(68,146,220,0.8)")  // color of the line
+                .style("stroke-width", 10)  // thickness of the line
+                .attr("x1", this.xscale(pace))  // x position of the start of the line
+                .attr("y1", -5)  // y position of the start of the line (top of the chart area)
+                .attr("x2", this.xscale(pace))  // x position of the end of the line
+                .attr("y2", this.height+5);  // y position of the end of the line (bottom of the chart area)
+
+            const sortedPaces = datas.map(d => d.pace).sort(d3.ascending);
+            const rank = (d3.bisectLeft(sortedPaces, pace));// / sortedPaces.length * 100;
+            const textRank = (rank<sortedPaces.length/2)?"Top " + Math.round(((rank+1)/ sortedPaces.length * 100)) + "% Rank":"Bottom " + Math.round(100-(rank/ sortedPaces.length * 100)) + "% Rank";
+
+            const textBackground = this.svg.append("rect")
+                .attr("class", "percentileTextBackground");
+
+            // Add the percentile as text on top of the SVG
+            const percentileText = this.svg.append("text")
+                .attr("class", "percentileText")
+                .attr("x", this.width/2)
+                .attr("y", this.height/2)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "black")
+                .text(textRank);
+
+            const bbox = percentileText.node().getBBox();
+            textBackground
+                .attr("x", bbox.x - 2)
+                .attr("y", bbox.y - 2)
+                .attr("width", bbox.width + 4)
+                .attr("height", bbox.height + 4)
+                .style("fill", "rgba(245, 245, 255, 0.6)");
+        }
+
+        removeLine() {
+            this.svg.selectAll(".paceLine").remove();
+            this.svg.selectAll(".percentileText").remove();
+            this.svg.selectAll(".percentileTextBackground").remove();
+        }
     }
 
     function highlight(id, scroll) {
@@ -659,6 +815,7 @@
             .style("top", tooltipy+"px")
             .style("left",tooltipx+"px")
             .style("visibility", "visible");
+        histo.showLineAt(minfraction);
     }
 
     function unhighlight(id) {
@@ -668,6 +825,7 @@
         row.style.transition = 'all ease 500ms';
         row.style.backgroundColor = "white";
         tooltip.style("visibility", "hidden");
+        histo.removeLine();
     }
 
     function clickactivity(id) {
@@ -699,10 +857,12 @@
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
         graph.updateWindowSize();
+        histo.updateWindowSize();
     }
 
     window.addEventListener("resize", function () {
         graph.updateWindowSize();
+        histo.updateWindowSize();
     });
 
     var map;
