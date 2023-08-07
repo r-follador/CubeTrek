@@ -1268,26 +1268,31 @@
             `
                 <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
                  <div class='row display-6 ms-1' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
-                    ${entry.title}
-                 </div>
-                 <div class='row'>
-                    <div class="col fs-6">
-                        <img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height=30>${(entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='20px'>":"")}
-                        ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
-                    </div>
+                    <span class="p-0 m-0"><img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height=30>${entry.title}</span>
                  </div>
                  <div class='row'>
                      <div class="col-5">
+                         <div class="col fs-6">
+                            ${(entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='20px'>":"")}
+                            ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                        </div>
                         <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/200x200.png' width='200' height='200'></a>
                      </div>
                      <div class="col-3">
-                        <div class='row'><span class='fw-light ms-2'>Duration</span> <span class='fs-5'>${minToString(parseInt(entry.duration))} h</span></div>
-                        <div class='row mt-1'><span class='fw-light ms-2'>Ascent</span> <span class='fs-5'>${(entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft")}</span></div>
-                        <div class='row mt-1'><span class='fw-light ms-2'>Distance</span>  <span class='fs-5'>${(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi")}</span></div>
+                        <div class='row'><span class='fw-light ms-2'>Duration</span> <span class='fs-6'>${minToString(parseInt(entry.duration))} h</span></div>
+                        <div class='row'><span class='fw-light ms-2'>Ascent</span> <span class='fs-6'>${(entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft")}</span></div>
+                        <div class='row'><span class='fw-light ms-2'>Distance</span>  <span class='fs-6'>${(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi")}</span></div>
+                        <div class='row'><span class='fw-light ms-2'>Avg Speed</span>
+                            <span class='fs-6'>${((parseFloat(entry.distance)/1000)/(parseFloat(entry.duration)/60)*(metric?1:miles_per_km)).toFixed(1) + (metric?" km/h":" mi/h")}</span>
+                            <span class="fs-6">${minFractionToString(parseFloat(entry.duration)/(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)))} ${metric?"min/km":"min/mi"}</span></div>
                      </div>
-                     <div class="col-4 position-relative justify-content-center">
-                        <a href="${entry.trackgroup?'/matching/'+entry.trackgroup:'/view/'+entry.id}"><div class="p-1 m-0" id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;" ></div></a>
-                        ${entry.trackgroup?'<div class="fs-6 position-absolute bottom-0 start-0 end-0 text-center" id="trackgroupRank'+entry.id+'"></div>':''}
+                     <div class="col-4 p-0 pe-3">
+                        <div class="d-flex flex-column h-75">
+                            <div class="flex-grow-1">
+                                <a href="${entry.trackgroup?'/matching/'+entry.trackgroup:'/view/'+entry.id}"><div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;" ></div></a>
+                            </div>
+                            ${entry.trackgroup?"<span class='fw-light ms-2'>Percentile</span>  <span class='fs-6' id='trackgroupRank"+entry.id+"'></span>":"<span class='fw-light ms-2 mt-3'>Highest Point ASL</span><span class='fs-6'>"+(entry.highestpoint*(metric?1:feet_per_m)).toFixed(0)+(metric?" m":" ft")+"</span>"}
+                        </div>
                      </div>
                  </div>
             `;
@@ -1650,8 +1655,7 @@
             const pace = this.datas.find(entry => entry.id === this.trackid).pace;
             const sortedPaces = this.datas.map(d => d.pace).sort(d3.ascending);
             const rank = (d3.bisectLeft(sortedPaces, pace));// / sortedPaces.length * 100;
-            this.textRank = "Rank "+(rank+1)+" of "+sortedPaces.length+" ("+Math.round(((rank+1)/ sortedPaces.length * 100)) + "%)";
-
+            this.textRank = (rank<=sortedPaces.length/2)?"Top " + Math.round(((rank+1)/ sortedPaces.length * 100)) + "% Rank":"Bottom " + Math.round(100-(rank/ sortedPaces.length * 100)) + "% Rank";
 
             this.datas.splice(15);
 
@@ -1696,9 +1700,7 @@
                 .attr("r", 5)
                 .attr("stroke", "#101010")
                 .attr("stroke-width", 1)
-                .style("fill", function (d) {
-                    return this.colorScale(d.pace); // Using pace value to determine color
-                }.bind(this))
+                .style("fill", "rgba(68,146,220,0.42)")
                 .filter(function (d) {
                     return d.id === this.trackid
                 }.bind(this))
@@ -1715,7 +1717,7 @@
             this.groupid = groupid;
             this.trackid = trackid;
 
-            this.margingraph = {top: 5, right: 10, bottom: 20, left: 5};
+            this.margingraph = {top: 10, right: 10, bottom: 20, left: 5};
 
             this.width = document.getElementById(divname).clientWidth - this.margingraph.left - this.margingraph.right,
                 this.height = document.getElementById(divname).clientHeight - this.margingraph.top - this.margingraph.bottom;
@@ -1733,7 +1735,12 @@
 
     }
 
-
+    function minFractionToString(minutes) {
+        var seconds = minutes*60;
+        var sec = seconds % 60;
+        var min = (seconds-sec)/60;
+        return min.toString() + ":" + (sec<10?"0":"") + (sec.toFixed(0)).toString();
+    }
 
 
 </script>
