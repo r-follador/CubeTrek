@@ -15,7 +15,8 @@ const feet_per_m = 3.28084;
 var kdtree;
 var graph;
 
-
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhY2EzNDc0NS0yZWFmLTQ0N2EtYTljNi0zMWFjNDAxMDEwMDYiLCJpZCI6MTY3NDY5LCJpYXQiOjE2OTUxODg0NTF9.TVsG9ZdEU_ikU0uMR6S0Dcmvu8r0K8i9Y2H4z-vCMNU";
+//see https://ion.cesium.com/tokens
 Cesium.RequestScheduler.requestsByServer["tile.googleapis.com:443"] = 18;
 
 
@@ -509,7 +510,6 @@ function onTick(clock) {
 
     var date = Cesium.JulianDate.toDate(currentTime);
     var timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit'});
-
 
     document.getElementById("cesiumrunButton").innerText=timeString;
 

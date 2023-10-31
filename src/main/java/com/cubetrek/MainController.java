@@ -127,6 +127,15 @@ public class MainController {
         return "activity_list";
     }
 
+    @GetMapping("/hidden")
+    public String getHiddenList(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        model.addAttribute("hiddenList", activitityService.getHiddenList(user));
+        logger.info("View Hidden List by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
+        return "hidden_list";
+    }
+
     @GetMapping("/trekmapper")
     public String getTrekMapper(Model model) throws JsonProcessingException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

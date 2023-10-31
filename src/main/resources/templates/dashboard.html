@@ -997,7 +997,12 @@
 
 		for (let year of yearDomain_monthly) {
 			const xAxis = d3.axisBottom(xScaleMonth_monthly).tickSize(0)
-				.tickFormat(d => d3.timeFormat("%b")((new Date()).setMonth(d)));
+				.tickFormat(d => {
+                    let date = new Date();
+                    date.setDate(1);
+                    date.setMonth(d);
+                    return d3.timeFormat("%b")(date);
+                });
 			monthAxis.append("g")
 				.attr("transform", `translate(${xScaleYear_monthly(year)},${13+height - marginBottom})`)
 				.call(xAxis).call(g => g.select(".domain").remove());
@@ -1739,6 +1744,7 @@
         var seconds = minutes*60;
         var sec = seconds % 60;
         var min = (seconds-sec)/60;
+        sec = Math.round(sec);
         return min.toString() + ":" + (sec<10?"0":"") + (sec.toFixed(0)).toString();
     }
 

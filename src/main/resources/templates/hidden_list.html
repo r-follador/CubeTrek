@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - List of Hidden Activities</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="../css/dashboard.css" rel="stylesheet">
+    <style>
+        .hover-row:hover {
+            background-color: rgba(185, 211, 246, 0.32);
+        }
+    </style>
+</head>
+<body>
+<header th:replace="dashboard.html :: header">
+</header>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <nav th:replace="dashboard.html :: navigation(field='activitylist')" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        </nav>
+    </div>
+
+
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">List of Hidden Activities</h1>
+            </div>
+
+            <div>
+                Hidden Activities do not count toward your totals and are not displayed anywhere else (besides this here page).
+            </div>
+
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th> Date </th>
+                    <th> Title </th>
+                    <th> Duration </th>
+                    <th> Ascent</th>
+                    <th> Distance</th>
+                    <th> </th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${hiddenList.empty}">
+                    <td colspan="2"><i>No hidden Activities</i></td>
+                </tr>
+                <tr th:each="track : ${hiddenList}">
+                    <td><img height="30px" th:src="${'../assets/'+track.activitytype.getIconName()}"
+                             th:title="${track.activitytype.getDisplayValue()}"></td>
+                    <td><span th:data-datetime="${track.getDatetrack()}" th:text="${track.getDatetrack()}"> Date </span></td>
+                    <td><a th:href="'/view/'+${track.getId()}" th:text="${track.getTitle()}"> Title </a></td>
+                    <td><span th:data-duration="${track.getDuration()}" th:text="${track.getDuration()}"> Duration </span></td>
+                    <td><span th:data-shortdist="${track.getElevationup()}" th:text="${track.getElevationup()}"> Ascent </span></td>
+                    <td><span th:data-longdist="${track.getDistance()}" th:text="${track.getDistance()}"> Distance </span></td>
+                    <td><span th:if="${track.getTrackgroup() != null}"> <a th:href="'/matching/'+${track.getTrackgroup()}"><img src="/assets/matched.svg" title="Matching Activities"></a></span></td>
+                    <td><a class="btn btn-light btn-sm" th:onclick="|unhide(${track.getId()})|">Unhide</a></td>
+                </tr>
+                </tbody>
+            </table>
+      </main>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+
+    let metric = true;
+    const miles_per_km = 0.621371;
+    const feet_per_m = 3.28084;
+
+    settings();
+
+    function settings() {
+        if (localStorage.getItem("metric") === null) {
+            localStorage.setItem("metric", true);
+        } else {
+            metric = (localStorage.getItem("metric")==="true");
+        }
+
+        if (metric) {
+            document.getElementById("metricChecked").checked = true;
+            setMetric();
+        } else {
+            document.getElementById("metricChecked").checked = false;
+            setMetric();
+        }
+    }
+
+    function setMetric() {
+        document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        formatValues();
+    }
+
+    function clickSettingsMetric() {
+        metric = document.getElementById("metricChecked").checked;
+        localStorage.setItem("metric",metric);
+        setMetric();
+    }
+
+    function formatValues() {
+        document.querySelectorAll('[data-duration]').forEach(function(element) {
+            element.innerText = minToString(element.dataset.duration)+" h";
+        });
+
+        document.querySelectorAll('[data-datetime]').forEach(function(element) {
+            element.innerText = (new Date(Date.parse(element.dataset.datetime))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+        });
+
+        document.querySelectorAll('[data-date]').forEach(function(element) {
+            element.innerText = (new Date(Date.parse(element.dataset.date))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric'});
+        });
+
+        document.querySelectorAll('[data-shortdist]').forEach(function(element) {
+            element.innerText = formatShortdist(element.dataset.shortdist);
+        });
+
+        document.querySelectorAll('[data-longdist]').forEach(function(element) {
+            element.innerText = formatLongdist(element.dataset.longdist/1000);
+        });
+    }
+
+    function formatShortdist(value) {
+        return (value *(metric?1:feet_per_m)).toFixed(0)+" "+(metric?"m":"ft");
+    }
+
+    function formatLongdist(value) {
+        return (value *(metric?1:miles_per_km)).toFixed(1)+" "+(metric?"km":"mi");
+    }
+
+    function minToString(minutes) {
+        var m = minutes % 60;
+        var h = (minutes-m)/60;
+        return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+
+
+
+
+    const root = "../api/";
+    function unhide(id) {
+        console.log(id);
+        fetch(root+"modify/id="+id+"&hidden=false", {
+            method: "GET"
+        }).then(res => {
+            res.json().then(response => {
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    //not good
+                }
+            });
+        }).catch(error => {
+            console.log("--error");
+            console.log(error);
+        });
+    }
+</script>
+</html>

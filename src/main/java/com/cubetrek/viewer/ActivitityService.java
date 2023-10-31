@@ -111,6 +111,10 @@ public class ActivitityService {
             return trackDataRepository.findByOwnerAndHiddenAndActivitytype(user, false, activitytype, paging);
     }
 
+    public List<TrackData.TrackMetadata> getHiddenList(Users user) {
+        return trackDataRepository.findByOwnerAndHidden(user, true);
+    }
+
     public List<TrackDataRepository.PublicActivity> getPublicActivitiesList(int size) {
         return trackDataRepository.findPublicActivities(size);
     }

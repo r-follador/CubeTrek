@@ -490,6 +490,7 @@
         var seconds = minutes*60;
         var sec = seconds % 60;
         var min = (seconds-sec)/60;
+        sec = Math.round(sec);
         return min.toString() + ":" + (sec<10?"0":"") + (sec.toFixed(0)).toString();
     }
 

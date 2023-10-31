@@ -189,6 +189,8 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
 
     Page<TrackData.TrackMetadata> findByOwnerAndHidden(Users owner, boolean hidden, Pageable pageable);
 
+    List<TrackData.TrackMetadata> findByOwnerAndHidden(Users owner, boolean hidden);
+
     List<TrackData.TrackMetadata> findByOwnerAndTrackgroupAndHiddenOrderByDatetrackDesc(Users owner, Long trackgroup, boolean hidden);
 
     List<TrackData.TrackMetadata> findByOwnerAndHiddenAndActivitytype(Users owner, boolean hidden, TrackData.Activitytype activitytype, Pageable pageable);
