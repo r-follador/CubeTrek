@@ -15,7 +15,7 @@ const feet_per_m = 3.28084;
 var kdtree;
 var graph;
 
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhY2EzNDc0NS0yZWFmLTQ0N2EtYTljNi0zMWFjNDAxMDEwMDYiLCJpZCI6MTY3NDY5LCJpYXQiOjE2OTUxODg0NTF9.TVsG9ZdEU_ikU0uMR6S0Dcmvu8r0K8i9Y2H4z-vCMNU";
+Cesium.Ion.defaultAccessToken = cesiumIonDefaultAccessToken;
 //see https://ion.cesium.com/tokens
 Cesium.RequestScheduler.requestsByServer["tile.googleapis.com:443"] = 18;
 
@@ -51,7 +51,7 @@ viewer.scene.skyBox = new Cesium.SkyBox({
 
 
 const tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
-    url: "https://tile.googleapis.com/v1/3dtiles/root.json?key=AIzaSyCIB6KWctsDcbcGmOqQoWYg_Uh1eO0muAg",
+    url: "https://tile.googleapis.com/v1/3dtiles/root.json?key="+googlemapApiKey,
     showCreditsOnScreen: true,
 }));
 
@@ -222,7 +222,7 @@ var marker;
 function prepareMap2d(jsonData) {
     var map = new maplibregl.Map({
         container: 'map2d',
-        style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI', // stylesheet location
+        style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key='+maptilerApiKey, // stylesheet location
         bounds: [[jsonData.properties.bbox.boundingBoxW-0.005,jsonData.properties.bbox.boundingBoxS-0.005],[jsonData.properties.bbox.boundingBoxE+0.005,jsonData.properties.bbox.boundingBoxN+0.005]],
         touchPitch: false,
         maxPitch: 0,

@@ -14,6 +14,7 @@ import com.sunlocator.topolibrary.LatLonBoundingBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -63,6 +64,15 @@ public class MainController {
 
     @Autowired
     private ActivitityService activitityService;
+
+    @Value("${maptiler.api.key}")
+    String maptilerApiKey;
+
+    @Value("${googlemap.api.key}")
+    String googlemapApiKey;
+
+    @Value("${cesium.ion.defaultAccessToken}")
+    String cesiumIonDefaultAccessToken;
 
     Logger logger = LoggerFactory.getLogger(MainController.class);
 
@@ -143,6 +153,7 @@ public class MainController {
         model.addAttribute("numberEntries", activitityService.countNumberOfEntries(user));
         model.addAttribute("activityCounts", activitityService.getActivityTypeCount(user));
         model.addAttribute("activitiesPosition", (new ObjectMapper()).writeValueAsString(activitityService.getAllTracksPosition(user)));
+        model.addAttribute("maptilerApiKey", maptilerApiKey);
         logger.info("View TrekMapper by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "trekmapper";
     }
@@ -232,6 +243,7 @@ public class MainController {
     public String viewTrack(@PathVariable("itemid") long trackid, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        model.addAttribute("maptilerApiKey", maptilerApiKey);
         return trackViewerService.mapView3D(authentication, trackid, model);
     }
 
@@ -239,6 +251,7 @@ public class MainController {
     public String viewTrack2D(@PathVariable("itemid") long trackid, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        model.addAttribute("maptilerApiKey", maptilerApiKey);
         return trackViewerService.mapView2D(authentication, trackid, model);
     }
 
@@ -246,6 +259,9 @@ public class MainController {
     public String viewTrack3dReplay(@PathVariable("itemid") long trackid, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        model.addAttribute("maptilerApiKey", maptilerApiKey);
+        model.addAttribute("googlemapApiKey", googlemapApiKey);
+        model.addAttribute("cesiumIonDefaultAccessToken", cesiumIonDefaultAccessToken);
         return trackViewerService.mapView3dReplay(authentication, trackid, model);
     }
 
@@ -262,6 +278,7 @@ public class MainController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("groupidstring", Long.toString(groupid));
+        model.addAttribute("maptilerApiKey", maptilerApiKey);
         try {
             model.addAttribute("matches", (new ObjectMapper().writeValueAsString(activitityService.getMatchingActivities(user, groupid))));
         } catch (JsonProcessingException e) {
@@ -303,63 +320,21 @@ public class MainController {
         return trackViewerService.getGLTF(authentication, trackid);
     }
 
-    /**
-    @ResponseBody
-    @RequestMapping(value = "/api/gltf/map/{zoom}/{x}/{y}.png", produces = "image/png")
-    public HttpEntity<byte[]> getGLTF(@PathVariable("zoom") int zoom, @PathVariable("x") int x, @PathVariable("y") int y, Model model) {
-
-        byte[] image = null;
-        try {
-            //URL url = new URL(String.format("https://api.maptiler.com/maps/basic/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x,y)); //Sun Locator style map (no shading)
-            URL url = new URL(String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x,y)); //Swiss Topo style map (shading)
-            InputStream in = new BufferedInputStream(url.openStream());
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
-            int n = 0;
-            while (-1 != (n = in.read(buf))) {
-                out.write(buf, 0, n);
-            }
-            out.close();
-            in.close();
-            image = out.toByteArray();
-        } catch (IOException ioException) {
-
-        }
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_PNG);
-        headers.setContentLength(image.length);
-
-        return new HttpEntity<byte[]>(image, headers);
-
-    }
-
-    **/
-
-
     @RequestMapping(value = "/api/gltf/map/{type}/{zoom}/{x}/{y}.png", produces = "image/png")
     public void getGLTF(@PathVariable("type") String type, @PathVariable("zoom") int zoom, @PathVariable("x") int x, @PathVariable("y") int y, HttpServletResponse response) {
         //LatLonBoundingBox CHBox = new LatLonBoundingBox(47.9163, 45.6755, 5.7349, 10.6677);
         String mapaccession = switch (type) {
             case "winter" ->
-                    String.format("https://api.maptiler.com/maps/winter/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+                    String.format("https://api.maptiler.com/maps/winter/%d/%d/%d.png?key=%s", zoom, x, y, maptilerApiKey);
             case "satellite" ->
-                    String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+                    String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=%s", zoom, x, y, maptilerApiKey);
             case "satellite_ch" ->
                     String.format("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/%d/%d/%d.jpeg", zoom, x, y);
             case "standard" -> {
-                //LatLon bla = MapTile.convertPixelXYtoLatLong(new MapTile.XY(x,y),zoom);
-                //System.out.println(bla.toString());
-                //if (CHBox.isPositionWithinBbox(MapTile.convertPixelXYtoLatLong(new MapTile.XY(x,y),zoom))) {//within CH bbox
-                //    System.out.println("@@ within CH");
-                    yield String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
-                //}else {
-                //    System.out.println("@@ outside CH");
-                //    yield String.format("https://api.maptiler.com/maps/dae70481-0d42-4345-867d-216c14f6ead8/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
-                //}
+                    yield String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=%s", zoom, x, y, maptilerApiKey);
             }
             default ->
-                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=Nq5vDCKAnSrurDLNgtSI", zoom, x, y);
+                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=%s", zoom, x, y, maptilerApiKey);
         };
 
         response.setHeader("Location", mapaccession);
@@ -372,7 +347,7 @@ public class MainController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String pathenc = trackViewerService.getEncodedPolyline(authentication, id, 50);
         final String color = "rgba(255,128,1,1)";
-        String maptilerUrl = String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/static/auto/%dx%d.png?key=Nq5vDCKAnSrurDLNgtSI&attribution=false&scale=@2x&path=stroke:%s|width:3|fill:none|enc:%s",width, height, color, pathenc);
+        String maptilerUrl = String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/static/auto/%dx%d.png?key=%s&attribution=false&scale=@2x&path=stroke:%s|width:3|fill:none|enc:%s",width, height, maptilerApiKey, color, pathenc);
         response.setHeader("Location", maptilerUrl);
         response.addHeader("Cache-Control", "max-age=864000, public");
         response.setStatus(302);

@@ -98,6 +98,12 @@
 </body>
 
 <script th:inline="javascript">
+    /*<![CDATA[*/
+    var maptilerApiKey = [[${maptilerApiKey}]];
+    /*]]>*/
+</script>
+
+<script th:inline="javascript">
     var icons = {};
     /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
     icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
@@ -229,7 +235,7 @@
     function prepareMap() {
         map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI',
+            style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key='+maptilerApiKey,
             center: [0,0],
             zoom: 1,
             touchPitch: false,

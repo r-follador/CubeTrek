@@ -80,6 +80,9 @@ public class StorageService {
     @Autowired
     ActivitityService activitityService;
 
+    @Value("${maptiler.api.key}")
+    String maptilerApiKey;
+
     @PostConstruct
     public void init() {
         //akrobatik needed to use @values in construtor
@@ -362,7 +365,7 @@ public class StorageService {
     private String reverseGeocode(LatLon coord) {
         try {
             String geoFeatureText = "-";
-            URL url = new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=Nq5vDCKAnSrurDLNgtSI", coord.getLongitude(), coord.getLatitude()));
+            URL url = new URL(String.format("https://api.maptiler.com/geocoding/%f,%f.json?key=%s", coord.getLongitude(), coord.getLatitude(), maptilerApiKey));
             URLConnection connection = url.openConnection();
             connection.setConnectTimeout(2000);
             connection.setReadTimeout(2000);

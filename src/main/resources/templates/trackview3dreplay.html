@@ -443,6 +443,13 @@
     </div>
 </div>
 
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var maptilerApiKey = [[${maptilerApiKey}]];
+    var googlemapApiKey = [[${googlemapApiKey}]];
+    var cesiumIonDefaultAccessToken = [[${cesiumIonDefaultAccessToken}]];
+    /*]]>*/
+</script>
 
 <script>
     var trackid = [[${trackmetadata.id}]];

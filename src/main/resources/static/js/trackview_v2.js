@@ -238,7 +238,7 @@ var marker;
 function prepareMap2d(jsonData) {
     var map = new maplibregl.Map({
         container: 'map2d',
-        style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=Nq5vDCKAnSrurDLNgtSI', // stylesheet location
+    style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key='+maptilerApiKey, // stylesheet location
         bounds: [[jsonData.properties.bbox.boundingBoxW-0.005,jsonData.properties.bbox.boundingBoxS-0.005],[jsonData.properties.bbox.boundingBoxE+0.005,jsonData.properties.bbox.boundingBoxN+0.005]],
         touchPitch: false,
         maxPitch: 0,
