@@ -14,6 +14,7 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -47,6 +48,9 @@ public class RegistrationController {
 
     @Autowired
     NewsletterSignupRepository newsletterSignupRepository;
+
+    @Value("${cloudflare.turnstyle.secret}")
+    String cloudflareTurnstyleSecret;
 
     Logger logger = LoggerFactory.getLogger(RegistrationController.class);
 
@@ -103,7 +107,7 @@ public class RegistrationController {
         HttpClient httpClient = HttpClient.newHttpClient();
 
         Map<String, String> content = new HashMap<>();
-        content.put("secret", "0x4AAAAAAACez2pOfKpLEGVmbCpkPL8n73E");
+        content.put("secret", cloudflareTurnstyleSecret);
         content.put("response", cf_turnstyle_response);
         content.put("remoteip", remoteip);
 

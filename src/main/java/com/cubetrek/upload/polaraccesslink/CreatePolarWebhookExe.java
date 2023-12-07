@@ -16,8 +16,8 @@ public class CreatePolarWebhookExe {
     //see https://www.polar.com/accesslink-api/?python#webhooks
 
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
-        String polarClientId="***REMOVED***";
-        String polarClientSecret="***REMOVED***";
+        String polarClientId="xxx";
+        String polarClientSecret="xxxx";
 
         System.out.println("Run only once: this creates a webhook for pings from Polar Accesslink");
         System.out.println("!! IMPORTANT: Save the 'signature_secret_key' which gets returned and update application.properties");
