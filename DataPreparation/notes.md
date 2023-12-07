@@ -12,13 +12,13 @@ rm -r /tmp/imposm*
 /home/rainer/software/imposm-0.11.1-linux-x86-64/imposm import -config /home/rainer/Software_Dev/IdeaProjects/Cubetrek/DataPreparation/imposm-config.txt -read /home/rainer/Downloads/switzerland-latest.osm.pbf -write -deployproduction -srid 4326
 
 #Remove peaks without name
-PGPASSWORD=***REMOVED*** psql -U postgres -h localhost -d verticaltrack -c "DELETE FROM osm_peaks WHERE (name = '')"
+PGPASSWORD=xxxx psql -U postgres -h localhost -d verticaltrack -c "DELETE FROM osm_peaks WHERE (name = '')"
 #replace comma by period for height
-#PGPASSWORD=***REMOVED*** psql -U postgres -h localhost -d verticaltrack -c "UPDATE osm_peaks SET ele =  REPLACE(ele, ',','.')"
+#PGPASSWORD=xxxx psql -U postgres -h localhost -d verticaltrack -c "UPDATE osm_peaks SET ele =  REPLACE(ele, ',','.')"
 #Change ele from string to numerics
-#PGPASSWORD=***REMOVED*** psql -U postgres -h localhost -d verticaltrack -c "ALTER TABLE osm_peaks ALTER COLUMN ele TYPE numeric USING NULLIF(ele,'')::numeric"
+#PGPASSWORD=xxxx psql -U postgres -h localhost -d verticaltrack -c "ALTER TABLE osm_peaks ALTER COLUMN ele TYPE numeric USING NULLIF(ele,'')::numeric"
 
-PGPASSWORD=***REMOVED*** psql -U postgres -h localhost -d verticaltrack -c "VACUUM FULL VERBOSE osm_peaks"
+PGPASSWORD=xxxx psql -U postgres -h localhost -d verticaltrack -c "VACUUM FULL VERBOSE osm_peaks"
 ```
 
 
