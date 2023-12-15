@@ -29,12 +29,14 @@ dependencies {
     implementation 'org.hibernate:hibernate-spatial:5.6.3.Final'
     implementation 'net.postgis:postgis-jdbc:2021.1.0'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE'
-    implementation 'io.jenetics:jpx:3.0.1'
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.1'
+    implementation 'io.jenetics:jpx:3.1.0'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.2-SNAPSHOT.jar')
     implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/libs/fit.jar')
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
     implementation 'oauth.signpost:signpost-core:2.1.1'
+    implementation "com.stripe:stripe-java:24.7.0"
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     compileOnly 'org.projectlombok:lombok:1.18.24'
     developmentOnly 'org.springframework.boot:spring-boot-devtools:2.7.0'
