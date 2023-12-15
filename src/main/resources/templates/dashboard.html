@@ -15,6 +15,16 @@
         .hover-row:hover {
             background-color: rgba(185, 211, 246, 0.32);
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animated-div {
+            animation-name: fadeIn;
+            animation-duration: 5s; /* Adjust the time as needed */
+        }
     </style>
 </head>
 <body>
@@ -90,6 +100,10 @@
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Dashboard</h1>
+                <div th:if="${user.getUserTier()==T(com.cubetrek.database.Users.UserTier).PAID}">
+                    <img src="assets/trophy-icon.svg" style="width: 30px; height: 30px;">
+                    <span class="badge text-bg-warning">You're a Supporter!</span>
+                </div>
             </div>
 
             <div th:if="${totalActivities < 5}" class="card m-5" style="width: 18rem;">
@@ -99,6 +113,13 @@
                     <p class="card-text">Add your Tracks to get started. Upload your files, link your Garmin and Polar account to automatically sync future activities.</p>
                     <a href="/upload" class="btn btn-primary m-1">Upload Activity Files</a>
                     <a href="/profile" class="btn btn-primary m-1">Link Accounts</a>
+                </div>
+            </div>
+
+            <div th:if="${totalActivities >= 10 and user.getUserTier()==T(com.cubetrek.database.Users.UserTier).FREE}" onclick="window.location='/subscribe';" style="cursor: pointer;" class="animated-div" >
+                <div class="card-body">
+                    <h5 class="card-title">Support CubeTrek</h5>
+                    <p class="card-text">Become a 🏆<a href="/subscribe">subscriber</a> and help pay the CubeTrek bills!</p>
                 </div>
             </div>
 

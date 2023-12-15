@@ -28,7 +28,30 @@
                 <h1 class="h2">Profile</h1>
             </div>
 
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+            <div class="row">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                    <h4 class="h4">Support CubeTrek</h4>
+                </div>
+                <div th:if="${userTier==userTier.FREE}">
+                    Your not a Subscriber yet 😔<br>
+                    Help CubeTrek pay the server bills by buying a subscription.<br>
+                    <a type="button" class="btn btn-warning" href="/subscribe">Subscribe to CubeTrek</a>
+                </div>
+                <div th:if="${userTier==userTier.PAID}">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <img src="assets/trophy-icon.svg" style="width: 100px; height: 100px;">
+                        </div>
+                        <div class="col">
+                            Thank you for subscribing to CubeTrek and helping pay the server bills!<br>
+                            <a type="button" class="btn btn-secondary" href="/subscribe">Manage your Subscription</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mt-4">
                 <h4 class="h4">Settings</h4>
             </div>
 
@@ -101,16 +124,6 @@
                 </div>
             </div>
             </div>
-
-            <div class="row">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mt-4">
-                    <h4 class="h4">Subscription</h4>
-                </div>
-                <div>
-                    Support CubeTrek and help pay the server bills by buying a subscription.
-                </div>
-            </div>
-            <div class="row mb-3"></div>
 
             <div class="row">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mt-4">

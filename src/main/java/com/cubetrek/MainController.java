@@ -179,6 +179,8 @@ public class MainController {
         UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
         model.addAttribute("isGarminConnected", utc != null && utc.isGarminEnabled());
         model.addAttribute("isPolarConnected", utc != null && utc.isPolarEnabled());
+        model.addAttribute("userTier", usersRepository.findById(user.getId()).get().getUserTier()); //force load from database, user might be stale
+        logger.info("View Profile by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "profile";
     }
 

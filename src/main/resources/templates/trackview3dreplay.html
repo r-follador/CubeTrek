@@ -161,7 +161,7 @@
                             <img th:if="${writeAccess}" style="visibility:hidden" id="edittitle" height="20px"
                                  src="../assets/cubetrek_modify.svg">
                         </div>
-                        <div th:unless="${writeAccess}" class="fw-light" th:text="${'Athlete: ' + owner}"></div>
+                        <div th:unless="${writeAccess}" class="fw-light">Athlete: [[${owner}]] <span th:if="${ownerIsSupporter}" class="badge text-bg-primary" title="This outstanding athlete supports CubeTrek by subscribing!">🏆 Supporter</span></div>
                         <div>
                             <a th:if="${writeAccess && trackmetadata.trackgroup != null}" type="button" class="btn btn-outline-secondary btn-sm ms-3 align-middle" th:href="${'/matching/'+trackmetadata.trackgroup}"><img src="../assets/matched.svg" height="20px"> View Matching Activities</a>
                             <a th:if="${writeAccess}" type="button" class="btn btn-outline-secondary btn-sm ms-3 align-middle" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Edit Track</a>

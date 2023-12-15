@@ -178,6 +178,7 @@ public class TrackViewerService {
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
+        model.addAttribute("ownerIsSupporter", track.getOwner().getUserTier()== Users.UserTier.PAID);
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
 
         //check if too big for 3D view (more than 100x100km)
@@ -203,6 +204,7 @@ public class TrackViewerService {
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
+        model.addAttribute("ownerIsSupporter", track.getOwner().getUserTier()== Users.UserTier.PAID);
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
 
         //check if too big for 3D view (more than 100x100km)
@@ -229,6 +231,7 @@ public class TrackViewerService {
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
+        model.addAttribute("ownerIsSupporter", track.getOwner().getUserTier()== Users.UserTier.PAID);
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
         return "trackview2d";
     }

@@ -22,7 +22,8 @@ public class Users implements UserDetails {
     }
 
     public enum UserTier {
-        FREE, PAID;
+        FREE,
+        PAID;
     }
 
     @Getter

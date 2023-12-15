@@ -122,20 +122,25 @@ public class StripeNewEventListener implements ApplicationListener<StripeNewEven
         }
     }
 
+    @Transactional
     public void checkForUpdates(Subscription sub) {
         Stripe.apiKey = StripeApiKey;
         try {
             com.stripe.model.Subscription subscription = com.stripe.model.Subscription.retrieve(sub.getStripeSubscriptionId());
 
-            Users user = sub.getUser();
+            Users user = usersRepository.findById(sub.getUser().getId()).get();
 
             if (subscription.getStatus().equalsIgnoreCase("incomplete_expired") || subscription.getStatus().equalsIgnoreCase("canceled") || subscription.getStatus().equalsIgnoreCase("unpaid")) {
                 sub.setActive(false);
-                usersRepository.updateUserTier(sub.getUser().getId(), Users.UserTier.FREE);
+                user.setUserTier(Users.UserTier.FREE);
+                //usersRepository.updateUserTier(sub.getUser().getId(), Users.UserTier.FREE);
             } else {
                 sub.setActive(true);
-                usersRepository.updateUserTier(sub.getUser().getId(), Users.UserTier.PAID);
+                user.setUserTier(Users.UserTier.PAID);
+                //usersRepository.updateUserTier(sub.getUser().getId(), Users.UserTier.PAID);
             }
+
+            usersRepository.save(user);
 
             sub.setCurrent_period_end(subscription.getCurrentPeriodEnd());
             sub.setCurrent_period_start(subscription.getCurrentPeriodStart());

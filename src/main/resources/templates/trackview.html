@@ -66,9 +66,6 @@
                 <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked
                        onchange="mapstyle('summer')">
                 <label class="btn btn-outline-danger" for="btnradio1">Summer</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off"
-                       onchange="mapstyle('winter')">
-                <label class="btn btn-outline-danger" for="btnradio2">Winter</label>
                 <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off"
                        onchange="mapstyle('satellite')">
                 <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
@@ -155,7 +152,7 @@
                             <img th:if="${writeAccess}" style="visibility:hidden" id="edittitle" height="20px"
                                  src="../assets/cubetrek_modify.svg">
                         </div>
-                        <div th:unless="${writeAccess}" class="fw-light" th:text="${'Athlete: ' + owner}"></div>
+                        <div th:unless="${writeAccess}" class="fw-light">Athlete: [[${owner}]] <span th:if="${ownerIsSupporter}" class="badge text-bg-primary" title="This outstanding athlete supports CubeTrek by subscribing!">🏆 Supporter</span></div>
                         <div>
                             <a th:if="${writeAccess && trackmetadata.trackgroup != null}" type="button" class="btn btn-outline-secondary btn-sm ms-3 align-middle" th:href="${'/matching/'+trackmetadata.trackgroup}"><img src="../assets/matched.svg" height="20px"> View Matching Activities</a>
                             <a th:if="${writeAccess}" type="button" class="btn btn-outline-secondary btn-sm ms-3 align-middle" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Edit Track</a>

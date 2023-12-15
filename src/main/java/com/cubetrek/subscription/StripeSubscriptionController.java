@@ -110,7 +110,7 @@ public class StripeSubscriptionController {
 
         // Handle the event; see https://stripe.com/docs/api/events/types
         if (stripeEvent.getType().equals("checkout.session.completed")) {
-            System.out.println("Handled event type: " + stripeEvent.getType());
+            //System.out.println("Handled event type: " + stripeEvent.getType());
 
             if (dataObjectDeserializer.getObject().isPresent()) {
                 Session sessionEvent = (Session) dataObjectDeserializer.getObject().get();
@@ -118,7 +118,7 @@ public class StripeSubscriptionController {
                 String subscriptionId = sessionEvent.getSubscription();
                 String cubetrekId = sessionEvent.getMetadata().get("cubetrek_id");
 
-                System.out.println("CustomerID "+ customerId +"; cubetrekId: "+cubetrekId + "; subscriptionId: "+subscriptionId);
+                //System.out.println("CustomerID "+ customerId +"; cubetrekId: "+cubetrekId + "; subscriptionId: "+subscriptionId);
                 eventPublisher.publishEvent(new StripeNewEventListener.OnEvent(StripeNewEventListener.StripeEvent.checkout_session_completed, subscriptionId, customerId, cubetrekId));
 
 
@@ -130,7 +130,7 @@ public class StripeSubscriptionController {
                 // instructions on how to handle this case, or return an error here.
             }
         } else if (stripeEvent.getType().equals("invoice.paid")) {
-            System.out.println("Handled event type: " + stripeEvent.getType());
+            //System.out.println("Handled event type: " + stripeEvent.getType());
 
             if (dataObjectDeserializer.getObject().isPresent()) {
                 Invoice invoice = (Invoice) dataObjectDeserializer.getObject().get();
@@ -138,7 +138,7 @@ public class StripeSubscriptionController {
                 String customerId = invoice.getCustomer();
                 String subscriptionId = invoice.getSubscription();
 
-                System.out.println("CustomerID "+ customerId+ "; subscriptionId: "+subscriptionId);
+                //System.out.println("CustomerID "+ customerId+ "; subscriptionId: "+subscriptionId);
                 eventPublisher.publishEvent(new StripeNewEventListener.OnEvent(StripeNewEventListener.StripeEvent.invoice_paid, subscriptionId, customerId, null));
             } else {
                 logger.error("Stripe Subscription Webhook : Deserialization failed: payload: " + payload);
