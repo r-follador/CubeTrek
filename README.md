@@ -9,13 +9,13 @@ Sign up on [CubeTrek.com](https://cubetrek.com), connect your Garmin and Polar w
 ## Features
 Check out the examples on [CubeTrek.com](https://cubetrek.com); e.g. [SkiMo to the Mattijsch Horn](https://cubetrek.com/view/4967)
 
-![Rotating Topology](src/main/resources/static/assets/pics/rotating5.mp4)
+<video src="src/main/resources/static/assets/pics/rotating5.mp4"></video>
 Interactive 3D Topology view using Babylon.js
 
-![TrekMapper](src/main/resources/static/assets/pics/trekmapper2.mp4)
+<video src="src/main/resources/static/assets/pics/trekmapper2.mp4"></video>
 TrekMapper: Heatmap of all your activities in one map
 
-![Statistics](src/main/resources/static/assets/index_bargraph.mp4)
+<video src="src/main/resources/static/assets/index_bargraph.mp4"></video>
 Tons of statistics
 
 ![Yearly activities](src/main/resources/static/assets/index_heatmap.png)
