@@ -423,45 +423,8 @@
   </div>
   <div id="techdeeds" class="py-5">
     <div class="container">
-      <div class="accordion" id="tech-exposition">
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingOne">
-            <button class="accordion-button collapsed fw-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-              Tech Stack Rundown for the Interested
-            </button>
-          </h2>
-          <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#exposition">
-            <div class="accordion-body">
-              <p>For the technically inclined people, here's a <strong>short summary of the underlying tech stack</strong> used by CubeTrek.</p>
-              <p>The Back End is constructed with <a href="https://i.imgur.com/oCqmcnE.jpeg">Java</a> and <a href="https://spring.io/projects/spring-boot">Spring Boot</a> backed with <a href="https://www.postgresql.org/">Postgresql</a> (and <a href="https://postgis.net/">Postgis</a>), the Front End is based on <a href="https://getbootstrap.com/">Bootstrap</a>. <a href="http://vanilla-js.com/">Good old plain JavaScript</a> is used for interaction with the server.</p>
-              <p>The actual 3D magic is performed by the awesome <a href="https://www.babylonjs.com/">Babylon.js</a> library (check it out, if you've never heard of it), the graph is handled by <a href="https://d3js.org/">D3.js</a> (very versatile, but a steep learning curve), the 2D map is rendered with <a href="https://maplibre.org/">MapLibre GL JS</a> (which is very straightforward to use in this particular case).</p>
-
-              <p><strong>So here's what happens when you upload a FIT or GPX file:</strong> the server reads the tracks, downsamples them to a reasonable resolution and calculates some descriptive values (such as the geographical bounding box, distance, time, etc.).<br>
-              The elevation data is cross-checked with the elevation model on the server. This is done to check if the device's height sensors were propely calibrated and a simple correction is applied if necessary. If elevation data is completely absent in the file (because the recording device doesn't have a height sensor) the elevation data is interpolated completely from the model.<br>
-                The elevation model consists of <a href="https://wiki.openstreetmap.org/wiki/SRTM#Format">HGT files</a> retrieved from the <a href="https://lpdaac.usgs.gov/products/srtmgl1v003/">NASA SRTM</a> dataset.</p>
-
-              <p>To guess the activity name, we take the highest point in the track data (making the assumption that this is the most prominent point of the whole activity, e.g. the summit). This is cross-checked against a peak database on the server. The data comes from <a href="https://www.openstreetmap.org">OpenStreetMap</a> and contains all OSM features annotated as '<a href="https://wiki.openstreetmap.org/wiki/Tag:natural%3Dpeak">Peak</a>', and contains >520k entries.<br>
-                If there's no peak in the vicinity, a reverse geocoding request is sent to <a href="https://www.maptiler.com/">Maptiler</a>.</p>
-
-              <p>Once all the data is gathered, it's stored in a PostGIS extended PostgreSQL database and the activity is ready be to put on the spotlight.</p>
-
-              <p><strong>When you view the activity in the 3D viewer:</strong> the server provides two key files for each activity. An extended <a href="https://en.wikipedia.org/wiki/GeoJSON">GeoJSON</a> file, describing the track latitude/longitude data, time, and elevation data. A <a href="https://kcoley.github.io/glTF/">gLTF</a> file which contains the 3D Model of the topography. Babylon.js is used to display the gLTF file and loads the texture (map tiles) from Maptiler.<br>
-              A custom script than draws the track on top of the texture of the 3D model.<br>
-              The script also handles the D3.js graph data conversion from the GeoJSON file, the mouse interaction etc.<br>
-                The 2D map is very straightforward: just show the GeoJSON data in a MapLibre map (again using Maptiler as source for the map data).</p>
-
-              <p><strong>When you view your heatmap (TrekMapper):</strong> The server provides a list of the center coordinates for every track associated to your account, which in turn is rendered by MapLibre GL JS
-                to a heatmap. See <a href="https://maplibre.org/maplibre-gl-js-docs/example/heatmap-layer/">MapLibre's Heatmap example</a> for details.<br>
-                In high zoom levels, the script requests a simplified GeoJSON for each track within the view, which are displayed in their own layer.
-                Simplified means that the track resolution is downsampled quite significantly and no further information (i.e. no altitude data) is provided.<br>
-                This makes the number of displayed coordinates on the user device more manageable, with the downside of noticeably
-                simplified tracks when completely zoomed in.<br>
-                After clicking on the map, <a href="https://turfjs.org/">Turf.js</a> is used to determine the closest track.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <h2 class="fw-light text-center">Open Source</h2>
+      CubeTrek is open source (under GPL v2). Get the code on <a href="https://github.com/r-follador/CubeTrek/">Github</a>.
     </div>
   </div>
 </main>

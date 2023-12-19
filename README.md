@@ -62,3 +62,5 @@ After clicking on the map, Turf.js is used to determine the closest track.
 - 3D visualization: [Babylon.js](https://www.babylonjs.com/)
 
 ## Contribute
+- Pull requests are welcome! CubeTrek is licensed under GPLv2.0
+- Consider becoming a Supporter of CubeTrek by getting a [subscription](https://cubetrek.com/subscribe). This helps paying the bills.
