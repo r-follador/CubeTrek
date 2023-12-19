@@ -45,6 +45,9 @@ public class StripeSubscriptionController {
     @Value("${stripe.endpoint.secret}")
     String endpointSecret;
 
+    @Value("${stripe.endpoint.public}")
+    String endpointPublic;
+
     Logger logger = LoggerFactory.getLogger(StripeSubscriptionController.class);
 
     @Autowired
@@ -195,6 +198,7 @@ public class StripeSubscriptionController {
             return "redirect:"+portalSession.getUrl();
         } else { //if no subscription exists, create new subscription
             model.addAttribute("user", user);
+            model.addAttribute("stripe_publickey", endpointPublic);
             return "subscribe";
         }
     }
