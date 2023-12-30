@@ -1,5 +1,6 @@
 package com.cubetrek;
 
+import com.cubetrek.database.Users;
 import com.cubetrek.viewer.TrackViewerService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,6 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -63,7 +67,12 @@ public class ExceptionHandling {
 
     @ExceptionHandler({TrackAccessException.class})
     public final String handleTrackViewerAccess(TrackAccessException ex) {
-        logger.info("- Track Access Exception");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof AnonymousAuthenticationToken) {
+            logger.info("- Track Access Exception by anonymous");
+            return "redirect:/login";
+        }
+        logger.info("- Track Access Exception by loggedin user");
         return "trackAccessError";
     }
 
