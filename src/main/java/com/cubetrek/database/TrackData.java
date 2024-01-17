@@ -6,22 +6,24 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
 
-import javax.persistence.*;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 
 @Entity(name = "trackdata")
@@ -99,7 +101,7 @@ public class TrackData implements Serializable {
 
     @Getter
     @Setter
-    @Enumerated(EnumType.ORDINAL)
+    @Convert(converter = SharingConverter.class)
     @Column(name = "sharing")
     private Sharing sharing;
 
@@ -111,7 +113,6 @@ public class TrackData implements Serializable {
     @Getter
     @Setter
     @Column(name = "center")
-    @Type(type = "org.locationtech.jts.geom.Point")
     private Point center;
 
     @Getter
@@ -161,13 +162,13 @@ public class TrackData implements Serializable {
 
     @Getter
     @Column(name = "datetrack", columnDefinition= "TIMESTAMPTZ")
-    private java.sql.Timestamp datetrack; //datetrack normalized to UTC
+    private Instant datetrack; //datetrack normalized to UTC
 
     public void setDatetrack(ZonedDateTime datetrack) {
-        this.datetrack = Timestamp.valueOf(datetrack.toLocalDateTime());
+        this.datetrack = datetrack.toInstant();
     }
 
-    public void setDatetrack(java.sql.Timestamp datetrack) {
+    public void setDatetrack(Instant datetrack) {
         this.datetrack = datetrack;
     }
 
@@ -188,13 +189,13 @@ public class TrackData implements Serializable {
 
     @Getter
     @Setter
-    @Enumerated
+    @Enumerated(EnumType.ORDINAL)
     @Column(name = "height_source")
     private Heightsource heightSource;
 
     @Getter
     @Setter
-    @Enumerated
+    @Enumerated(EnumType.ORDINAL)
     @Column(name = "activitytype")
     private Activitytype activitytype;
 
@@ -268,7 +269,9 @@ public class TrackData implements Serializable {
 
         @JsonSerialize(using = TitleSerializer.class, as=String.class)
         String getTitle();
-        TrackData.Sharing getSharing();
+
+        @Value("#{@sharingConverter.convertToEntityAttribute(target.sharing)}") //see explanation below by the @Converter
+        Sharing getSharing();
         Integer getElevationup();
         Integer getElevationdown();
         Integer getDistance();
@@ -276,15 +279,18 @@ public class TrackData implements Serializable {
         Integer getLowestpoint();
 
         @JsonSerialize(using = TimestampSerializer.class)
-        java.sql.Timestamp getDatetrack();
+        Instant getDatetrack();
         Integer getDuration();
-        TrackData.Activitytype getActivitytype();
+
+        @Value("#{@activitytypeConverter.convertToEntityAttribute(target.activitytype)}")
+        Activitytype getActivitytype();
         boolean isHidden();
         boolean isFavorite();
 
         @JsonSerialize(using= ToStringSerializer.class)
         Long getTrackgroup();
     }
+
 
     public interface TrekmapperData {
         Long getId();
@@ -293,13 +299,14 @@ public class TrackData implements Serializable {
         String getTitle();
 
         @JsonSerialize(using = TimestampSerializer.class)
-        java.sql.Timestamp getDatetrack();
+        Instant getDatetrack();
 
         double getLatitude();
 
         double getLongitude();
 
-        TrackData.Activitytype getActivitytype();
+        @Value("#{@activitytypeConverter.convertToEntityAttribute(target.activitytype)}")
+        Activitytype getActivitytype();
 
         boolean isFavorite();
 
@@ -309,9 +316,17 @@ public class TrackData implements Serializable {
         int getTrackgroupentrycount();
     }
 
-    public static class TimestampSerializer extends JsonSerializer<Timestamp> {
+    public interface PublicActivity {
+        @Value("#{@activitytypeConverter.convertToEntityAttribute(target.activitytype)}")
+        TrackData.Activitytype getActivitytype();
+        int getId();
+        String getTitle();
+        String getName();
+    }
+
+    public static class TimestampSerializer extends JsonSerializer<Instant> {
         @Override
-        public void serialize(Timestamp value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(Instant value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
             gen.writeString(isoDateFormat.format(value));
         }
@@ -321,6 +336,40 @@ public class TrackData implements Serializable {
         @Override
         public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeObject(HtmlUtils.htmlEscape(value));
+        }
+    }
+
+    /**
+     * These Converters are a work around for some very annoying breaking changes caused by the upgrade to Spring Data
+     * JPA 3 where the conversion of enums in interface-based projections seems to be broken...
+     * See https://github.com/spring-projects/spring-data-jpa/issues/3315
+     */
+
+    @Component("sharingConverter")
+    @Converter
+    public static class SharingConverter implements AttributeConverter<Sharing, Short> {
+        @Override
+        public Short convertToDatabaseColumn(Sharing sharing) {
+            return (short) sharing.ordinal();
+        }
+
+        @Override
+        public Sharing convertToEntityAttribute(Short dbData) {
+            return Sharing.values()[dbData];
+        }
+    }
+
+    @Component("activitytypeConverter")
+    @Converter
+    public static class ActivitytypeConverter implements AttributeConverter<Activitytype, Short> {
+        @Override
+        public Short convertToDatabaseColumn(Activitytype activitytype) {
+            return (short) activitytype.ordinal();
+        }
+
+        @Override
+        public Activitytype convertToEntityAttribute(Short dbData) {
+            return Activitytype.values()[dbData];
         }
     }
 }

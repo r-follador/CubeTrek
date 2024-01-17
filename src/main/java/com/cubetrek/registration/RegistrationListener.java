@@ -1,24 +1,21 @@
 package com.cubetrek.registration;
 
-import com.cubetrek.MainController;
 import com.cubetrek.database.Users;
 import com.cubetrek.database.VerificationToken;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.MessageSource;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.UUID;
 
 @Component

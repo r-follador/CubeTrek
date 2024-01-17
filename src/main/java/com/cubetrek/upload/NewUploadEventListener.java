@@ -2,8 +2,6 @@ package com.cubetrek.upload;
 
 import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
-import com.cubetrek.database.UserThirdpartyConnect;
-import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.sunlocator.topolibrary.LatLon;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +14,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.sound.midi.Track;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

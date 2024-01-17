@@ -8,7 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
-import java.sql.Timestamp;
+import javax.sound.midi.Track;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,8 +31,8 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     List<TrackData.TrackMetadata> findMetadataByOwner(Users owner);
 
     //find duplicates by key features
-    boolean existsByOwnerAndDatetrackAndCenterAndDistanceAndDuration(Users owner, Timestamp dateTrack, Point center, int distance, int duration);
-    List<TrackData.TrackMetadata> findMetadataByOwnerAndDatetrackAndCenterAndDistanceAndDuration(Users owner, Timestamp dateTrack, Point center, int distance, int duration);
+    boolean existsByOwnerAndDatetrackAndCenterAndDistanceAndDuration(Users owner, Instant dateTrack, Point center, int distance, int duration);
+    List<TrackData.TrackMetadata> findMetadataByOwnerAndDatetrackAndCenterAndDistanceAndDuration(Users owner, Instant dateTrack, Point center, int distance, int duration);
 
     @Cacheable(cacheNames = "ownerid")
     @Query("select u.owner.id from trackdata u where u.id = :id")
@@ -133,13 +134,6 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     List<TrackData.TrekmapperData> findAllTracksPositionByUser(long user_id);
 
 
-    public interface PublicActivity {
-        TrackData.Activitytype getActivitytype();
-        int getId();
-        String getTitle();
-        String getName();
-    }
-
     @Cacheable(value = "publictracks", key = "#size") //See CubetrekScheduler.emptypublictracksCache for cache clearing every 10min
     @Query(value = """ 
             SELECT trackdata.activitytype, trackdata.id, trackdata.title, users.name FROM trackdata
@@ -148,7 +142,7 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
            ORDER BY trackdata.upload_date DESC
            LIMIT :size
             """, nativeQuery = true)
-    List<PublicActivity> findPublicActivities(int size);
+    List<TrackData.PublicActivity> findPublicActivities(int size);
 
 
     @Query(value = "SELECT trackdata.activitytype, trackdata.id, trackdata.title, trackdata.datetrack, trackdata.distance FROM trackdata " +

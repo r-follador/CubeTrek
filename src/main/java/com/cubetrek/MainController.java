@@ -30,9 +30,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -103,6 +103,8 @@ public class MainController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
+        ActivitityService.TopActivities bla = activitityService.getTopActivities(user);
+        TrackData.TrackMetadata bli = bla.alltimeDistance.get(0);
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
         model.addAttribute("monthlyTotalJSON", activitityService.getMonthlyTotalAsJSON(user, user.getTimezone()));
@@ -348,6 +350,16 @@ public class MainController {
     public void getGLTF(@PathVariable("id") Long id, @PathVariable("width") Long width, @PathVariable("height") Long height, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String pathenc = trackViewerService.getEncodedPolyline(authentication, id, 50);
+        final String color = "rgba(255,128,1,1)";
+        String maptilerUrl = String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/static/auto/%dx%d.png?key=%s&attribution=false&scale=@2x&path=stroke:%s|width:3|fill:none|enc:%s",width, height, maptilerApiKey, color, pathenc);
+        response.setHeader("Location", maptilerUrl);
+        response.addHeader("Cache-Control", "max-age=864000, public");
+        response.setStatus(302);
+    }
+
+    @RequestMapping(value = "/api/static_map_secret/{id}/{width}x{height}.png", produces = "image/png")
+    public void getSecretMap(@PathVariable("id") Long id, @PathVariable("width") Long width, @PathVariable("height") Long height, HttpServletResponse response) {
+        String pathenc = trackViewerService.getEncodedPolylineSecret(id, 50);
         final String color = "rgba(255,128,1,1)";
         String maptilerUrl = String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/static/auto/%dx%d.png?key=%s&attribution=false&scale=@2x&path=stroke:%s|width:3|fill:none|enc:%s",width, height, maptilerApiKey, color, pathenc);
         response.setHeader("Location", maptilerUrl);

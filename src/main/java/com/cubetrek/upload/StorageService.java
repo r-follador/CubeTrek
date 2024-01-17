@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -293,7 +293,7 @@ public class StorageService {
             UploadResponse ur = new UploadResponse();
             ur.setTrackID(trackData_duplicate.getId());
             ur.setTitle(trackData_duplicate.getTitle() + " [Duplicate]");
-            ur.setDate(trackData_duplicate.getDatetrack().toLocalDateTime().atZone(ZoneId.of(user.getTimezone())).format(formatter));
+            ur.setDate(trackData_duplicate.getDatetrack().atZone(ZoneId.of(user.getTimezone())).format(formatter));
             ur.setActivitytype(trackData_duplicate.getActivitytype());
             ur.setTrackSummary(trackSummary);
 
@@ -307,7 +307,7 @@ public class StorageService {
         UploadResponse ur = new UploadResponse();
         ur.setTrackID(trackData.getId());
         ur.setTitle(trackData.getTitle());
-        ur.setDate(trackData.getDatetrack().toLocalDateTime().atZone(ZoneId.of(user.getTimezone())).format(formatter));
+        ur.setDate(trackData.getDatetrack().atZone(ZoneId.of(user.getTimezone())).format(formatter));
         ur.setActivitytype(trackData.getActivitytype());
         ur.setTrackSummary(trackSummary);
         logger.info("File upload - Successful '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
@@ -340,7 +340,7 @@ public class StorageService {
     }
 
     private String createTitlePreliminary(TrackData trackData, String timeZone) {
-        return "Activity on "+ trackData.getDatetrack().toLocalDateTime().atZone(ZoneId.of(timeZone)).format(formatter);
+        return "Activity on "+ trackData.getDatetrack().atZone(ZoneId.of(timeZone)).format(formatter);
     }
 
     protected String createTitleFinal(LatLon highestPoint, TrackData trackData, String timeZone) {

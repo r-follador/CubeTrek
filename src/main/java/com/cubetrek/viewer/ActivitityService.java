@@ -115,7 +115,7 @@ public class ActivitityService {
         return trackDataRepository.findByOwnerAndHidden(user, true);
     }
 
-    public List<TrackDataRepository.PublicActivity> getPublicActivitiesList(int size) {
+    public List<TrackData.PublicActivity> getPublicActivitiesList(int size) {
         return trackDataRepository.findPublicActivities(size);
     }
 

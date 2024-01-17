@@ -1,10 +1,9 @@
 package com.cubetrek.database;
 
-import com.cubetrek.database.Users;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
@@ -39,6 +38,7 @@ public class VerificationToken {
 
     @Setter
     @Getter
+    @Enumerated(EnumType.ORDINAL)
     @Column(name = "tokentype", nullable = false)
     private VerificationType verificationType;
 }

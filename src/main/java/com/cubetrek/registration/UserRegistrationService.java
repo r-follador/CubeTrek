@@ -1,7 +1,10 @@
 package com.cubetrek.registration;
 
-import com.cubetrek.database.*;
 import com.cubetrek.ExceptionHandling;
+import com.cubetrek.database.*;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +18,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.NewsAddress;
-import javax.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 

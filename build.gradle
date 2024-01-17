@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.0'
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'org.springframework.boot' version '3.2.1'
+    id 'io.spring.dependency-management' version '1.1.4'
     id 'java'
 }
 
@@ -19,16 +19,16 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-data-rest:2.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-security:2.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-mail:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.hibernate:hibernate-spatial:5.6.3.Final'
-    implementation 'net.postgis:postgis-jdbc:2021.1.0'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE'
+    implementation 'org.hibernate.orm:hibernate-spatial'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
     implementation 'io.jenetics:jpx:3.1.0'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.2-SNAPSHOT.jar')
@@ -38,12 +38,12 @@ dependencies {
     implementation "com.stripe:stripe-java:24.7.0"
     implementation 'com.google.code.gson:gson:2.10.1'
 
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools:2.7.0'
-    runtimeOnly 'org.postgresql:postgresql:42.3.8'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.0'
-    testImplementation 'org.springframework.security:spring-security-test:5.7.1'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {

@@ -1,10 +1,10 @@
 package com.cubetrek.database;
 
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

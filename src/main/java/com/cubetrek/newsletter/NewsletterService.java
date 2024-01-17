@@ -1,24 +1,15 @@
 package com.cubetrek.newsletter;
 
 import com.cubetrek.ExceptionHandling;
-import com.cubetrek.MainController;
 import com.cubetrek.database.NewsletterSignup;
 import com.cubetrek.database.NewsletterSignupRepository;
-import com.cubetrek.database.Users;
-import com.cubetrek.database.UsersRepository;
-import com.cubetrek.registration.UserDto;
 import com.cubetrek.upload.UpdateTrackmetadataResponse;
-import com.cubetrek.upload.UploadResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.sql.Date;
 import java.util.regex.Pattern;
 

@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.sunlocator.topolibrary.LatLon;
-import org.hibernate.annotations.Type;
+import jakarta.persistence.*;
 import org.locationtech.jts.geom.Point;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.*;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -24,7 +23,6 @@ public class OsmPeaks implements Serializable {
     private Long id;
 
     @Column(name = "geometry")
-    @Type(type = "org.locationtech.jts.geom.Point")
     private Point point;
 
     @Column(name = "name")
