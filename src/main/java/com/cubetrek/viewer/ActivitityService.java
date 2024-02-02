@@ -20,7 +20,10 @@ public class ActivitityService {
     TrackDataRepository trackDataRepository;
 
     public String getActivityHeatmapAsJSON(Users user, String timeZone) {
-        return trackDataRepository.getDailyAggregatedStatsAsJSON(user.getId(), timeZone);
+        String out = trackDataRepository.getDailyAggregatedStatsAsJSON(user.getId(), timeZone);
+        if (out == null || out.isBlank())
+            return "[]";
+        return out;
     }
 
     public String getMonthlyTotalAsJSON(Users user, String timeZone) {

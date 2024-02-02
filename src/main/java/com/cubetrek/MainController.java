@@ -165,6 +165,7 @@ public class MainController {
     public List<TrackData.TrackMetadata> getActivitiesAjax(@RequestParam("size") int size, @RequestParam("page") int page, @RequestParam("sortby") String sort, @RequestParam("descending") boolean descending, @RequestParam(value = "filterby", required = false) Optional<String> activitytype) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
+        logger.info("Get Activity JSON by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         TrackData.Activitytype at = activitytype.map(TrackData.Activitytype::valueOf).orElse(null);
         return activitityService.getActivitiesList(user, size, page, sort, descending, at);
     }

@@ -24,7 +24,9 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Entity(name = "trackdata")
 @Table(name = "trackdata")
@@ -327,8 +329,8 @@ public class TrackData implements Serializable {
     public static class TimestampSerializer extends JsonSerializer<Instant> {
         @Override
         public void serialize(Instant value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-            gen.writeString(isoDateFormat.format(value));
+            DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").withZone(ZoneOffset.UTC);
+            gen.writeString(isoFormatter.format(value));
         }
     }
 
@@ -357,6 +359,11 @@ public class TrackData implements Serializable {
         public Sharing convertToEntityAttribute(Short dbData) {
             return Sharing.values()[dbData];
         }
+
+        //no clue why this is required
+        public Sharing convertToEntityAttribute(Sharing sharing) {
+            return sharing;
+        }
     }
 
     @Component("activitytypeConverter")
@@ -370,6 +377,11 @@ public class TrackData implements Serializable {
         @Override
         public Activitytype convertToEntityAttribute(Short dbData) {
             return Activitytype.values()[dbData];
+        }
+
+        //no clue why this is required
+        public Activitytype convertToEntityAttribute(Activitytype activitytype) {
+            return activitytype;
         }
     }
 }

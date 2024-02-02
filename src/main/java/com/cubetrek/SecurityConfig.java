@@ -31,7 +31,28 @@ public class SecurityConfig {
         http
                 .csrf().disable()
                 .authorizeRequests(authorize -> authorize
-                        .requestMatchers("/", "/home", "/reset_password3*", "/reset_password", "/registration*", "registrationConfirm*", "/successRegister*","/successRegisterValidation*", "/upload_anonymous", "/newslettersignup/**", "/api/**", "/view/**", "/view2d/**","/replay/**", "/garminconnect", "/polarconnect", "/suuntoconnect", "/stripe_hook").permitAll()
+                        .requestMatchers("/",
+                                "/css/**",
+                                "/assets/**",
+                                "/js/**",
+                                "/static/**",
+                                "/home",
+                                "/reset_password3*",
+                                "/reset_password",
+                                "/registration*",
+                                "registrationConfirm*",
+                                "/successRegister*",
+                                "/successRegisterValidation*",
+                                "/upload_anonymous",
+                                "/newslettersignup/**",
+                                "/api/**",
+                                "/view/**",
+                                "/view2d/**",
+                                "/replay/**",
+                                "/garminconnect",
+                                "/polarconnect",
+                                "/suuntoconnect",
+                                "/stripe_hook").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

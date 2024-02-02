@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.sunlocator.topolibrary.LatLon;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.locationtech.jts.geom.Point;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,53 +20,29 @@ import java.io.Serializable;
 public class OsmPeaks implements Serializable {
     private static final long serialVersionUID = 12L;
 
+    @Setter
+    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
+    @Getter
     @Column(name = "geometry")
     private Point point;
 
+    @Setter
+    @Getter
     @Column(name = "name")
     private String name;
 
+    @Setter
+    @Getter
     @Column(name = "ele")
     private String ele;
 
     @Column(name = "ele_calculated")
     private Integer ele_calculated;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Point getPoint() {
-        return point;
-    }
-
-    public void setPoint(Point point) {
-        this.point = point;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getEle() {
-        return ele;
-    }
-
-    public void setEle(String ele) {
-        this.ele = ele;
-    }
 
     public void setEle_calculated(int ele_calculated) {
         this.ele_calculated = ele_calculated;
