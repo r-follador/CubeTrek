@@ -101,6 +101,8 @@ suunto.client.secret=***get your own api key***
 spring.datasource.url.dev=jdbc:postgresql://localhost:5432/cubetrek
 spring.datasource.username.dev=cubetrek_postgres
 spring.datasource.password.dev=my-super-secure-password
+
+thirdparty.clientkey.key=**key used to symmetrically encrypt garmin/polar user access tokens**
 ```
 
 
