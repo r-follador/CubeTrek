@@ -3,6 +3,8 @@ package com.cubetrek.database;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 @Entity
 @Getter
@@ -19,20 +21,23 @@ public class UserThirdpartyConnect {
     @Column
     private String garminUseraccesstoken;
 
+    @Convert(converter = DataEncryptDecryptConverter.class)
     @Column
-    private String garminUseraccesstokenSecret;
+    private String garminUseraccesstokenSecret; //to be encrypted/decrypted
 
     @Column
     private boolean garminEnabled = false;
 
+    @Convert(converter = DataEncryptDecryptConverter.class)
     @Column
-    private String polarUseraccesstoken;
+    private String polarUseraccesstoken; //to be encrypted/decrypted
 
     @Column
     private String polarUserid;
 
     @Column
     private boolean polarEnabled = false;
+
 
     @Column(columnDefinition = "TEXT")
     private String suuntoUseraccesstoken;
@@ -47,5 +52,34 @@ public class UserThirdpartyConnect {
     private boolean suuntoEnabled = false;
 
 
+    @Component
+    @Converter
+    public static class DataEncryptDecryptConverter implements AttributeConverter<String, String> {
+
+        @Autowired
+        AESEncryptionService aesEncryptionService;
+
+        @Override
+        public String convertToDatabaseColumn(String attribute) {
+            if (attribute == null || attribute.isEmpty())
+                return "";
+            try {
+                return aesEncryptionService.encrypt(attribute);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public String convertToEntityAttribute(String dbData) {
+            if (dbData == null || dbData.isEmpty())
+                return "";
+            try {
+                return aesEncryptionService.decrypt(dbData);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
 }

@@ -106,7 +106,7 @@ public class GarminconnectController {
                 userThirdpartyConnect.setGarminUseraccesstokenSecret(userAccessTokenSecret);
                 userThirdpartyConnectRepository.save(userThirdpartyConnect);
             }
-            logger.info("GarminConnect User successfully linked Garmin Account: User id '"+user.getId()+"'; Garmin User Access Token: '"+userAccessToken+"'");
+            logger.info("GarminConnect User successfully linked Garmin Account: User id '"+user.getId()+"'; Garmin User Access Token: '"+userAccessToken.substring(0,10)+"xxx'");
             return "redirect:/profile";
         } catch (OAuthMessageSignerException | OAuthNotAuthorizedException | OAuthExpectationFailedException |
                  OAuthCommunicationException e) {
