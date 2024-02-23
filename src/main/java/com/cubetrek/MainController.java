@@ -138,6 +138,17 @@ public class MainController {
         return "activity_list";
     }
 
+    @GetMapping("/matched_activities")
+    public String getMatchedActivitiesList(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        List<TrackDataRepository.MatchedActivityInterface> matchedActivityOverview = activitityService.getMatchedActivityOverview(user);
+        model.addAttribute("matchedActivities", matchedActivityOverview);
+
+        logger.info("View Matched Activity List by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
+        return "matched_activities_overview";
+    }
+
     @GetMapping("/hidden")
     public String getHiddenList(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

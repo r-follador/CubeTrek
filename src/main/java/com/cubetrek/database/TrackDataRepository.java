@@ -86,6 +86,55 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
         int getCount();
     }
 
+    @Query(value =
+            """
+            WITH RankedTracks AS (
+                SELECT
+                    DISTINCT ON (trackgroup)
+                    trackgroup,
+                    id,
+                    datetrack,
+                    title
+                FROM
+                    trackdata
+                WHERE
+                    owner = :user_id AND hidden = false AND trackgroup IS NOT NULL
+            ), Counts AS (
+                SELECT
+                    trackgroup,
+                    COUNT(id) AS count
+                FROM
+                    trackdata
+                WHERE
+                    owner = :user_id AND hidden = false AND trackgroup IS NOT NULL
+                GROUP BY
+                    trackgroup
+            )
+            SELECT
+                r.trackgroup,
+                r.id AS most_recent_track_id,
+                r.datetrack AS most_recent_datetrack,
+                r.title AS most_recent_title,
+                c.count AS count
+            FROM
+                RankedTracks r
+            JOIN
+                Counts c ON r.trackgroup = c.trackgroup
+            ORDER BY count DESC
+            LIMIT :limit ;
+            """
+            , nativeQuery = true)
+    List<MatchedActivityInterface> getMatchedActivities(@Param(value= "user_id") long user_id, @Param(value= "limit") int limit);
+
+    public interface MatchedActivityInterface {
+        long getTrackgroup();
+        long getMost_recent_track_id();
+        Instant getMost_recent_datetrack();
+        String getMost_recent_title();
+        int getCount();
+    }
+
+
     @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
             "SELECT date_trunc('day', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_day, sum(trackdata.distance) as day_dist, sum(trackdata.elevationup) as day_elevationup, COUNT(trackdata) as number " +
             "FROM trackdata " +

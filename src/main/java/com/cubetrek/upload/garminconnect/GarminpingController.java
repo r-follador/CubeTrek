@@ -31,6 +31,7 @@ public class GarminpingController {
     //Ping from Garmin
     @PostMapping(value = "/garminconnect")
     public ResponseEntity uploadFile(@RequestBody String payload) {
+        logger.info("Garminconnect  Ping received: "+payload);
         try {
             boolean success = false;
             JsonNode activities = (new ObjectMapper()).readTree(payload).get("activityFiles");

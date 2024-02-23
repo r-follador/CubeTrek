@@ -99,6 +99,10 @@ public class ActivitityService {
         return trackDataRepository.findTrackOfGivenDay(user.getId(), dateDay, timezone);
     }
 
+    public List<TrackDataRepository.MatchedActivityInterface> getMatchedActivityOverview(Users user) {
+        return trackDataRepository.getMatchedActivities(user.getId(), 20);
+    }
+
     public List<TrackData.TrackMetadata> getMatchingActivities(Users user, Long matchgroup) {
         return trackDataRepository.findByOwnerAndTrackgroupAndHiddenOrderByDatetrackDesc(user, matchgroup, false);
     }

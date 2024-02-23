@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - Matched Activities</title>
+    <script src=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js "></script>
+    <link href=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css " rel="stylesheet">
+    <link href="../css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+</head>
+<style>
+    .text-overlay {
+        color: white; /* Text color */
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+        padding: 10px; /* Padding around the text */
+        border-radius: 5px; /* Optional: rounded corners */
+    }
+    .custom-link {
+        text-decoration: none; /* Removes the underline */
+        color: inherit; /* Inherits the color from the parent element, or you can set a specific color */
+    }
+</style>
+<body>
+<header th:replace="~{dashboard.html :: header}">
+</header>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <nav th:replace="~{dashboard.html :: navigation(field='matchingactivities')}" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        </nav>
+    </div>
+
+
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Your most popular Tracks (Matched Activities)</h1>
+            </div>
+
+            <div th:if="${matchedActivities.empty}" class="card m-5" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">There are no matched Activities 😔</h5>
+                    <p class="card-text">Add more Tracks to get started. Upload your files, link your Garmin and Polar account.</p>
+                    <a href="/upload" class="btn btn-primary m-1">Upload Activity Files</a>
+                    <a href="/profile" class="btn btn-primary m-1">Link Accounts</a>
+                </div>
+            </div>
+
+            <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
+                Error fetching data
+            </div>
+
+            <div>
+                <div th:if="${matchedActivities.empty}">
+                    <i>No Matched Activities</i>
+                </div>
+                <div class="row pb-5" th:each="matchedActivity : ${matchedActivities}">
+                    <div class="row mb-3" text-center>
+                        <div class="bottom-50 start-50 text-overlay" >
+                            <a th:href="'/matching/'+${matchedActivity.getTrackgroup()}" class="custom-link"><span>Matched </span><span class="h5" th:text="${matchedActivity.getCount()}"></span><span> Attempts</span></a>
+                        </div>
+                    </div>
+                    <div class="col-3  text-center">
+                        <a th:href="'/matching/'+${matchedActivity.getTrackgroup()}" class="custom-link">
+                            <img class="img-fluid rounded" th:src="'/api/static_map/'+${matchedActivity.getMost_recent_track_id()}+'/200x200.png'" width="200" height="200">
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a th:href="'/matching/'+${matchedActivity.getTrackgroup()}" class="custom-link">
+                            <div class="row figure-caption">Last Attempt</div>
+                            <div class="row">
+                                <span th:text="${matchedActivity.getMost_recent_title()}">Title</span>
+                                <span th:data-date="${matchedActivity.getMost_recent_datetrack()}" th:text="${matchedActivity.getMost_recent_datetrack()}">Title</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
+        </main>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+</body>
+
+<script th:inline="javascript">
+    var icons = {};
+    /*[# th:each="activityOpt : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"]*/
+    icons[ /*[[${activityOpt}]]*/ ] =[ /*[[${activityOpt.iconName}]]*/ , /*[[${activityOpt.displayValue}]]*/ ];
+    /*[/]*/
+</script>
+
+<script>
+    let metric = true;
+    const miles_per_km = 0.621371;
+    const feet_per_m = 3.28084;
+
+    var numberEntries;
+</script>
+
+<script th:inline="none">
+    settings();
+
+
+    function minToString(minutes) {
+        var m = minutes % 60;
+        var h = (minutes-m)/60;
+        return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+    function settings() {
+        if (localStorage.getItem("metric") === null) {
+            localStorage.setItem("metric", true);
+        } else {
+            metric = (localStorage.getItem("metric")==="true");
+        }
+
+        if (metric) {
+            document.getElementById("metricChecked").checked = true;
+            setMetric();
+        } else {
+            document.getElementById("metricChecked").checked = false;
+            setMetric();
+        }
+    }
+
+    function clickSettingsMetric() {
+        metric = document.getElementById("metricChecked").checked;
+        localStorage.setItem("metric",metric);
+        setMetric();
+    }
+
+    function setMetric() {
+        document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        document.querySelectorAll('[data-date]').forEach(function(element) {
+            element.innerText = (new Date(Date.parse(element.dataset.date))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric'});
+        });
+        init();
+    }
+
+</script>
+</html>
