@@ -4,9 +4,14 @@ import eventBus from './EventBus.js';
 export class Map2D {
     constructor(jsonData) {
         this.jsonData = jsonData;
+
+        this.mapstyle = new Map();
+        this.mapstyle.set("standard",'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key='+maptilerApiKey);
+        this.mapstyle.set("satellite",'https://api.maptiler.com/maps/satellite/style.json?key='+maptilerApiKey);
+        this.mapstyle.set("topo",'https://api.maptiler.com/maps/topo-v2/style.json?key='+maptilerApiKey);
         this.map = new maplibregl.Map({
             container: 'map2d',
-            style: 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key='+maptilerApiKey, // stylesheet location
+            style: this.mapstyle.get("standard"),
             //style: 'https://demotiles.maplibre.org/style.json',
             bounds: [[jsonData.properties.bbox.boundingBoxW-0.005,jsonData.properties.bbox.boundingBoxS-0.005],[jsonData.properties.bbox.boundingBoxE+0.005,jsonData.properties.bbox.boundingBoxN+0.005]],
             touchPitch: false,
@@ -19,7 +24,7 @@ export class Map2D {
         this.map.on('load', () => {
             this.map.addSource('route', {
                     type: 'geojson',
-                    data: jsonData
+                    data: this.jsonData
                 }
             );
             this.map.addLayer({
@@ -45,6 +50,12 @@ export class Map2D {
         el.className = 'marker2d';
         this.marker= new maplibregl.Marker({element: el}).setLngLat([0,0]).addTo(this.map);
         this.kdtree = new KdTree(jsonData.geometry.coordinates[0]);
+
+        document.getElementById("btnradio1").addEventListener('click', () =>  {this.changeMapstyle('standard')});
+        document.getElementById("btnradio2").addEventListener('click', () =>  {this.changeMapstyle('topo')});
+        document.getElementById("btnradio3").addEventListener('click', () =>  {this.changeMapstyle('satellite')});
+
+        document.mymap = this.map;
     }
 
     findClosestTrackpoint(lat, lon) {
@@ -68,5 +79,41 @@ export class Map2D {
 
     moveMarker(lat, lon) {
         this.marker.setLngLat([lon, lat]);
+    }
+
+    changeMapstyle(style) {
+
+
+        let style_source;
+
+        switch(style) {
+            case 'standard':
+                style_source = this.mapstyle.get("standard");
+                break;
+            case 'topo':
+                style_source = this.mapstyle.get("topo");
+                break;
+            case 'satellite':
+                style_source = this.mapstyle.get("satellite");
+                break;
+            default:
+                style_source = this.mapstyle.get("standard");
+        }
+
+        this.map.setStyle(style_source, {
+            transformStyle: (previousStyle, nextStyle) => ({
+                ...nextStyle,
+                sources: {
+                    ...nextStyle.sources,
+                    'route': previousStyle.sources.route
+                },
+                layers: [
+                    // background layer
+                    ...nextStyle.layers,
+                    previousStyle.layers.find(obj => obj.id === 'route')
+                ]
+            })
+        });
+
     }
 }
