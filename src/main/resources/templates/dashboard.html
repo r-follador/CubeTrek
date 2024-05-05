@@ -1270,7 +1270,7 @@
         while (recenttablebody.firstChild) {
             recenttablebody.removeChild(recenttablebody.firstChild);
         }
-        const entriesPerFetch = 12;
+        const entriesPerFetch = 5;
         var url = "/activities_ajax?page=0&size="+entriesPerFetch+"&sortby=datetrack&descending=true";
 
         fetch(url)
@@ -1289,7 +1289,7 @@
             entries.set(entry.id, entry);
             let newRow = document.createElement('div');
             newRow.id="r"+entry.id;
-            newRow.classList.add("shadow-sm", "col-12", "col-sm-12", "col-md-12", "col-lg-6", "col-xxl-4", "p-1", "mb-1","bg-body-tertiary", "rounded", "position-relative");
+            newRow.classList.add("shadow-sm", "col-10", "col-sm-10", "col-md-10", "col-lg-10", "col-xxl-10", "p-1", "mb-3","bg-body-tertiary", "rounded", "position-relative");
             recenttablebody.appendChild(newRow);
             addRowInfo(newRow, entry);
         }
@@ -1299,26 +1299,27 @@
         row.innerHTML =
             `
                 <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
-                 <div class='row display-6 ms-1' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
+                 <div class='row display-6 ms-1 mb-2' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
                     <span class="p-0 m-0"><img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height=30>${entry.title}</span>
                  </div>
                  <div class='row'>
-                     <div class="col-5">
+                     <div class="col-4">
                          <div class="col fs-6">
                             ${(entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='20px'>":"")}
                             ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
                         </div>
-                        <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/200x200.png' width='200' height='200'></a>
+                        <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/600x200.png' width='600' height='200'></a>
                      </div>
-                     <div class="col-3">
-                        <div class='row'><span class='fw-light ms-2'>Duration</span> <span class='fs-6'>${minToString(parseInt(entry.duration))} h</span></div>
-                        <div class='row'><span class='fw-light ms-2'>Ascent</span> <span class='fs-6'>${(entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft")}</span></div>
-                        <div class='row'><span class='fw-light ms-2'>Distance</span>  <span class='fs-6'>${(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi")}</span></div>
-                        <div class='row'><span class='fw-light ms-2'>Avg Speed</span>
-                            <span class='fs-6'>${((parseFloat(entry.distance)/1000)/(parseFloat(entry.duration)/60)*(metric?1:miles_per_km)).toFixed(1) + (metric?" km/h":" mi/h")}</span>
-                            <span class="fs-6">${minFractionToString(parseFloat(entry.duration)/(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)))} ${metric?"min/km":"min/mi"}</span></div>
+                     <div class="col-5 pe-3 d-flex flex-wrap">
+                        <div class="m-2"><span class='fw-light ms-2'>Duration</span> <span class='fs-3'>${minToString(parseInt(entry.duration))} h</span></div>
+                        <div class="m-2"><span class='fw-light ms-2'>Ascent</span> <span class='fs-3'>${(entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft")}</span></div>
+                        <div class="m-2"><span class='fw-light ms-2'>Distance</span>  <span class='fs-3'>${(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi")}</span></div>
+                        <div class="m-2"><span class='fw-light ms-2'>Avg Speed</span>
+                            <span class='fs-3'>${((parseFloat(entry.distance)/1000)/(parseFloat(entry.duration)/60)*(metric?1:miles_per_km)).toFixed(1) + (metric?" km/h":" mi/h")}</span></div>
+                        <div class="m-2"><span class='fw-light ms-2'>Pace</span>
+                            <span class="fs-3">${minFractionToString(parseFloat(entry.duration)/(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)))} ${metric?"min/km":"min/mi"}</span></div>
                      </div>
-                     <div class="col-4 p-0 pe-3">
+                     <div class="col-3 p-0 pe-3">
                         <div class="d-flex flex-column h-75">
                             <div class="flex-grow-1">
                                 <a href="${entry.trackgroup?'/matching/'+entry.trackgroup:'/view/'+entry.id}"><div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;" ></div></a>
