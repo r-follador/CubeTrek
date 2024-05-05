@@ -1,8 +1,6 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3" lang="en">
-
-<head>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" lang="en"><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${trackmetadata.title + ' - CubeTrek'}"></title>
@@ -10,15 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js "></script>
     <link href=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css " rel="stylesheet">
-    <link href="../css/dashboard.css" rel="stylesheet">
-    <script src=" https://cdn.jsdelivr.net/npm/maplibre-gl@3.1.0/dist/maplibre-gl.min.js "></script>
-    <link href=" https://cdn.jsdelivr.net/npm/maplibre-gl@3.1.0/dist/maplibre-gl.min.css " rel="stylesheet">
+    <link href=" ../css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.1.2/dist/maplibre-gl.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.1.2/dist/maplibre-gl.min.css" rel="stylesheet">
     <script src=" https://cdn.jsdelivr.net/npm/d3-regression@1.3.10/dist/d3-regression.min.js "></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
-    <script src=" https://cdn.jsdelivr.net/npm/babylonjs@6.7.0/babylon.min.js "></script>
-    <script src=" https://cdn.jsdelivr.net/npm/babylonjs-loaders@6.7.0/babylonjs.loaders.min.js "></script>
-</head>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 <style>
     .marker2d {
         display: block;
@@ -30,7 +27,8 @@
         cursor: pointer;
         padding: 0;
     }
-</style>
+</style></head>
+
 <body>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 m-0 shadow">
     <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" th:href="${isLoggedIn} ? '../dashboard':'../'">← <img src="/assets/logo.svg" width="30px" alt="CubeTrek"></a>
@@ -43,8 +41,7 @@
 </header>
 
 <div class="progress" id="progressdiv">
-    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar"
-         style="width: 5%"></div>
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar" style="width: 100%"></div>
 </div>
 <div class="alert alert-danger" style="display: none;" id="errormessage" role="alert">
     Error Message
@@ -53,18 +50,18 @@
     Welcome Stranger. <a href="/signin" class="alert-link">Sign in</a> or <a href="/registration" class="alert-link">Register for an account</a>
     <button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
+<div th:if="${tracktoobig}" class="alert alert-info" id="tracktoobigmessage" role="alert">
+    Track covers area above 100km x 100km, this is currently too large for 3D view
+</div>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
-            <canvas class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;"
-                    id="renderCanvas" touch-action="none"></canvas>
+            <canvas class="p-0 m-0" style="width: 100%; height: 100%; touch-action: none; z-index: 0; outline: none;" id="map3dCanvas" touch-action="none" width="1777" height="714" data-engine="Babylon.js v6.7.0" tabindex="1"></canvas>
             <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked
-                       onchange="mapstyle('summer')">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked="checked">
                 <label class="btn btn-outline-danger" for="btnradio1">Map</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off"
-                       onchange="mapstyle('satellite')">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
                 <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
             </div>
             <div class="btn-group-vertical position-absolute bottom-0 start-0 p-3">
@@ -78,34 +75,21 @@
                 <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%"></div>
                 <div class="d-flex flex-row justify-content-end p-0 pb-1 me-2 m-0">
                     <div class="dropdown">
-                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                            ...
-                        </button>
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphyaxis" data-bs-toggle="dropdown" aria-expanded="false">Elevation</button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"
-                                   onclick="changeGraphY(GraphAxis.Distance)">Distance</a></li>
-                            <li><a class="dropdown-item" href="#"
-                                   onclick="changeGraphY(GraphAxis.Elevation)">Elevation</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.HorizontalSpeed)">Horizontal
-                                Speed</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphY(GraphAxis.VerticalSpeed)">Vertical
-                                Speed</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphYDistance">Distance</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphYElevation" >Elevation</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphYHorizontalspeed" >Horizontal Speed</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphYVerticalspeed" >Vertical Speed</a></li>
                         </ul>
                     </div>
                     <div class="p-1">versus</div>
                     <div class="dropdown">
-                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                            ...
-                        </button>
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdowngraphxaxis" data-bs-toggle="dropdown" aria-expanded="false">Distance</button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.ElapsedTime)">Elapsed
-                                Time</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="changeGraphX(GraphAxis.MovingTime)">Moving
-                                Time</a></li>
-                            <li><a class="dropdown-item" href="#"
-                                   onclick="changeGraphX(GraphAxis.Distance)">Distance</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphXElapsedtime">Elapsed Time</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphXMovingtime">Moving Time</a></li>
+                            <li><a class="dropdown-item" href="#" id="graphXDistance">Distance</a></li>
                         </ul>
                     </div>
                 </div>
@@ -124,14 +108,13 @@
                 <div class="card-header">
                     <div class="row">
                         <div class="col">
-                            <a th:if="${writeAccess}" href="#" title="Click to Favorite/Unfavorite" onclick="clickfavorite()"><img
+                            <a id="favoritelink" th:if="${writeAccess}" href="#" title="Click to Favorite/Unfavorite"><img
                                     id="favoritestar"
                                     th:src="${trackmetadata.favorite} ? '../assets/icon_favorite_select.svg':'../assets/icon_favorite_unselect.svg'"
                                     height="20px"></a>
                             <span th:if="${trackmetadata.hidden}" class="badge bg-warning text-dark">Hidden Track</span>
-                            <button type="button" class="btn btn-outline-primary btn-sm ms-3 align-middle"
-                                    onclick="clickshare()"><img id="publicicon"
-                                                                th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'display:inline' : 'display:none'}"
+                            <button id="sharebutton" type="button" class="btn btn-outline-primary btn-sm ms-3 align-middle">
+                                <img id="publicicon" th:style="${trackmetadata.sharing == T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'display:inline' : 'display:none'}"
                                                                 src="../assets/icon_public.svg" height="15px"> Share
                             </button>
                         </div>
@@ -244,7 +227,7 @@
             <div class="modal-body">
                 <h5 th:if="${writeAccess}">View Settings</h5>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <input class="form-check-input" type="checkbox" id="metricChecked">
                     <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
                 </div>
                 <div th:if="${writeAccess}">
@@ -252,7 +235,7 @@
                     <h5>Track Settings</h5>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="favoriteChecked"
-                               th:checked="${trackmetadata.favorite}" onclick="clickfavorite()">
+                               th:checked="${trackmetadata.favorite}">
                         <label class="form-check-label" for="favoriteChecked">Favorite</label>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm"
@@ -269,18 +252,17 @@
                     <h6 class="mt-3">Privacy</h6>
                     <div class="form-check form-switch mt-3">
                         <input class="form-check-input" type="checkbox" id="publicChecked"
-                               th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackData.Sharing).PUBLIC}"
-                               onclick="setTrackShare()">
+                               th:checked="${trackmetadata.sharing== T(com.cubetrek.database.TrackData.Sharing).PUBLIC}">
                         <label class="form-check-label" for="publicChecked" id="publicCheckedLabel"
                                th:text="${trackmetadata.sharing== T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'Public, anyone with the link can view this track' : 'Private, only you can view this track'}">Public</label>
                     </div>
                     <h6 class="mt-3">Hide or Delete Track</h6>
                     <div class="form-check form-switch mt-3">
                         <input class="form-check-input" type="checkbox" id="hiddenChecked"
-                               th:checked="${trackmetadata.hidden}" onclick="clickhide(false)">
+                               th:checked="${trackmetadata.hidden}">
                         <label class="form-check-label" for="hiddenChecked">Hide Track</label>
                     </div>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="clickdelete(false)">Delete Track
+                    <button type="button" class="btn btn-danger btn-sm" id="deleteTrack">Delete Track
                     </button>
                 </div>
             </div>
@@ -324,7 +306,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+                <button type="button" class="btn btn-primary" id="saveEditButton">Save</button>
             </div>
         </div>
     </div>
@@ -351,7 +333,7 @@
             <div class="modal-footer">
                 <div>Use markdown for formatting</div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+                <button type="button" class="btn btn-primary" id="saveEditButton2">Save</button>
             </div>
         </div>
     </div>
@@ -372,7 +354,7 @@
                         onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">
                     Cancel
                 </button>
-                <button type="button" class="btn btn-primary" onclick="clickhide(true)">Hide Track</button>
+                <button type="button" class="btn btn-primary" id="hideTrackButton">Hide Track</button>
             </div>
         </div>
     </div>
@@ -393,7 +375,7 @@
                         onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();">
                     Cancel
                 </button>
-                <button type="button" class="btn btn-primary" onclick="clickdelete(true)">Delete Track</button>
+                <button type="button" class="btn btn-primary" id="deleteTrackButton">Delete Track</button>
             </div>
         </div>
     </div>
@@ -410,7 +392,7 @@
                      id="publicSet">
                     <p>Anyone with the link can view this track.</p>
                     <input type="text" class="form-control" id="sharelink" readonly>
-                    <button type="button" class="btn btn-primary m-2" onclick="copylinktoclipboard()">Copy</button>
+                    <button type="button" class="btn btn-primary m-2" id="copylinktoclipboard">Copy</button>
                     <div class="alert alert-primary m-2" style="visibility:hidden" role="alert" id="sharelinkalert">
                         Link copied to clipboard!
                     </div>
@@ -419,7 +401,7 @@
                 <div th:style="${trackmetadata.sharing != T(com.cubetrek.database.TrackData.Sharing).PUBLIC ? 'display:block' : 'display:none'}"
                      id="privateSet">
                     <p>If you share this track, anyone with the link can view it.</p>
-                    <button type="button" class="btn btn-primary m-2" onclick="setTrackShare('PUBLIC')">Set Track to
+                    <button type="button" class="btn btn-primary m-2" id="trackShareButton">Set Track to
                         Public
                     </button>
                 </div>
@@ -439,18 +421,20 @@
 
 
 <script>
-    var trackid = [[${trackmetadata.id}]];
-    var distance = [[${trackmetadata.distance}]];
-    var elevationUp = [[${trackmetadata.elevationup}]];
-    var elevationDown = [[${trackmetadata.elevationdown}]];
-    var highestElevationPoint = [[${trackmetadata.highestpoint}]];
-    var lowestElevationPoint = [[${trackmetadata.lowestpoint}]];
-    var favorite = [[${trackmetadata.favorite}]];
-    var hidden = [[${trackmetadata.hidden}]];
-    var sharing = "[[${trackmetadata.sharing}]]";
+    const sharedObjects = {
+        metric : true,
+        trackid : [[${trackmetadata.id}]],
+        distance : [[${trackmetadata.distance}]],
+        elevationUp : [[${trackmetadata.elevationup}]],
+        elevationDown : [[${trackmetadata.elevationdown}]],
+        highestElevationPoint : [[${trackmetadata.highestpoint}]],
+        lowestElevationPoint : [[${trackmetadata.lowestpoint}]],
+        favorite : [[${trackmetadata.favorite}]],
+        hidden : [[${trackmetadata.hidden}]],
+        sharing : "[[${trackmetadata.sharing}]]",
+        root : "../api/",
+    }
 </script>
-<script src="../js/kd-tree.js"></script>
-<script src="../js/trackview_v2.js"></script>
-
-</body>
-</html>
+<script type="module" src="../js/main.js">
+</script>
+</body></html>
