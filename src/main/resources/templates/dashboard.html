@@ -28,6 +28,14 @@
             animation-name: fadeIn;
             animation-duration: 5s; /* Adjust the time as needed */
         }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .blinking-dot {
+            animation: blink 1s infinite;
+        }
     </style>
 </head>
 <body>
@@ -147,6 +155,21 @@
                 </div>
             </div>
             <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%">
+            </div>
+
+            <div th:if="${totalActivities >= 5}" class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
+                <div class="h4">
+                    <span>Annual Comparison</span>
+                    <div class="btn-group">
+                        <a class="btn btn-light btn-sm" id="cumgraphButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            Activitytype
+                        </a>
+                        <ul class="dropdown-menu" id="cumgraphDropdow">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-grow-1 p-0 m-0" id="cumgraph" style="width:100%">
             </div>
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
@@ -576,6 +599,9 @@
     var datamonthly = [(${monthlyTotalJSON})];
 
     var datayearly = [(${yearlyTotalJSON})];
+
+    var datacumulative = [(${activityCumulativeJSON})];
+
 </script>
 <script th:inline="none">
     var parseDate = d3.utcParse("%Y-%m-%dT%H:%M:%S%Z");
@@ -589,6 +615,175 @@
     const recenttablebody = document.getElementById("recenttablebody");
     var entries = new Map();
 
+
+    const orderedActivityTypes = Object.entries(datacumulative.reduce((acc, {activitytype}) => {
+        acc[activitytype] = (acc[activitytype] || 0) + 1;
+        return acc;
+    }, {}))
+        .sort((a, b) => b[1] - a[1])
+        .map(item => parseInt(item[0]));
+
+    for (let act of orderedActivityTypes) {
+        var node = document.createElement("li");
+        node.innerHTML = "<a class='dropdown-item' onclick='generateCumulativeGraph("+act+")'>"+icons[Object.keys(icons)[act]][1]+"</a>";
+        document.getElementById("cumgraphDropdow").appendChild(node);
+    }
+
+    function generateCumulativeGraph(activitytype) {
+        const thisYearString = new Date().getFullYear().toString();
+
+        const filteredData = datacumulative.filter(d => d.activitytype === activitytype);
+        const parseTime = d3.timeParse("%Y-%m-%dT%H:%M:%S%Z");
+
+        // Group and sum data by year
+        let cumulativeData = {};
+        filteredData.forEach(d => {
+            const year = parseTime(d.trackdata_day).getFullYear();
+            const date = (parseTime(d.trackdata_day)).setFullYear(2024);
+            cumulativeData[year] = cumulativeData[year] || [];
+            cumulativeData[year].push({date: date, dist: (d.day_dist/1000)*(metric?1:miles_per_km), show: true});
+        });
+
+        // Adding zero data point for the first day of each year if it doesn't exist
+        Object.keys(cumulativeData).forEach(year => {
+            const jan1 = new Date(2024, 0, 1);
+            if (!cumulativeData[year].some(d => +d.date === +jan1)) {
+                cumulativeData[year].push({
+                    date: jan1,
+                    dist: 0,
+                    show: false
+                });
+            }
+            cumulativeData[year].sort((a, b) => +a.date - +b.date); //sort
+        });
+
+        //last day of the year for the first year
+        Object.keys(cumulativeData).forEach(year => {
+            let lastDay;
+            if (year === (new Date().getFullYear().toString())) {
+                lastDay = new Date();
+            } else {
+                lastDay = new Date(2024, 11, 31);
+            }
+            if (!cumulativeData[year].some(d => +d.date === +lastDay)) {
+                cumulativeData[year].push({
+                    date: lastDay,
+                    dist: 0,
+                    show: false
+                });
+            }
+        });
+
+
+        // Calculate cumulative sums
+        Object.keys(cumulativeData).forEach(year => {
+            cumulativeData[year].sort((a, b) => a.date - b.date);
+            cumulativeData[year].reduce((acc, curr) => {
+                curr.cumulative = acc + curr.dist;
+                return curr.cumulative;
+            }, 0);
+        });
+
+        d3.select("#cumgraph").select("svg").remove(); //clear if exists already
+        const svg = d3.select("#cumgraph").append("svg");
+        let width = 1000,
+            height = 300;
+        const margin = {top: 20, right: 0, bottom: 20, left: 50};
+        svg
+            .attr("width", width+margin.right+margin.left)
+            .attr("height", height+margin.top+margin.bottom)
+            .attr("viewBox", [0, 0, width+margin.right+margin.left, height+margin.top+margin.bottom])
+            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+            ;
+
+
+        const x = d3.scaleTime().range([0, width]),
+            y = d3.scaleLinear().range([height, 0]);
+
+        const line = d3.line()
+            .x(d => x(d.date))
+            .y(d => y(d.cumulative));
+
+        const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+        x.domain([new Date(2024, 0, 1), new Date(2024, 11, 31)]);
+        y.domain([0, d3.max(Object.values(cumulativeData).flat(), d => d.cumulative)]);
+        // Draw lines for each year
+        Object.keys(cumulativeData).forEach(year => {
+            g.append("path")
+                .datum(cumulativeData[year])
+                .attr("fill", "none")
+                .attr("stroke", year === (thisYearString) ? "#ff8001" : "darkgrey")
+                .attr("stroke-linejoin", "round")
+                .attr("stroke-linecap", "round")
+                .attr("stroke-width", year === (thisYearString) ? 3 : 1.5)
+                .attr("d", line);
+
+            g.selectAll("dot")
+                .data(cumulativeData[year].filter(d => d.show === true))
+                .enter().append("circle") // Adds a circle at each datapoint
+                .attr("r", 3) // Radius of the dot
+                .attr("cx", d => x(d.date))
+                .attr("cy", d => y(d.cumulative))
+                .attr("fill", year === (thisYearString) ? "#ff8001" : "darkgrey");
+
+        });
+
+
+        // Mark current date
+        if (cumulativeData[thisYearString]) {
+            const lastDataPoint = cumulativeData[thisYearString][cumulativeData[thisYearString].length - 1];
+            g.append("circle")
+                .attr("r", 4)
+                .attr("cx", x(lastDataPoint.date))
+                .attr("cy", y(lastDataPoint.cumulative))
+                .attr("fill", "#ff8001")
+                .style("stroke", "#ff8001")
+                .style("stroke-width", 3)
+                .style("fill-opacity", 0.8)
+                .attr("class", "blinking-dot");
+        }
+
+        // Define legend properties
+        const legendSize = 10;
+        const legendSpacing = 4;
+        const legend = svg.append("g")
+            .attr("transform", `translate(${width - 20}, ${height - 20 * Object.keys(cumulativeData).length})`);
+        Object.keys(cumulativeData).forEach((year, index) => {
+            legend.append("rect")
+                .attr("x", 0)
+                .attr("y", index * (legendSize + legendSpacing))
+                .attr("width", legendSize)
+                .attr("height", legendSize)
+                .style("fill", year === (new Date().getFullYear().toString()) ? "#ff8001" : "darkgrey");
+            legend.append("text")
+                .attr("x", legendSize + legendSpacing)
+                .attr("y", index * (legendSize + legendSpacing) + legendSize / 2)
+                .attr("dy", ".35em")
+                .text(year)
+                .style("font-size", "12px")
+                .style("text-anchor", "start")
+                .style("alignment-baseline", "middle");
+        });
+
+        // Add axes
+        g.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x).ticks(d3.timeMonth.every(1)).tickFormat(d3.timeFormat("%B")));
+
+        g.append("g")
+            .call(d3.axisLeft(y))
+            .call(g => g.append("text")
+                .attr("id", "cumgraphhead")
+                .attr("x", 0 - margin.left)
+                .attr("y", -5)
+                .attr("fill", "black")
+                .attr("text-anchor", "start")
+                .text("↑ Cumulative Distance ["+(metric?"km":"mi")+"]"));;
+    }
+
+    document.getElementById("cumgraphButton").innerText = icons[Object.keys(icons)[orderedActivityTypes[0]]][1];
+    generateCumulativeGraph(orderedActivityTypes[0]);
 
     function prepareHeatmapdata() {
         for (var i=0; i<dataHeatmap.length; i++) {

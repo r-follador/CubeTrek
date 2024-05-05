@@ -144,6 +144,14 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     String getDailyAggregatedStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years distance, ascent, number of activities for Heatmap
 
     @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
+            "SELECT date_trunc('day', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_day, trackdata.activitytype as activitytype, sum(trackdata.distance) as day_dist " +
+            "FROM trackdata " +
+            "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND (date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 1) " +
+            "GROUP BY trackdata_day, activitytype " +
+            "ORDER BY trackdata_day) AS t;", nativeQuery = true)
+    String getDailyStatsAsJSON(@Param(value= "user_id") long user_id, String user_timezone); //Last two years daily distance and activitytype for cumulitative comparison
+
+    @Query(value = "SELECT CAST(json_agg(t) as TEXT) FROM (" +
             "SELECT date_trunc('month', trackdata.datetrack at time zone 'utc' at time zone :user_timezone) AS trackdata_month, trackdata.activitytype, sum(trackdata.distance) as monthly_dist, sum(trackdata.elevationup) as monthly_elevationup " +
             "FROM trackdata " +
             "WHERE trackdata.owner = :user_id AND trackdata.hidden = false AND (date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 1 OR date_part('year', trackdata.datetrack) = date_part('year', CURRENT_DATE) - 2) " +

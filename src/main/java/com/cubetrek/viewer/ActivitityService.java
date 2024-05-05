@@ -26,6 +26,13 @@ public class ActivitityService {
         return out;
     }
 
+    public String getActivityCumulativeAsJSON(Users user, String timeZone) {
+        String out = trackDataRepository.getDailyStatsAsJSON(user.getId(), timeZone);
+        if (out == null || out.isBlank())
+            return "[]";
+        return out;
+    }
+
     public String getMonthlyTotalAsJSON(Users user, String timeZone) {
         return trackDataRepository.getMonthlyAggregatedStatsAsJSON(user.getId(), timeZone);
     }

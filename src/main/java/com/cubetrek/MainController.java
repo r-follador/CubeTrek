@@ -106,6 +106,7 @@ public class MainController {
         ActivitityService.TopActivities bla = activitityService.getTopActivities(user);
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
+        model.addAttribute("activityCumulativeJSON", activitityService.getActivityCumulativeAsJSON(user, user.getTimezone()));
         model.addAttribute("monthlyTotalJSON", activitityService.getMonthlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("yearlyTotalJSON", activitityService.getYearlyTotalAsJSON(user, user.getTimezone()));
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
