@@ -51,9 +51,12 @@ export class Map2D {
         this.marker= new maplibregl.Marker({element: el}).setLngLat([0,0]).addTo(this.map);
         this.kdtree = new KdTree(jsonData.geometry.coordinates[0]);
 
-        document.getElementById("btnradio1").addEventListener('click', () =>  {this.changeMapstyle('standard')});
-        document.getElementById("btnradio2").addEventListener('click', () =>  {this.changeMapstyle('topo')});
-        document.getElementById("btnradio3").addEventListener('click', () =>  {this.changeMapstyle('satellite')});
+        if (document.getElementById("map2dBtnradioStandard"))
+            document.getElementById("map2dBtnradioStandard").addEventListener('click', () =>  {this.changeMapstyle('standard')});
+        if (document.getElementById("map2dBtnradioTopo"))
+            document.getElementById("map2dBtnradioTopo").addEventListener('click', () =>  {this.changeMapstyle('topo')});
+        if (document.getElementById("map2dBtnradioSat"))
+            document.getElementById("map2dBtnradioSat").addEventListener('click', () =>  {this.changeMapstyle('satellite')});
 
         document.mymap = this.map;
     }

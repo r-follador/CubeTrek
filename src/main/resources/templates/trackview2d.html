@@ -57,12 +57,12 @@
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
             <div id="map2d" style="height: 100%; width: 100%; min-width: 100px;"></div>
             <div class="btn-group-vertical position-absolute top-0 start-0 p-3" role="group" id="mapstyle">
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked="checked">
-                <label class="btn btn-outline-danger" for="btnradio1">Map</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
-                <label class="btn btn-outline-danger" for="btnradio2">Topo</label>
-                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
-                <label class="btn btn-outline-danger" for="btnradio3">Satellite</label>
+                <input type="radio" class="btn-check" name="btnradio" id="map2dBtnradioStandard" autocomplete="off" checked="checked">
+                <label class="btn btn-outline-danger" for="map2dBtnradioStandard">Map</label>
+                <input type="radio" class="btn-check" name="btnradio" id="map2dBtnradioTopo" autocomplete="off">
+                <label class="btn btn-outline-danger" for="map2dBtnradioTopo">Topo</label>
+                <input type="radio" class="btn-check" name="btnradio" id="map2dBtnradioSat" autocomplete="off">
+                <label class="btn btn-outline-danger" for="map2dBtnradioSat">Satellite</label>
             </div>
             <div th:unless="${tracktoobig}" class="btn-group-vertical position-absolute bottom-0 start-0 p-3">
                 <a th:href="${'../replay/'+trackmetadata.id}" class="btn btn-outline-primary btn-sm">3D Replay</a>
