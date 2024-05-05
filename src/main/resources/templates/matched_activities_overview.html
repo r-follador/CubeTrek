@@ -165,7 +165,6 @@
         document.querySelectorAll('[data-date]').forEach(function(element) {
             element.innerText = (new Date(Date.parse(element.dataset.date))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric'});
         });
-        init();
     }
 
 </script>
