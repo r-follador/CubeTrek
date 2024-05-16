@@ -156,22 +156,59 @@
             </div>
             <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%">
             </div>
+            <div th:if="${totalActivities >= 5}">
+                <div class="pt-3">
+                    <div class="row">
+                        <!-- Bar Graph Section -->
+                        <div class="col-xxl-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="h4 mb-0">
+                                        <span>Totals</span>
+                                    </div>
+                                    <div class="btn-group ms-3">
+                                        <a class="btn btn-light btn-sm" id="barGraphButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Activitytype
+                                        </a>
+                                        <ul class="dropdown-menu" id="barGraphDropdown">
+                                        </ul>
+                                        <a class="btn btn-light btn-sm" id="barGraphButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Distance
+                                        </a>
+                                        <ul class="dropdown-menu" id="barGraphDropdown2">
+                                            <li><a class="dropdown-item" onclick="updateBargraphType('distance')">Distance</a></li>
+                                            <li><a class="dropdown-item" onclick="updateBargraphType('ascent')">Ascent</a></li>
+                                        </ul>
+                                        <a class="btn btn-light btn-sm" id="barGraphButton3" onclick="updateBargraphTime()">
+                                            Monthly
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="bargraph" style="width: 100%; height: 400px;"></div>
+                        </div>
 
-            <div th:if="${totalActivities >= 5}" class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
-                <div class="h4">
-                    <span>Annual Comparison</span>
-                    <div class="btn-group">
-                        <a class="btn btn-light btn-sm" id="cumgraphButton" data-bs-toggle="dropdown" aria-expanded="false">
-                            Activitytype
-                        </a>
-                        <ul class="dropdown-menu" id="cumgraphDropdow">
-                        </ul>
+                        <!-- Cumulative Graph Section -->
+                        <div class="col-xxl-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="h4 mb-0">
+                                        <span>Annual Comparison</span>
+                                    </div>
+                                    <div class="btn-group ms-3">
+                                        <a class="btn btn-light btn-sm" id="cumgraphButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Activitytype
+                                        </a>
+                                        <ul class="dropdown-menu" id="cumgraphDropdow">
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cumgraph" style="width: 100%; height: 400px;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="flex-grow-1 p-0 m-0" id="cumgraph" style="width:100%">
-            </div>
-
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Recent Activities</h4>
             </div>
@@ -185,32 +222,6 @@
 
             </div>
             <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
-
-
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
-                <h4 class="h4">Totals
-                    <div class="btn-group">
-                        <a class="btn btn-light btn-sm" id="barGraphButton" data-bs-toggle="dropdown" aria-expanded="false">
-                            Activitytype
-                        </a>
-                        <ul class="dropdown-menu" id="barGraphDropdown">
-                        </ul>
-						<a class="btn btn-light btn-sm" id="barGraphButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                            Distance
-                        </a>
-                        <ul class="dropdown-menu" id="barGraphDropdown2">
-							<li><a class="dropdown-item" onclick="updateBargraphType('distance')">Distance</a></li>
-							<li><a class="dropdown-item" onclick="updateBargraphType('ascent')">Ascent</a></li>
-                        </ul>
-						<a class="btn btn-light btn-sm" id="barGraphButton3" onclick="updateBargraphTime()">
-                            Monthly
-                        </a>
-                    </div>
-                </h4>
-            </div>
-
-            <div class="flex-grow-1 p-0 m-0" id="bargraph" style="width:100%">
-            </div>
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2">
                 <h4 class="h4">Best Of</h4>
@@ -686,9 +697,13 @@
 
         d3.select("#cumgraph").select("svg").remove(); //clear if exists already
         const svg = d3.select("#cumgraph").append("svg");
-        let width = 1000,
-            height = 300;
+        const cumgraphElement = d3.select("#cumgraph").node();
+        const cumgraphWidth = cumgraphElement.getBoundingClientRect().width;
+        const cumgraphHeight = 400;
+
         const margin = {top: 20, right: 0, bottom: 20, left: 50};
+        let width = cumgraphWidth-margin.left-margin.right;
+            height = cumgraphHeight-margin.top-margin.bottom;
         svg
             .attr("width", width+margin.right+margin.left)
             .attr("height", height+margin.top+margin.bottom)
@@ -841,8 +856,7 @@
             document.getElementById("barGraphDropdown").appendChild(node);
         }
 
-        this.width = document.getElementById('bargraph').clientWidth*0.8;
-        this.width = Math.max(500, this.width);
+        this.width = document.getElementById('bargraph').clientWidth;
         d3.select("#bargraph").select("svg").remove(); //clear if exists already
         this.svg = d3.select("#bargraph").append("svg");
         barchart = BarChart(this.svg, bargraphdatasMonthly, bargraphdatasYearly, bargraphActivity);
@@ -880,12 +894,11 @@
     let heatmapType = "distance";
 
     function drawHeatmap() {
-        this.width = document.getElementById('graph').clientWidth*0.8;
-
-        this.width = Math.max(500, this.width);
 
         d3.select("#graph").select("svg").remove(); //clear if exists already
         this.svg = d3.select("#graph").append("svg");
+        const heatgraphElement = d3.select("#graph").node();
+        this.width = heatgraphElement.getBoundingClientRect().width;
 
         Calendar(this.svg, datas, {
             x: d => d.date,
@@ -958,7 +971,6 @@
     function Calendar(svg, data, {
         x = ([x]) => x, // given d in data, returns the (temporal) x-value
         y = ([, y]) => y, // given d in data, returns the (quantitative) y-value
-        width = 1100, // width of the chart, in pixels
         cellSize = 20, // width and height of an individual day, in pixels
         weekday = "monday", // either: weekday, sunday, or monday
         formatDay = i => "SMTWTFS"[i], // given a day number in [0, 6], the day-of-week label
@@ -966,6 +978,9 @@
         formatingFunction = formatShortdist,
         colors = d3.interpolateYlOrRd
     } = {}) {
+        const heatgraphElement = d3.select("#graph").node();
+        width = heatgraphElement.getBoundingClientRect().width;
+
         // Compute values.
         const X = d3.map(data, x);
         const Y = d3.map(data, y);
@@ -1113,18 +1128,22 @@
     }
 
     function BarChart(svg, data_monthly, data_yearly, activitytype, {
-        width = 1000,
-        height = 300,
+        height = 400,
         marginTop = 30, // top margin, in pixels
         marginRight = 0, // right margin, in pixels
-        marginBottom = 30, // bottom margin, in pixels
+        marginBottom = 40, // bottom margin, in pixels
         marginLeft = 60, // left margin, in pixels
-        xRange = [marginLeft, width - marginRight], // [xmin, xmax]
         yRange = [height - marginBottom, marginTop], // [ymin, ymax]
         yFormat, // a format specifier string for the y-axis
         duration: initialDuration = 250, // transition duration, in milliseconds
         delay: initialDelay = (_, i) => i * 20 // per-element transition delay, in milliseconds
     } = {}) {
+
+        const bargraphElement = d3.select("#bargraph").node();
+        // Get the width of the #cumgraph element
+        const width = bargraphElement.getBoundingClientRect().width;
+        let xRange = [marginLeft, width - marginRight]; // [xmin, xmax]
+
         // Compute values.
         let X_monthly = d3.map(data_monthly.filter(d => d.activitytype === activitytype), d => d.date);
         let X_yearly = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.date);
@@ -1215,20 +1234,28 @@
             .style("mix-blend-mode", "multiply")
             .style("visibility", "hidden");
 
-		const monthAxis = svg.append("g");
+        const monthAxis = svg.append("g");
 
-		for (let year of yearDomain_monthly) {
-			const xAxis = d3.axisBottom(xScaleMonth_monthly).tickSize(0)
-				.tickFormat(d => {
+        for (let year of yearDomain_monthly) {
+            const xAxis = d3.axisBottom(xScaleMonth_monthly).tickSize(0)
+                .tickFormat(d => {
                     let date = new Date();
                     date.setDate(1);
                     date.setMonth(d);
                     return d3.timeFormat("%b")(date);
                 });
-			monthAxis.append("g")
-				.attr("transform", `translate(${xScaleYear_monthly(year)},${13+height - marginBottom})`)
-				.call(xAxis).call(g => g.select(".domain").remove());
-		}
+
+            const axisGroup = monthAxis.append("g")
+                .attr("transform", `translate(${xScaleYear_monthly(year)},${13 + height - marginBottom})`)
+                .call(xAxis)
+                .call(g => g.select(".domain").remove());
+
+            // Rotate the text labels
+            axisGroup.selectAll("text")
+                .attr("transform", "rotate(90)")
+                .style("text-anchor", "start")
+                .attr("y", -7);
+        }
 
 		const xAxis_year_monthly = d3.axisBottom(xScaleYear_monthly).tickSize(0);
         const xAxis_year_yearly = d3.axisBottom(xScaleYear_yearly).tickSize(0);
@@ -1484,7 +1511,7 @@
             entries.set(entry.id, entry);
             let newRow = document.createElement('div');
             newRow.id="r"+entry.id;
-            newRow.classList.add("shadow-sm", "col-10", "col-sm-10", "col-md-10", "col-lg-10", "col-xxl-10", "p-1", "mb-3","bg-body-tertiary", "rounded", "position-relative");
+            newRow.classList.add("shadow-sm", "col-12", "p-1", "mb-3","bg-body-tertiary", "rounded", "position-relative");
             recenttablebody.appendChild(newRow);
             addRowInfo(newRow, entry);
         }
@@ -1493,36 +1520,42 @@
     async function addRowInfo(row, entry) {
         row.innerHTML =
             `
-                <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
-                 <div class='row display-6 ms-1 mb-2' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
-                    <span class="p-0 m-0"><img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height=30>${entry.title}</span>
-                 </div>
-                 <div class='row'>
-                     <div class="col-4">
-                         <div class="col fs-6">
-                            ${(entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='20px'>":"")}
-                            ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
-                        </div>
-                        <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/600x200.png' width='600' height='200'></a>
-                     </div>
-                     <div class="col-5 pe-3 d-flex flex-wrap">
-                        <div class="m-2"><span class='fw-light ms-2'>Duration</span> <span class='fs-3'>${minToString(parseInt(entry.duration))} h</span></div>
-                        <div class="m-2"><span class='fw-light ms-2'>Ascent</span> <span class='fs-3'>${(entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft")}</span></div>
-                        <div class="m-2"><span class='fw-light ms-2'>Distance</span>  <span class='fs-3'>${(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi")}</span></div>
-                        <div class="m-2"><span class='fw-light ms-2'>Avg Speed</span>
-                            <span class='fs-3'>${((parseFloat(entry.distance)/1000)/(parseFloat(entry.duration)/60)*(metric?1:miles_per_km)).toFixed(1) + (metric?" km/h":" mi/h")}</span></div>
-                        <div class="m-2"><span class='fw-light ms-2'>Pace</span>
-                            <span class="fs-3">${minFractionToString(parseFloat(entry.duration)/(parseFloat(entry.distance)/1000*(metric?1:miles_per_km)))} ${metric?"min/km":"min/mi"}</span></div>
-                     </div>
-                     <div class="col-3 p-0 pe-3">
-                        <div class="d-flex flex-column h-75">
-                            <div class="flex-grow-1">
-                                <a href="${entry.trackgroup?'/matching/'+entry.trackgroup:'/view/'+entry.id}"><div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;" ></div></a>
-                            </div>
-                            ${entry.trackgroup?"<span class='fw-light ms-2'>Percentile</span>  <span class='fs-6' id='trackgroupRank"+entry.id+"'></span>":"<span class='fw-light ms-2 mt-3'>Highest Point ASL</span><span class='fs-6'>"+(entry.highestpoint*(metric?1:feet_per_m)).toFixed(0)+(metric?" m":" ft")+"</span>"}
-                        </div>
-                     </div>
-                 </div>
+    <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
+    <div class='row display-6 ms-1 mb-2' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
+        <span class="p-0 m-0"><img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height="30">${entry.title}</span>
+    </div>
+    <div class='row'>
+        <div class="col-lg-4 d-flex flex-column justify-content-center"">
+            <div class="col fs-6">
+                ${entry.favorite ? "<img src='../assets/icon_favorite_select.svg' height='20px'>" : ""}
+                ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}
+            </div>
+            <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/500x300.png' alt="Map"></a>
+        </div>
+        <div class="col-lg-5 d-flex flex-wrap">
+            <div class="m-2"><span class='fw-light'>Duration</span> <span class='fs-3'>${minToString(parseInt(entry.duration))} h</span></div>
+            <div class="m-2"><span class='fw-light'>Ascent</span> <span class='fs-3'>${(entry.elevationup * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft")}</span></div>
+            <div class="m-2"><span class='fw-light'>Distance</span> <span class='fs-3'>${(parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)).toFixed(1) + (metric ? " km" : " mi")}</span></div>
+            <div class="m-2"><span class='fw-light'>Avg Speed</span> <span class='fs-3'>${((parseFloat(entry.distance) / 1000) / (parseFloat(entry.duration) / 60) * (metric ? 1 : miles_per_km)).toFixed(1) + (metric ? " km/h" : " mi/h")}</span></div>
+            <div class="m-2"><span class='fw-light'>Pace</span> <span class="fs-3">${minFractionToString(parseFloat(entry.duration) / (parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)))} ${metric ? "min/km" : "min/mi"}</span></div>
+        </div>
+        <div class="col-lg-3 p-3">
+            <div class="d-flex flex-column h-100">
+                <div class="flex-grow-1">
+                    <a href="${entry.trackgroup ? '/matching/' + entry.trackgroup : '/view/' + entry.id}">
+                        <div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;"></div>
+                    </a>
+                </div>
+                ${entry.trackgroup ? "<span class='fw-light'>Percentile</span> <span class='fs-6' id='trackgroupRank" + entry.id + "'></span>" : "<span class='fw-light mt-3'>Highest Point ASL</span><span class='fs-6'>" + (entry.highestpoint * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft") + "</span>"}
+            </div>
+        </div>
+    </div>
             `;
 
         if (entry.trackgroup) {
