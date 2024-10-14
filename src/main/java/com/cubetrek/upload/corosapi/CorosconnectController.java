@@ -5,6 +5,8 @@ import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.upload.garminconnect.GarminconnectAuthSession;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,8 @@ import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
@@ -41,19 +45,23 @@ public class CorosconnectController {
 
     //Get the Authentications
 
-    final String requestURLCoros = "https://open.coros.com/oauth2/authorize?client_id="+corosClientId;
-
-    final String redirectUri = httpAddress+"/profile/connectCoros-step2";
+    //final String corosBaseURL = "https://opentest.coros.com/"; //test
+    final String corosBaseURL = "https://open.coros.com/"; //live
 
 
     @GetMapping(value="/profile/connectCoros-step1")
     public String connectToCoros() {
+        final String requestURLCoros = corosBaseURL+"oauth2/authorize?client_id="+corosClientId;
+        final String redirectUri = httpAddress+"/profile/connectCoros-step2";
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         logger.info("CorosConnect User tries to Link Coros Account: User id '"+user.getId()+"'");
 
         String state = "555xxx444"; // TODO: use a random generator here
         String authorizationUrl = requestURLCoros + "&redirect_uri=" + redirectUri + "&response_type=code&state=" + state;
+        //TODO: remove in working system
+        logger.info("Authorizaton url: "+authorizationUrl);
         return "redirect:"+authorizationUrl;
     }
 
@@ -61,6 +69,7 @@ public class CorosconnectController {
     public String connectToCoros2(@RequestParam("code") String code, @RequestParam("state") String state) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
+        final String redirectUri = httpAddress+"/profile/connectCoros-step2";
 
         //TODO: remove in working system
         logger.info("connectCoros-step2: State: "+state);
@@ -76,25 +85,29 @@ public class CorosconnectController {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            Map<String, String> body = new HashMap<>();
-            body.put("client_id", corosClientId);
-            body.put("client_secret", corosClientSecret);
-            body.put("redirect_uri", redirectUri);
-            body.put("code", code);
-            body.put("grant_type", "authorization_code");
-            HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            body.add("client_id", corosClientId);
+            body.add("client_secret", corosClientSecret);
+            body.add("redirect_uri", redirectUri);
+            body.add("code", code);
+            body.add("grant_type", "authorization_code");
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
 
-            ResponseEntity<RequestReturn> response = restTemplate.exchange("https://open.coros.com/oauth2/accesstoken", HttpMethod.POST, request, RequestReturn.class);
-            RequestReturn responseBody = response.getBody();
+            ResponseEntity<String> response = restTemplate.exchange(corosBaseURL+"oauth2/accesstoken", HttpMethod.POST, request, String.class);
+            logger.info("response string: "+response.getBody());
 
-            if (response.getStatusCode() != HttpStatus.OK || responseBody == null || !responseBody.isValid()) {
+            // Convert the raw JSON string into the RequestReturn object
+            ObjectMapper objectMapper = new ObjectMapper();
+            RequestReturn requestReturn = objectMapper.readValue(response.getBody(), RequestReturn.class);
+
+            if (response.getStatusCode() != HttpStatus.OK || requestReturn == null || !requestReturn.isValid()) {
                 logger.error("Error linking Coros account 2. User id: " + user.getId() + "; " + response.getBody());
-                throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Coros account.");
+                throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Coros account. Please make sure to select all relevant checkmarks.");
             }
 
             UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByUser(user);
-            UserThirdpartyConnect other = userThirdpartyConnectRepository.findByCorosUserid(responseBody.openId);
+            UserThirdpartyConnect other = userThirdpartyConnectRepository.findByCorosUserid(requestReturn.openId);
 
             if ((other != null && userThirdpartyConnect != null && !Objects.equals(other.getId(), userThirdpartyConnect.getId())) || other != null && userThirdpartyConnect == null) {
                 throw new ExceptionHandling.UnnamedException("Failed", "This Coros Account is already linked to another CubeTrek account");
@@ -103,24 +116,26 @@ public class CorosconnectController {
             if (userThirdpartyConnect==null) {
                 UserThirdpartyConnect utc = new UserThirdpartyConnect();
                 utc.setCorosEnabled(true);
-                utc.setCorosUserid(responseBody.openId);
-                utc.setCorosAccessToken(responseBody.accessToken);
-                utc.setCorosRefreshToken(responseBody.refreshToken);
-                utc.setCorosExpiresIn(responseBody.expiresIn);
+                utc.setCorosUserid(requestReturn.openId);
+                utc.setCorosAccessToken(requestReturn.accessToken);
+                utc.setCorosRefreshToken(requestReturn.refreshToken);
+                utc.setCorosExpiresIn(requestReturn.expiresIn);
                 utc.setUser(user);
                 userThirdpartyConnectRepository.save(utc);
             } else {
                 userThirdpartyConnect.setCorosEnabled(true);
-                userThirdpartyConnect.setCorosUserid(responseBody.openId);
-                userThirdpartyConnect.setCorosAccessToken(responseBody.accessToken);
-                userThirdpartyConnect.setCorosRefreshToken(responseBody.refreshToken);
-                userThirdpartyConnect.setCorosExpiresIn(responseBody.expiresIn);
+                userThirdpartyConnect.setCorosUserid(requestReturn.openId);
+                userThirdpartyConnect.setCorosAccessToken(requestReturn.accessToken);
+                userThirdpartyConnect.setCorosRefreshToken(requestReturn.refreshToken);
+                userThirdpartyConnect.setCorosExpiresIn(requestReturn.expiresIn);
                 userThirdpartyConnectRepository.save(userThirdpartyConnect);
             }
 
-            logger.info("Coros User successfully linked Coros Account: User id '"+user.getId()+"'; Coros User id: '"+responseBody.openId+"'");
+            logger.info("Coros User successfully linked Coros Account: User id '"+user.getId()+"'; Coros User id: '"+requestReturn.openId+"'");
 
             return "redirect:/profile";
+        } catch (ExceptionHandling.UnnamedException ue) {
+            throw ue;
         } catch(Exception e) {
             logger.error("Error linking Coros account 4. User id: "+user.getId(), e);
             throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Coros account.");
@@ -128,9 +143,16 @@ public class CorosconnectController {
     }
 
     static class RequestReturn {
+        @JsonProperty("expires_in")
         Integer expiresIn;
+
+        @JsonProperty("refresh_token")
         String refreshToken;
+
+        @JsonProperty("access_token")
         String accessToken;
+
+        @JsonProperty("openId")
         String openId;
 
         boolean isValid() {
@@ -151,20 +173,19 @@ public class CorosconnectController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        Map<String, String> body = new HashMap<>();
-        body.put("client_id", corosClientId);
-        body.put("client_secret", corosClientSecret);
-        body.put("grant_type", "refresh_token");
-        body.put("refresh_token", utc.getCorosRefreshToken());
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_id", corosClientId);
+        body.add("client_secret", corosClientSecret);
+        body.add("grant_type", "refresh_token");
+        body.add("refresh_token", utc.getCorosRefreshToken());
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
-
-        ResponseEntity<Map> response = restTemplate.exchange("https://open.coros.com/oauth2/refresh-token", HttpMethod.POST, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(corosBaseURL+"oauth2/refresh-token", HttpMethod.POST, request, Map.class);
         Map<String, String> responseBody = response.getBody();
 
-        //unclear what the response is
+        //Response is {result=0000, message=OK}; no clue what to do with it
         logger.info("coros response: "+responseBody);
 
-        return "refreshed";
+        return "profile";
     }
 }

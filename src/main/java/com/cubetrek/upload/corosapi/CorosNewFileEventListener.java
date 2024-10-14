@@ -29,11 +29,6 @@ public class CorosNewFileEventListener implements ApplicationListener<CorosNewFi
 
     Logger logger = LoggerFactory.getLogger(CorosNewFileEventListener.class);
 
-    @Value("${polar.client.id}")
-    String polarConsumerKey;
-    @Value("${polar.client.secret}")
-    String polarConsumerSecret;
-
     @Autowired
     private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
     @Autowired
