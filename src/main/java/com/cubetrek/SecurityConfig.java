@@ -52,6 +52,8 @@ public class SecurityConfig {
                                 "/garminconnect",
                                 "/polarconnect",
                                 "/suuntoconnect",
+                                "/corosconnect",
+                                "/corosconnect/status",
                                 "/stripe_hook").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -51,6 +51,22 @@ public class UserThirdpartyConnect {
     @Column
     private boolean suuntoEnabled = false;
 
+    @Column
+    private boolean corosEnabled = false;
+
+    @Column
+    String corosUserid;
+
+    @Convert(converter = DataEncryptDecryptConverter.class)
+    @Column
+    String corosAccessToken;
+
+    @Column
+    String corosRefreshToken;
+
+    @Column
+    Integer corosExpiresIn;
+
 
     @Component
     @Converter
