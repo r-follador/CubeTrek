@@ -6,22 +6,19 @@ import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.upload.StorageService;
 import com.cubetrek.upload.UploadResponse;
-import com.cubetrek.upload.polaraccesslink.PolarAccesslinkService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
+import java.util.Objects;
 
 
 @Component
@@ -34,9 +31,6 @@ public class CorosNewFileEventListener implements ApplicationListener<CorosNewFi
     @Autowired
     private StorageService storageService;
 
-    @Autowired
-    PolarAccesslinkService polarAccesslinkService;
-
     @Async
     @Override
     public void onApplicationEvent(OnEvent event) {
@@ -45,58 +39,53 @@ public class CorosNewFileEventListener implements ApplicationListener<CorosNewFi
 
     public void downloadFile(OnEvent event) {
 
-        if (!event.getUrl().contains("polaraccesslink.com")) {
-            logger.error("PolarAccesslink: will not download file, wrong URL: "+event.getUrl()+"; Payload: "+event.getPayload());
+        if (!event.getUrl().contains(".fit")) {
+            logger.error("Coros: will not download file, no Fit extenstion: "+event.getUrl());
             return;
         }
 
-        UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByPolarUserid(event.getUserId());
+        UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByCorosUserid(event.getUserId());
         if (userThirdpartyConnect == null){
-            logger.error("PolarAccesslink: pull file failed: Unknown User id: "+event.getUserId()+"; Payload: "+event.getPayload());
+            logger.error("Coros: pull file failed: Unknown User id: "+event.getUserId());
             return;
         }
         Users user = userThirdpartyConnect.getUser();
-
-        String downloadUrl = event.getUrl()+"/fit";
+        String filename = "coros-"+event.getUrl().substring(event.getUrl().lastIndexOf('/') + 1);
         UploadResponse uploadResponse = null;
         try {
-            HttpResponse<InputStream> response = polarAccesslinkService.userTokenAuthenticationGET_getFile(downloadUrl, userThirdpartyConnect.getPolarUseraccesstoken());
-            if (response.statusCode() == 200) {
-                byte[] filedata = response.body().readAllBytes();
-                response.body().close();
-                String filename = "polar-"+event.entityId+".FIT";
-                uploadResponse = storageService.store(user, filedata, filename);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<byte[]> response = restTemplate.getForEntity(event.getUrl(), byte[].class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                uploadResponse = storageService.store(user, Objects.requireNonNull(response.getBody()), filename);
             } else {
-                logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', CallbackURL '"+event.getUrl()+"'");
-                logger.error("Response status code: "+response.statusCode()+"; Payload: "+event.getPayload());
+                logger.error("Coros: pull file failed: User id: "+user.getId()+", User Coros ID '"+event.getUserId()+"', File Url '"+event.getUrl()+"'");
+                logger.error("Response status code: "+response.getStatusCode());
             }
-        } catch (URISyntaxException | IOException | InterruptedException e) {
-            logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', CallbackURL '"+event.getUrl()+"'"+"; Payload: "+event.getPayload());
-            logger.error("PolarAccesslink", e);
+        } catch (NullPointerException e) {
+            logger.error("Coros: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', File Url '"+event.getUrl()+"'");
+            logger.error("Coros", e);
         } catch (ExceptionHandling.FileNotAccepted e) {
             //Already logged in StorageService, do nothing
         }
 
         if (uploadResponse != null)
-            logger.info("PolarAccesslink: pull file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
+            logger.info("Coros: download file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
         else
-            logger.error("PolarAccesslink: pull file failed: User id: "+user.getId()+", User Polar Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'"+"; Payload: "+event.getPayload());
+            logger.error("Coros: download file failed: User id: "+user.getId()+", User Polar Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'");
     }
 
     @Getter
     @Setter
     static public class OnEvent extends ApplicationEvent {
-        String entityId;
         String userId;
         String url;
-        String payload;
 
-        public OnEvent(String entityId, String userId, String url, String payload) {
+        public OnEvent(String userId, String url) {
             super(userId);
-            this.entityId = entityId;
             this.userId = userId;
             this.url = url;
-            this.payload = payload;
         }
     }
 

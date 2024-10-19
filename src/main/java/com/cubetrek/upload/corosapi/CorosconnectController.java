@@ -4,13 +4,16 @@ import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
+import com.cubetrek.upload.garminconnect.GarminNewFileEventListener;
 import com.cubetrek.upload.garminconnect.GarminconnectAuthSession;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +32,10 @@ import java.util.Objects;
 @Controller
 public class CorosconnectController {
     Logger logger = LoggerFactory.getLogger(CorosconnectController.class);
+
+    @Autowired
+    ApplicationEventPublisher eventPublisher;
+
 
     @Value("${coros.client.id}") //aka application_id
     String corosClientId;
@@ -50,7 +58,7 @@ public class CorosconnectController {
 
 
     @GetMapping(value="/profile/connectCoros-step1")
-    public String connectToCoros() {
+    public String connectToCoros(HttpSession session) {
         final String requestURLCoros = corosBaseURL+"oauth2/authorize?client_id="+corosClientId;
         final String redirectUri = httpAddress+"/profile/connectCoros-step2";
 
@@ -58,7 +66,8 @@ public class CorosconnectController {
         Users user = (Users)authentication.getPrincipal();
         logger.info("CorosConnect User tries to Link Coros Account: User id '"+user.getId()+"'");
 
-        String state = "555xxx444"; // TODO: use a random generator here
+        String state = createRandomString();
+        session.setAttribute("corosState", state);
         String authorizationUrl = requestURLCoros + "&redirect_uri=" + redirectUri + "&response_type=code&state=" + state;
         //TODO: remove in working system
         logger.info("Authorizaton url: "+authorizationUrl);
@@ -66,7 +75,7 @@ public class CorosconnectController {
     }
 
     @GetMapping(value="/profile/connectCoros-step2")
-    public String connectToCoros2(@RequestParam("code") String code, @RequestParam("state") String state) {
+    public String connectToCoros2(@RequestParam("code") String code, @RequestParam("state") String state, HttpSession session) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         final String redirectUri = httpAddress+"/profile/connectCoros-step2";
@@ -77,6 +86,13 @@ public class CorosconnectController {
 
         if (code == null) {
             logger.error("Error linking Coros account 1. User id: "+user.getId());
+            throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Coros account.");
+        }
+
+        String storedString = (String) session.getAttribute("corosState");
+
+        if (storedString == null || !storedString.equals(state)) {
+            logger.error("Error linking Coros account 5. User id: "+user.getId());
             throw new ExceptionHandling.UnnamedException("Failed", "Error Linking Coros account.");
         }
 
@@ -130,8 +146,12 @@ public class CorosconnectController {
                 userThirdpartyConnect.setCorosExpiresIn(requestReturn.expiresIn);
                 userThirdpartyConnectRepository.save(userThirdpartyConnect);
             }
+            userThirdpartyConnectRepository.flush();
 
             logger.info("Coros User successfully linked Coros Account: User id '"+user.getId()+"'; Coros User id: '"+requestReturn.openId+"'");
+
+            //Request historical data for this newly registered user
+            eventPublisher.publishEvent(new CorosHistoricDataRequestedListener.OnEvent(user, userThirdpartyConnectRepository.findByUser(user)));
 
             return "redirect:/profile";
         } catch (ExceptionHandling.UnnamedException ue) {
@@ -186,6 +206,30 @@ public class CorosconnectController {
         //Response is {result=0000, message=OK}; no clue what to do with it
         logger.info("coros response: "+responseBody);
 
-        return "profile";
+        return "redirect:/profile";
+    }
+
+
+    @GetMapping(value="/profile/connectCoros-historic")
+    public String getHistoricData() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
+
+        eventPublisher.publishEvent(new CorosHistoricDataRequestedListener.OnEvent(user, utc));
+
+        return "redirect:/profile";
+    }
+
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private String createRandomString() {
+        StringBuilder stringBuilder = new StringBuilder(8);
+        for (int i = 0; i < 8; i++) {
+            int randomIndex = RANDOM.nextInt(CHARACTERS.length());
+            stringBuilder.append(CHARACTERS.charAt(randomIndex));
+        }
+        return stringBuilder.toString();
     }
 }

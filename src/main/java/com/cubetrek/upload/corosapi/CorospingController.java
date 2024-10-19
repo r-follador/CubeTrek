@@ -1,5 +1,8 @@
 package com.cubetrek.upload.corosapi;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +11,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.*;
 
 @Controller
 public class CorospingController {
@@ -30,15 +35,40 @@ public class CorospingController {
                                     @RequestHeader("secret") String secret) { // To capture headers
 
         logger.info("Coros Ping received: "+payload);
-        logger.info("Cient: "+client);
+        logger.info("Client: "+client);
         logger.info("Secret: "+secret);
 
 
+        ArrayList<String> fitUrls = new ArrayList<>();
+
+        try {
+            JsonNode rootNode = (new ObjectMapper()).readTree(payload);
+            findFitUrls(rootNode, fitUrls);
+        } catch (JsonProcessingException e) {
+            logger.error("Coros: Failed parsing ping payload",e);
+            logger.error("Coros: Payload that failed: "+payload);
+        }
 
         //see chapter 5.3.4
         return ResponseEntity.ok("""
                 { "message":"ok", "result":"0000" }
                 """);
+    }
+
+    // Recursive method to search for fitUrl in all nodes
+    public static void findFitUrls(JsonNode node, List<String> fitUrls) {
+        if (node.has("fitUrl")) {
+            fitUrls.add(node.get("fitUrl").asText());
+        }
+
+        // Iterate over all the child nodes (if the node is an object or array)
+        if (node.isObject() || node.isArray()) {
+            Iterator<JsonNode> elements = node.elements();
+            while (elements.hasNext()) {
+                JsonNode childNode = elements.next();
+                findFitUrls(childNode, fitUrls);
+            }
+        }
     }
 
     //Service Status Check, Chapter 5.3

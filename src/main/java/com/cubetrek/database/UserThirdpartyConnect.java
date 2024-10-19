@@ -57,6 +57,7 @@ public class UserThirdpartyConnect {
     @Column
     String corosUserid;
 
+    @Convert(converter = DataEncryptDecryptConverter.class)
     @Column
     String corosAccessToken;
 
