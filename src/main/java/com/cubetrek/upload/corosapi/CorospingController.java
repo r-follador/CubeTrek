@@ -34,7 +34,36 @@ public class CorospingController {
                                     @RequestHeader("client") String client,
                                     @RequestHeader("secret") String secret) { // To capture headers
 
-        logger.info("Coros Ping received: "+payload);
+        logger.info("Coros Ping received on /corosconnect: "+payload);
+        logger.info("Client: "+client);
+        logger.info("Secret: "+secret);
+
+
+        ArrayList<String> fitUrls = new ArrayList<>();
+
+        try {
+            JsonNode rootNode = (new ObjectMapper()).readTree(payload);
+            findFitUrls(rootNode, fitUrls);
+        } catch (JsonProcessingException e) {
+            logger.error("Coros: Failed parsing ping payload",e);
+            logger.error("Coros: Payload that failed: "+payload);
+        }
+
+        //see chapter 5.3.4
+        return ResponseEntity.ok("""
+                { "message":"ok", "result":"0000" }
+                """);
+    }
+
+    //for testing purposes only, POST request should be received by /corosconnect
+    //note: does not work anyway, only /corosconnect/status is called (GET requests)
+    @PostMapping(value = "/corosconnect/status")
+    public ResponseEntity corosPingStatus(
+            @RequestBody String payload, // To capture JSON body parameters
+            @RequestHeader("client") String client,
+            @RequestHeader("secret") String secret) { // To capture headers
+
+        logger.info("Coros Ping received on /corosconnect/status: "+payload);
         logger.info("Client: "+client);
         logger.info("Secret: "+secret);
 

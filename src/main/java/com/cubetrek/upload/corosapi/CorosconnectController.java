@@ -4,8 +4,6 @@ import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
-import com.cubetrek.upload.garminconnect.GarminNewFileEventListener;
-import com.cubetrek.upload.garminconnect.GarminconnectAuthSession;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
@@ -25,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -47,9 +44,6 @@ public class CorosconnectController {
 
     @Autowired
     private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
-
-    @Autowired
-    private GarminconnectAuthSession garminconnectAuthSession;
 
     //Get the Authentications
 
