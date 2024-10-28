@@ -5,12 +5,14 @@ import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
 import com.cubetrek.database.UsersRepository;
 import com.cubetrek.upload.polaraccesslink.PolarAccesslinkService;
+import com.cubetrek.upload.polaraccesslink.PolarLoginEventListener;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -29,7 +31,7 @@ public class SuccessfulLoginEventListener implements ApplicationListener<Success
     private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
 
     @Autowired
-    PolarAccesslinkService polarAccesslinkService;
+    ApplicationEventPublisher eventPublisher;
 
     @Async
     @Override
@@ -43,20 +45,7 @@ public class SuccessfulLoginEventListener implements ApplicationListener<Success
         //Check if Polar is still connected
         UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByUser(event.getUser());
         if (userThirdpartyConnect != null && userThirdpartyConnect.isPolarEnabled()) {
-            //try to get polar user info in order to check if still enabled; see https://github.com/polarofficial/accesslink-example-python/issues/28
-            final String polarUserUrl = "https://www.polaraccesslink.com/v3/users/"+userThirdpartyConnect.getPolarUserid();
-            try {
-                HttpResponse<String> polaruserinfo = polarAccesslinkService.userTokenAuthenticationGET_getJSON(polarUserUrl, userThirdpartyConnect.getPolarUseraccesstoken());
-
-                logger.info("Polar user info: " + polaruserinfo.body());
-                if (polaruserinfo.statusCode()==401 || polaruserinfo.statusCode()==204) { //Authorization removed (401) or no Userid found (204)
-                    userThirdpartyConnect.setPolarEnabled(false);
-                    userThirdpartyConnectRepository.save(userThirdpartyConnect);
-                }
-
-            } catch (URISyntaxException | IOException | InterruptedException e) {
-                logger.error("Error checking Polar Accesslink status", e);
-            }
+            eventPublisher.publishEvent(new PolarLoginEventListener.OnEvent(userThirdpartyConnect));
         }
 
     }

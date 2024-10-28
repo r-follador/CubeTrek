@@ -48,7 +48,7 @@ public class CorosconnectController {
     //Get the Authentications
 
     //final String corosBaseURL = "https://opentest.coros.com/"; //test
-    final String corosBaseURL = "https://open.coros.com/"; //live
+    public final static String corosBaseURL = "https://open.coros.com/"; //live
 
 
     @GetMapping(value="/profile/connectCoros-step1")
@@ -173,36 +173,6 @@ public class CorosconnectController {
             return expiresIn != null && refreshToken != null && accessToken != null && openId != null;
         }
     }
-
-
-    @GetMapping(value="/profile/connectCoros-refresh")
-    public String refreshToken() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-        UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
-
-        logger.info("Refresh called for user id "+user.getId());
-
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("client_id", corosClientId);
-        body.add("client_secret", corosClientSecret);
-        body.add("grant_type", "refresh_token");
-        body.add("refresh_token", utc.getCorosRefreshToken());
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-
-        ResponseEntity<Map> response = restTemplate.exchange(corosBaseURL+"oauth2/refresh-token", HttpMethod.POST, request, Map.class);
-        Map<String, String> responseBody = response.getBody();
-
-        //Response is {result=0000, message=OK}; no clue what to do with it
-        logger.info("coros response: "+responseBody);
-
-        return "redirect:/profile";
-    }
-
 
     @GetMapping(value="/profile/connectCoros-historic")
     public String getHistoricData() {

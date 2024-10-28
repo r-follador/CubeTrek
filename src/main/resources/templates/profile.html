@@ -123,6 +123,16 @@
                     <div th:unless="${isPolarConnected}" class="badge bg-secondary">No Polar Account linked</div>
                 </div>
             </div>
+
+            <div class="card m-2 mt-4 col-md-4" style="width: 18rem; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#corosModal">
+                <img src="/assets/coros_logo.png" class="card-img-top mt-2" alt="Coros Logo">
+                <div class="card-body">
+                    <h5 class="card-title">Coros</h5>
+                    <p class="card-text">Link your Coros devices to CubeTrek</p>
+                    <div th:if="${isCorosConnected}" class="badge bg-primary">✅ Coros Account is linked</div>
+                    <div th:unless="${isCorosConnected}" class="badge bg-secondary">No Coros Account linked</div>
+                </div>
+            </div>
             </div>
 
             <div class="row">
@@ -176,6 +186,25 @@
             </div>
             <div class="modal-footer">
                 <a href="/profile/connectPolar-step1" type="button" class="btn btn-primary">Go To Polar Accesslink</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="corosModal" tabindex="-1" aria-labelledby="exampleModalLabel3" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel3">Coros</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                You will be redirected to the Coros website.
+                <a href="/profile/connectCoros-step1"><img class="img-thumbnail" width="300px" src="/assets/coros_screenshot.png" alt="Screenshot"></a><br>
+                Make sure to "Agree to the Terms of Service/Privacy Policy and Allow Third Party App Access" and click "Accept".
+            </div>
+            <div class="modal-footer">
+                <a href="/profile/connectCoros-step1" type="button" class="btn btn-primary">Go To Coros Login</a>
             </div>
         </div>
     </div>
