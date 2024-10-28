@@ -40,42 +40,31 @@ public class CorospingController {
 
 
         ArrayList<String> fitUrls = new ArrayList<>();
+        String openId = null;
+
+        if (!(client.equals(corosClientId) && secret.equals(corosClientSecret))) {
+            logger.error("Coros Ping Error: corosClientId or corosClientSecret is incorrect");
+            logger.error("Payload {}", payload);
+        }
 
         try {
             JsonNode rootNode = (new ObjectMapper()).readTree(payload);
             findFitUrls(rootNode, fitUrls);
+            openId = findOpenId(rootNode);
+
         } catch (JsonProcessingException e) {
             logger.error("Coros: Failed parsing ping payload",e);
             logger.error("Coros: Payload that failed: "+payload);
         }
 
-        //see chapter 5.3.4
-        return ResponseEntity.ok("""
-                { "message":"ok", "result":"0000" }
-                """);
-    }
-
-    //for testing purposes only, POST request should be received by /corosconnect
-    //note: does not work anyway, only /corosconnect/status is called (GET requests)
-    @PostMapping(value = "/corosconnect/status")
-    public ResponseEntity corosPingStatus(
-            @RequestBody String payload, // To capture JSON body parameters
-            @RequestHeader("client") String client,
-            @RequestHeader("secret") String secret) { // To capture headers
-
-        logger.info("Coros Ping received on /corosconnect/status: "+payload);
-        logger.info("Client: "+client);
-        logger.info("Secret: "+secret);
-
-
-        ArrayList<String> fitUrls = new ArrayList<>();
-
-        try {
-            JsonNode rootNode = (new ObjectMapper()).readTree(payload);
-            findFitUrls(rootNode, fitUrls);
-        } catch (JsonProcessingException e) {
-            logger.error("Coros: Failed parsing ping payload",e);
+        if (openId == null || openId.isEmpty() || fitUrls.isEmpty()) {
+            logger.error("Coros: Failed parsing ping payload; could not find fitUrl and/or openId");
             logger.error("Coros: Payload that failed: "+payload);
+        } else {
+            //Publish async event; handled by CorosNewFileEventListener
+            for (String fitUrl : fitUrls) {
+                eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(openId, fitUrl));
+            }
         }
 
         //see chapter 5.3.4
@@ -98,6 +87,22 @@ public class CorospingController {
                 findFitUrls(childNode, fitUrls);
             }
         }
+    }
+
+    public static String findOpenId(JsonNode node) {
+        if (node.has("openId")) {
+            return node.get("openId").asText();
+        }
+
+        // Iterate over all the child nodes (if the node is an object or array)
+        if (node.isObject() || node.isArray()) {
+            Iterator<JsonNode> elements = node.elements();
+            while (elements.hasNext()) {
+                JsonNode childNode = elements.next();
+                return findOpenId(childNode);
+            }
+        }
+        return null;
     }
 
     //Service Status Check, Chapter 5.3

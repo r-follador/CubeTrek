@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration
-@EnableScheduling
 public class CubetrekScheduler {
     Logger logger = LoggerFactory.getLogger(CubetrekScheduler.class);
 

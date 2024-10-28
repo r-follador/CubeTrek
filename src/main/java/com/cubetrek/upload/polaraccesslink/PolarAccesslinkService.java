@@ -91,8 +91,6 @@ public class PolarAccesslinkService {
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-
-
     public static HttpRequest.BodyPublisher getFormDataAsString(Map<String, String> formData) {
         StringBuilder formBodyBuilder = new StringBuilder();
         for (Map.Entry<String, String> singleEntry : formData.entrySet()) {

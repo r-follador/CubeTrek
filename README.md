@@ -4,7 +4,7 @@
 Topography is what makes Skiing, Hiking, Trail running and Mountain biking so exciting. You conquer those vertical distances with a lot of sweat and effort, but your tracking software only shows a boring 2D map.
 That's where **CubeTrek** comes in.
 
-Sign up on [CubeTrek.com](https://cubetrek.com), connect your Garmin and Polar watch and manage your outdoor activities.
+Sign up on [CubeTrek.com](https://cubetrek.com), connect your Garmin, Polar and Coros watch and manage your outdoor activities.
 
 ## Features
 Check out the examples on [CubeTrek.com](https://cubetrek.com); e.g. [SkiMo to the Mattijsch Horn](https://cubetrek.com/view/4967)

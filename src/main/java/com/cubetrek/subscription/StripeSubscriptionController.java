@@ -2,14 +2,12 @@ package com.cubetrek.subscription;
 
 import com.cubetrek.database.SubscriptionRepository;
 import com.cubetrek.database.Users;
-import com.cubetrek.upload.garminconnect.GarminNewFileEventListener;
 import com.google.gson.JsonSyntaxException;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
 import com.stripe.model.checkout.Session;
-import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
