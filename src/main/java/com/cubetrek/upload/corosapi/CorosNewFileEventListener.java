@@ -64,7 +64,7 @@ public class CorosNewFileEventListener implements ApplicationListener<CorosNewFi
                 logger.error("Response status code: "+response.getStatusCode());
             }
         } catch (NullPointerException e) {
-            logger.error("Coros: pull file failed: User id: "+user.getId()+", User Polar ID '"+event.getUserId()+"', File Url '"+event.getUrl()+"'");
+            logger.error("Coros: pull file failed: User id: "+user.getId()+", User Coros ID '"+event.getUserId()+"', File Url '"+event.getUrl()+"'");
             logger.error("Coros", e);
         } catch (ExceptionHandling.FileNotAccepted e) {
             //Already logged in StorageService, do nothing
@@ -73,7 +73,7 @@ public class CorosNewFileEventListener implements ApplicationListener<CorosNewFi
         if (uploadResponse != null)
             logger.info("Coros: download file successful: User id: "+user.getId()+"; Track ID: "+uploadResponse.getTrackID());
         else
-            logger.error("Coros: download file failed: User id: "+user.getId()+", User Polar Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'");
+            logger.error("Coros: download file failed: User id: "+user.getId()+", User Coros Id '"+event.userId+"', CallbackURL '"+event.getUrl()+"'");
     }
 
     @Getter
