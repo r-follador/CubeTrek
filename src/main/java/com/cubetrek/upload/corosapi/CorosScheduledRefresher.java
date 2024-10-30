@@ -31,9 +31,9 @@ public class CorosScheduledRefresher {
     @Autowired
     private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
 
-    @Scheduled(fixedRate = 15, timeUnit = TimeUnit.DAYS, initialDelay = 15)
+    @Scheduled(cron = "0 0 11 5,20 * ?")
     public void refreshUserTokens() {
-        //Refreshing the AccessToken of every registered user each 20 days
+        //Refreshing the AccessToken of every registered user each 5th and 20th of the month
         //see Chapter 3.5
 
         logger.info("Coros: Scheduled Refresher Task");

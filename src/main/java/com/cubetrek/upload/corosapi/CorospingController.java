@@ -34,9 +34,9 @@ public class CorospingController {
                                     @RequestHeader("client") String client,
                                     @RequestHeader("secret") String secret) { // To capture headers
 
-        logger.info("Coros Ping received on /corosconnect: "+payload);
-        logger.info("Client: "+client);
-        logger.info("Secret: "+secret);
+        logger.info("Coros Ping received: "+payload);
+        //logger.info("Client: "+client);
+        //logger.info("Secret: "+secret);
 
 
         ArrayList<String> fitUrls = new ArrayList<>();

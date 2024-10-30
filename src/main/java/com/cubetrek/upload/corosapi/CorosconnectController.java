@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
-import java.util.Map;
 import java.util.Objects;
 
 @Controller
@@ -63,8 +62,6 @@ public class CorosconnectController {
         String state = createRandomString();
         session.setAttribute("corosState", state);
         String authorizationUrl = requestURLCoros + "&redirect_uri=" + redirectUri + "&response_type=code&state=" + state;
-        //TODO: remove in working system
-        logger.info("Authorizaton url: "+authorizationUrl);
         return "redirect:"+authorizationUrl;
     }
 
@@ -73,10 +70,6 @@ public class CorosconnectController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         final String redirectUri = httpAddress+"/profile/connectCoros-step2";
-
-        //TODO: remove in working system
-        logger.info("connectCoros-step2: State: "+state);
-        logger.info("connectCoros-step2: Code: "+code);
 
         if (code == null) {
             logger.error("Error linking Coros account 1. User id: "+user.getId());
@@ -105,7 +98,7 @@ public class CorosconnectController {
 
 
             ResponseEntity<String> response = restTemplate.exchange(corosBaseURL+"oauth2/accesstoken", HttpMethod.POST, request, String.class);
-            logger.info("response string: "+response.getBody());
+            //logger.info("response string: "+response.getBody());
 
             // Convert the raw JSON string into the RequestReturn object
             ObjectMapper objectMapper = new ObjectMapper();
