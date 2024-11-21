@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sound.midi.Track;
 import java.time.Instant;
@@ -47,6 +48,12 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     @CacheEvict(value = "trackdata", key = "#id")
     @Query("update trackdata u set u.title = :title where u.id = :id")
     void updateTrackMetadataTitle(@Param(value = "id") long id, @Param(value = "title") String title);
+
+    @Modifying
+    @Transactional
+    @Query("update trackdata t set t.trackgroup = :trackgroup where t.id in :ids")
+    void updateTrackgroupForIds(@Param("trackgroup") long trackgroup, @Param("ids") List<Long> ids);
+
 
 
     @Modifying

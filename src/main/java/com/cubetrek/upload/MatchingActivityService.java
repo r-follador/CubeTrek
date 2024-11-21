@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Component
 public class MatchingActivityService {
@@ -19,7 +20,6 @@ public class MatchingActivityService {
 
     Logger logger = LoggerFactory.getLogger(MatchingActivityService.class);
 
-    @Transactional
     public void processMatchingActivities(TrackData newUploadedActivity, List<TrackData> mt) {
         long time = System.currentTimeMillis();
         List<TrackData> unassignedActivities = new ArrayList<>();
@@ -41,12 +41,10 @@ public class MatchingActivityService {
             groupId = new Random().nextLong();
         }
 
-        for (TrackData nt : unassignedActivities) {
-            nt.setTrackgroup(groupId);
-        }
+        List<Long> idsToUpdate = unassignedActivities.stream().map(TrackData::getId).toList();
 
+        trackDataRepository.updateTrackgroupForIds(groupId, idsToUpdate);
         // Save unassigned activities
-        trackDataRepository.saveAllAndFlush(unassignedActivities);
         logger.info("Processed {} matched activities for TrackID '{}' of User ID '{}' in {} ms",
                 mt.size(),
                 newUploadedActivity.getId(),
