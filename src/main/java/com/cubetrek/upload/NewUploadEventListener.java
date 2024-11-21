@@ -14,9 +14,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 
 @Component
@@ -30,6 +28,9 @@ public class NewUploadEventListener implements ApplicationListener<NewUploadEven
     @Autowired
     private StorageService storageService;
 
+    @Autowired
+    private MatchingActivityService matchingActivityService;
+
     @Async
     @Transactional
     @Override
@@ -39,49 +40,29 @@ public class NewUploadEventListener implements ApplicationListener<NewUploadEven
 
     public void newUploadFile(OnEvent event) {
         TrackData newUploadedActivity = trackDataRepository.getReferenceById(event.getTrackId());
-        ///Find matching activities of the same owner
-        long time = System.currentTimeMillis();
-        List<TrackData> mt = trackDataRepository.findMatchingActivities(newUploadedActivity.getOwner().getId(), newUploadedActivity.getId());
-
-        String titleSuggestion = null;
+        List<TrackData> mt = trackDataRepository.findMatchingActivities(
+                newUploadedActivity.getOwner().getId(),
+                newUploadedActivity.getId()
+        );
 
         if (mt.size() >= 2) {
-            List<TrackData> unassignedActivities = new ArrayList<>();
-            Long groupid = null;
-            for (TrackData t : mt) {
-                if (t.getTrackgroup()!= null &&  t.getTrackgroup() != 0) {
-                    if (groupid== null) {
-                        groupid = t.getTrackgroup();
-                    } else {
-                        if (!t.getTrackgroup().equals(groupid))
-                            unassignedActivities.add(t);
-                    }
-                } else {
-                    unassignedActivities.add(t);
-                }
-            }
-
-            if (!mt.get(0).getTitle().startsWith("Activity on"))
-                titleSuggestion = mt.get(0).getTitle();
-
-            if (groupid==null)
-                groupid = new Random().nextLong();
-
-            for (TrackData nt : unassignedActivities)
-                nt.setTrackgroup(groupid);
-
-            trackDataRepository.saveAllAndFlush(unassignedActivities);
-            logger.info("Found "+mt.size()+" matched activities for TrackID '"+newUploadedActivity.getId()+"' of User ID: '"+newUploadedActivity.getOwner().getId()+"' in "+(System.currentTimeMillis()-time)+"ms");
+            matchingActivityService.processMatchingActivities(newUploadedActivity, mt);
         }
 
-        //Get the final title of the activity
-        if (titleSuggestion!= null) {
-            trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), titleSuggestion);
-        } else {
-            String title = storageService.createTitleFinal(event.getHighestPoint(), newUploadedActivity, event.getTimezone());
-            trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), title);
-        }
+        String title = determineTitle(event, newUploadedActivity);
+        trackDataRepository.updateTrackMetadataTitle(newUploadedActivity.getId(), title);
     }
+
+    private String determineTitle(OnEvent event, TrackData newUploadedActivity) {
+        String titleSuggestion = null;
+        if (!newUploadedActivity.getTitle().startsWith("Activity on")) {
+            titleSuggestion = newUploadedActivity.getTitle();
+        }
+        return (titleSuggestion != null) ?
+                titleSuggestion :
+                storageService.createTitleFinal(event.getHighestPoint(), newUploadedActivity, event.getTimezone());
+    }
+
 
     @Getter
     @Setter
