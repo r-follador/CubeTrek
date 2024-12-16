@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +26,9 @@ public class CorospingController {
 
     @Autowired
     ApplicationEventPublisher eventPublisher;
+
+    //Coros sometimes sends the same fitUrl multiple times. Keep track of that
+    HashSet<String> fitUrlSet = new HashSet<>();
 
     //Ping from Coros; this is the webhook
     //Workout Summary Data Push, Chapter 5.3
@@ -63,7 +67,10 @@ public class CorospingController {
         } else {
             //Publish async event; handled by CorosNewFileEventListener
             for (String fitUrl : fitUrls) {
-                eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(openId, fitUrl));
+                if (!fitUrlSet.contains(fitUrl)) {
+                    fitUrlSet.add(fitUrl);
+                    eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(openId, fitUrl));
+                }
             }
         }
 
@@ -110,5 +117,11 @@ public class CorospingController {
     public ResponseEntity corosStatus() {
         logger.info("Coros: Status Request received");
         return ResponseEntity.ok().build();
+    }
+
+    @Scheduled(fixedRate = 900_000) //every 15min
+    public void clearFitUrlSet() {
+        fitUrlSet.clear();
+        logger.info("Cleared fitUrlSet");
     }
 }
