@@ -66,10 +66,12 @@ public class CorospingController {
             logger.error("Coros: Payload that failed: "+payload);
         } else {
             //Publish async event; handled by CorosNewFileEventListener
-            for (String fitUrl : fitUrls) {
-                if (!fitUrlSet.contains(fitUrl)) {
-                    fitUrlSet.add(fitUrl);
-                    eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(openId, fitUrl));
+            synchronized (this) {
+                for (String fitUrl : fitUrls) {
+                    if (!fitUrlSet.contains(fitUrl)) {
+                        fitUrlSet.add(fitUrl);
+                        eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(openId, fitUrl));
+                    }
                 }
             }
         }
