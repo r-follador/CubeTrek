@@ -36,3 +36,13 @@ out/
 ### VS Code ###
 .vscode/
 /src/main/resources/application-secrets.properties
+
+
+## Docker
+docker/externaljars/TopoLibrary-2.2-SNAPSHOT.jar
+docker/externaljars/fit.jar
+#docker/volumes/** */
+docker/volumes/cubetrek/maps/HGT/*
+docker/volumes/cubetrek/maps/HGT_1DEM/*
+docker/volumes/cubetrek/logs/*
+docker/volumes/cubetrek/db/*
