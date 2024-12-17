@@ -40,10 +40,16 @@ public class NewUploadEventListener implements ApplicationListener<NewUploadEven
 
     public void newUploadFile(OnEvent event) {
         TrackData newUploadedActivity = trackDataRepository.getReferenceById(event.getTrackId());
+        long time = System.currentTimeMillis();
         List<TrackData> mt = trackDataRepository.findMatchingActivities(
                 newUploadedActivity.getOwner().getId(),
                 newUploadedActivity.getId()
         );
+        logger.info("Processed {} matched activities for TrackID '{}' of User ID '{}' in {} ms",
+                mt.size(),
+                newUploadedActivity.getId(),
+                newUploadedActivity.getOwner().getId(),
+                (System.currentTimeMillis() - time));
 
         if (mt.size() >= 2) {
             matchingActivityService.processMatchingActivities(newUploadedActivity, mt);

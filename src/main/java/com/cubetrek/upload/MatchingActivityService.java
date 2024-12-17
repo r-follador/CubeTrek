@@ -21,7 +21,6 @@ public class MatchingActivityService {
     Logger logger = LoggerFactory.getLogger(MatchingActivityService.class);
 
     public void processMatchingActivities(TrackData newUploadedActivity, List<TrackData> mt) {
-        long time = System.currentTimeMillis();
         List<TrackData> unassignedActivities = new ArrayList<>();
         Long groupId = null;
 
@@ -45,10 +44,5 @@ public class MatchingActivityService {
 
         trackDataRepository.updateTrackgroupForIds(groupId, idsToUpdate);
         // Save unassigned activities
-        logger.info("Processed {} matched activities for TrackID '{}' of User ID '{}' in {} ms",
-                mt.size(),
-                newUploadedActivity.getId(),
-                newUploadedActivity.getOwner().getId(),
-                (System.currentTimeMillis() - time));
     }
 }
