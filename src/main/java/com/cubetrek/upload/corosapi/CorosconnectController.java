@@ -178,6 +178,27 @@ public class CorosconnectController {
         return "redirect:/profile";
     }
 
+    @GetMapping(value="/profile/connectCoros-deauthorize")
+    public String deauthorize() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users)authentication.getPrincipal();
+        UserThirdpartyConnect utc = userThirdpartyConnectRepository.findByUser(user);
+
+        logger.info("Coros User deauthorization: User id '"+user.getId()+"'; Coros User id: '"+utc.getCorosUserid()+"'");
+
+        final String requestUrl = corosBaseURL+"oauth2/deauthorize?token="+utc.getCorosAccessToken();
+        logger.info("Deauthorization Url: "+requestUrl);
+
+        RestTemplate restTemplate = new RestTemplate();
+        String response = restTemplate.getForObject(requestUrl, String.class);
+        logger.info("Coros User deauthorization: response string: "+response);
+
+        utc.setCorosEnabled(false);
+        userThirdpartyConnectRepository.saveAndFlush(utc);
+
+        return "redirect:/profile";
+    }
+
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 

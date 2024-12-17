@@ -53,6 +53,23 @@ public class CorosHistoricDataRequestedListener implements ApplicationListener<C
                 +"&startDate="+formattedDate30DaysAgo
                 +"&endDate="+formattedCurrentDate;
 
+        ArrayList<String> fitUrls = new ArrayList<>();
+
+        fitUrls.addAll(requestHistoricDataDateRange(event.getUtc().getCorosAccessToken(), event.getUtc().getCorosUserid(), currentDate.minusDays(30), currentDate));
+        fitUrls.addAll(requestHistoricDataDateRange(event.getUtc().getCorosAccessToken(), event.getUtc().getCorosUserid(), currentDate.minusDays(60), currentDate.minusDays(31)));
+        fitUrls.addAll(requestHistoricDataDateRange(event.getUtc().getCorosAccessToken(), event.getUtc().getCorosUserid(), currentDate.minusDays(90), currentDate.minusDays(61)));
+
+        for (String fitUrl : fitUrls) {
+            eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(event.getUtc().getCorosUserid(), fitUrl));
+        }
+    }
+
+    private ArrayList<String> requestHistoricDataDateRange(String corosAccessToken, String corosUserid, LocalDate startDate, LocalDate endDate) {
+        final String requestUrl = corosBaseURL+"v2/coros/sport/list?token="+corosAccessToken
+                +"&openId="+corosUserid
+                +"&startDate="+startDate.format(formatter)
+                +"&endDate="+endDate.format(formatter);
+
         logger.info("Request Url: "+requestUrl);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -69,12 +86,10 @@ public class CorosHistoricDataRequestedListener implements ApplicationListener<C
             CorospingController.findFitUrls(rootNode, fitUrls);
         } catch (JsonProcessingException e) {
             logger.error("Coros: Failed getting historic data",e);
-            return;
+            return null;
         }
 
-        for (String fitUrl : fitUrls) {
-            eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(event.getUtc().getCorosUserid(), fitUrl));
-        }
+        return fitUrls;
     }
 
     @Getter

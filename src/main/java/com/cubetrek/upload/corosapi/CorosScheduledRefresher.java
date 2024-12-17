@@ -41,6 +41,9 @@ public class CorosScheduledRefresher {
         List<UserThirdpartyConnect> utcs = userThirdpartyConnectRepository.findByCorosUseridIsNotNull();
 
         for (UserThirdpartyConnect utc : utcs) {
+            if (!utc.isCorosEnabled())
+                continue;
+
             logger.info("- Coros Refresh Token for user id {}", utc.getUser().getId());
 
             RestTemplate restTemplate = new RestTemplate();

@@ -192,7 +192,7 @@
 </div>
 
 <div class="modal fade" id="corosModal" tabindex="-1" aria-labelledby="exampleModalLabel3" aria-hidden="true">
-    <div class="modal-dialog">
+    <div th:unless="${isCorosConnected}" class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="exampleModalLabel3">Coros</h1>
@@ -205,6 +205,25 @@
             </div>
             <div class="modal-footer">
                 <a href="/profile/connectCoros-step1" type="button" class="btn btn-primary">Go To Coros Login</a>
+            </div>
+        </div>
+    </div>
+    <div th:if="${isCorosConnected}" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel3">Coros</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Your Coros account is connected to CubeTrek.
+                <div><a class="btn btn-outline-primary" href="/profile/connectCoros-historic">Download Historic Coros Data</a><br>
+                    This will attempt to download activities from the past 90 days in your Coros account to CubeTrek. Use this option if you believe some activities are missing.</div>
+
+
+                <div class="mt-2"><a class="btn btn-outline-danger" href="/profile/connectCoros-deauthorize">Disconnect your Coros account</a><br>
+                    New activities will no longer sync from Coros to CubeTrek. You can reconnect your account at any time.</div>
+
+
             </div>
         </div>
     </div>
