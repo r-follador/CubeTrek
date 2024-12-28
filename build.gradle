@@ -29,10 +29,10 @@ dependencies {
     implementation 'org.hibernate.orm:hibernate-spatial'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
-    implementation 'io.jenetics:jpx:3.1.0'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
-    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.2-SNAPSHOT.jar')
+    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.3-SNAPSHOT.jar')
     implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/libs/fit.jar')
+    implementation files('/home/rainer/Software_Dev/IdeaProjects/jpx/jpx/build/libs/jpx-3.2.1.jar') //alternative get from maven: implementation 'io.jenetics:jpx:3.2.0'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
     implementation 'oauth.signpost:signpost-core:2.1.1'
     implementation "com.stripe:stripe-java:24.7.0"
