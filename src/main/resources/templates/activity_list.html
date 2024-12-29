@@ -64,9 +64,9 @@
                     <th></th>
                     <th> <a href="#" class="text-decoration-none" onclick="sortBy('datetrack')">Date <span id="sort_datetrack"></span></a></th>
                     <th> Title </th>
-                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('duration')">Duration <span id="sort_duration"></span></a></th>
-                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('elevationup')">Ascent <span id="sort_elevationup"></span></a></th>
-                    <th> <a href="#" class="text-decoration-none" onclick="sortBy('distance')">Distance <span id="sort_distance"></span></a></th>
+                    <th style="text-align: right;" > <a href="#" class="text-decoration-none" onclick="sortBy('duration')">Duration <span id="sort_duration"></span></a></th>
+                    <th style="text-align: right;" > <a href="#" class="text-decoration-none" onclick="sortBy('elevationup')">Ascent <span id="sort_elevationup"></span></a></th>
+                    <th style="text-align: right;" > <a href="#" class="text-decoration-none" onclick="sortBy('distance')">Distance <span id="sort_distance"></span></a></th>
                     <th>&nbsp;</th>
                 </tr>
                 </thead>
@@ -554,11 +554,25 @@
     function addRowInfo(row, entry) {
         row.setAttribute("onclick","openPane("+entry.id+");");
         row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
-        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
+        row.insertCell().innerHTML = new Date(Date.parse(entry.datetrack)).toLocaleString(undefined, {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
         row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
-        row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
-        row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
-        row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
+
+        const durationCell = row.insertCell();
+        durationCell.style.textAlign = 'right';
+        durationCell.innerHTML = minToString(parseInt(entry.duration))+ " h";
+        const elevationCell = row.insertCell();
+        elevationCell.style.textAlign = 'right';
+        elevationCell.innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
+        const distanceCell = row.insertCell();
+        distanceCell.style.textAlign = 'right';
+        distanceCell.innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
         row.insertCell().innerHTML = (entry.trackgroup?"<a href='/matching/"+entry.trackgroup+"'><img title='Matching Activities' src='/assets/matched.svg'></a>":"");
     }
     async function deleteRow(rowid)
