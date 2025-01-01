@@ -1,0 +1,32 @@
+services:
+
+# CubeTrek
+  cubetrek-dev:
+    image: cubetrek-dev:local
+    container_name: cubetrek-dev
+    restart: no
+    depends_on: 
+      - cubetrekdb
+    networks:
+      - cubetrek
+    ports:
+      - 8080:8080
+    volumes:
+      - ./volumes/cubetrek/logs:/logs
+      - ./volumes/cubetrek/maps:/maps
+
+# Database
+  cubetrekdb:
+    image: cubetrekdb:local
+    container_name: cubetrekdb
+    networks:
+     - cubetrek
+    volumes:
+     - ./volumes/cubetrek/db/postgres_data:/var/lib/postgresql/data
+    #ports: #the ports dont need to be opened on host because cubetrek can access in the same docker network
+    #  - "5432:5432"
+    restart: unless-stopped
+
+networks:
+  cubetrek:
+    driver: bridge 
