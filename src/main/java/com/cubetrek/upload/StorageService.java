@@ -38,7 +38,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.IntSummaryStatistics;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
 
@@ -415,6 +419,75 @@ public class StorageService {
 
         logger.info("Batch rename Trackgroup '"+editTrackmetadataDto.getIndex()+"' by User '"+user.getId()+"'");
         return new UpdateTrackmetadataResponse(true);
+    }
+
+    @Transactional
+    public UpdateTrackmetadataResponse recalculateHeight(Authentication authentication, long trackId) {
+
+        isWriteAccessAllowedToTrack(authentication, trackId);
+
+        if  (!trackDataRepository.existsById(trackId)) {
+            logger.error("Recalculate Height - Failed because reading TrackId does not exist - "+trackId);
+            return new UpdateTrackmetadataResponse(false);
+        }
+
+        TrackData trackData = trackDataRepository.getReferenceById(trackId);
+        TrackGeodata trackGeodata = trackData.getTrackgeodata();
+
+        try {
+            ArrayList<short[]> newElevationData = GPXWorker.getElevationDataFromHGT(trackGeodata.getMultiLineString(), hgtFileLoader_1DEM, hgtFileLoader_3DEM);
+            trackGeodata.setAltitudes(convertShort2Int(newElevationData));
+
+            int highestpoint = -400000;
+            int lowestpoint = 400000;
+            int up = 0;
+            int down = 0;
+
+            for (short[] elevationData : newElevationData) {
+                for (int i=1; i<elevationData.length; i++) {
+                    int ele = elevationData[i] - elevationData[i-1];
+                    if (ele<0)
+                        down -= ele;
+                    else
+                        up += ele;
+
+                    if (elevationData[i] > highestpoint) {
+                        highestpoint = ele;
+                    }
+                    if (elevationData[i] < lowestpoint) {
+                        lowestpoint = ele;
+                    }
+                }
+            }
+
+            trackDataRepository.updateTrackHeightRecalculation(trackId, TrackData.Heightsource.CALCULATED, up, down, highestpoint, lowestpoint);
+            trackGeodataRepository.save(trackGeodata);
+        } catch (IOException e) {
+            logger.error("Recalculate Height - Failed because reading Elevation Data IOException - by TrackId "+trackData.getId(), e);
+            return new UpdateTrackmetadataResponse(false);
+        }
+        logger.info("Recalculate Height of TrackId '"+trackData.getId()+"'");
+        return new UpdateTrackmetadataResponse(true);
+    }
+
+    private void printList(ArrayList<int[]> elevs) {
+        logger.info("Size: "+elevs.size());
+        IntSummaryStatistics stats = Arrays.stream(elevs.get(0)).summaryStatistics();
+        logger.info(stats.toString());
+
+        for (int i = 0; i < elevs.get(0).length || i < 5; i++) {
+            System.out.println(elevs.get(0)[i]);
+        }
+    }
+
+    private static ArrayList<int[]> convertShort2Int(ArrayList<short[]> shortList) {
+        return shortList.stream()
+                .map(shortArr ->
+                        IntStream.range(0, shortArr.length)
+                                .map(i -> shortArr[i])
+                                .toArray()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private void isWriteAccessAllowedToTrack(Authentication authentication, long trackId) {

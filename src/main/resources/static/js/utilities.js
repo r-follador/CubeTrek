@@ -43,6 +43,8 @@ export function settings() {
             document.getElementById("deleteTrackButton").addEventListener('click', () => {clickdelete(true)});
         if (document.getElementById("trackShareButton"))
             document.getElementById("trackShareButton").addEventListener('click', () => {setTrackShare('PUBLIC')});
+        if (document.getElementById("recalculateHeightButton"))
+            document.getElementById("recalculateHeightButton").addEventListener('click', recalculateHeight);
 
 
         if (document.getElementById("copylinktoclipboard"))
@@ -102,6 +104,24 @@ function saveEdit() {
             } else {
                 document.getElementById("errormessageedit").innerText = response.response;
                 document.getElementById("errormessageedit").style.display = "block";
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
+    });
+}
+
+function recalculateHeight() {
+    fetch(sharedObjects.root+"modify/recalculateHeight/id="+sharedObjects.trackid, {
+        method: 'GET',
+        cache: 'no-store'
+    }).then(res => {
+        res.json().then(response => {
+            if (res.ok) {
+                location.reload();
+            } else {
+                //not good
             }
         });
     }).catch(error => {

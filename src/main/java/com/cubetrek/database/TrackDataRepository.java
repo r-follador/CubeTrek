@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.sound.midi.Track;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +18,6 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     @Override
     @CacheEvict(value = "trackdata", key = "#id")
     void deleteById(Long id);
-
 
     @Cacheable(value = "trackdata", key = "#id")
     @EntityGraph(attributePaths={"trackgeodata", "owner"})
@@ -48,6 +46,11 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     @CacheEvict(value = "trackdata", key = "#id")
     @Query("update trackdata u set u.title = :title where u.id = :id")
     void updateTrackMetadataTitle(@Param(value = "id") long id, @Param(value = "title") String title);
+
+    @Modifying
+    @CacheEvict(value = "trackdata", key = "#id")
+    @Query("update trackdata u set u.heightSource = :heightsource, u.elevationup = :elevationup, u.elevationdown = :elevationdown, u.highestpoint = :highestpoint, u.lowestpoint = :lowestpoint where u.id = :id")
+    void updateTrackHeightRecalculation(@Param(value = "id") long id, @Param(value = "heightsource") TrackData.Heightsource heightsource, @Param(value = "elevationup") Integer elevationup, @Param(value = "elevationdown") Integer elevationdown, @Param(value = "highestpoint") Integer highestpoint, @Param(value = "lowestpoint") Integer lowestpoint);
 
     @Modifying
     @Transactional

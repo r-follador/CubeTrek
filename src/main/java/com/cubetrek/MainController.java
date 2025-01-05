@@ -439,6 +439,13 @@ public class MainController {
     }
 
     @ResponseBody
+    @GetMapping(value="/api/modify/recalculateHeight/id={id}")
+    public UpdateTrackmetadataResponse recalculateHeight(@PathVariable("id") long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return storageService.recalculateHeight(authentication, id);
+    }
+
+    @ResponseBody
     @RequestMapping(value="/api/modify/matching/")
     public UpdateTrackmetadataResponse batchRenameMatchingactivities(@RequestBody EditTrackmetadataDto editTrackmetadataDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
