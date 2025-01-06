@@ -51,7 +51,6 @@
     Track covers area above 100km x 100km, this is currently too large for 3D view
 </div>
 
-
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-8 p-0 position-relative" style="height: 50vh; min-height: 500px">
@@ -246,9 +245,15 @@
                             onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('editNoteModal')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
                         Edit Notes
                     </button>
-                    <a type="button" class="btn btn-light btn-sm ms-5" th:href="${'/download/'+trackmetadata.id}">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('recalculateHeight')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
+                        Recalculate Elevation
+                    </button>
+                    <div>
+                    <a type="button" class="btn btn-light btn-sm mt-3" th:href="${'/download/'+trackmetadata.id}">
                         Download Original File
                     </a>
+                    </div>
                     <h6 class="mt-3">Privacy</h6>
                     <div class="form-check form-switch mt-3">
                         <input class="form-check-input" type="checkbox" id="publicChecked"
@@ -334,6 +339,27 @@
                 <div>Use markdown for formatting</div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveEditButton2">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:if="${writeAccess}" class="modal fade" id="recalculateHeight" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Recalculate Elevation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" style="display: none;" id="errormessagerecalculateHeight" role="alert">
+                </div>
+                <p>Discard your elevation data and recalculate from the height model.</p>
+                <p>Note that elevation data from devices with barometers are usually more accurate.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="recalculateHeightButton">Recalculate</button>
             </div>
         </div>
     </div>

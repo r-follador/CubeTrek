@@ -250,9 +250,11 @@
                             onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('recalculateHeight')).show(); bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).hide(); ">
                         Recalculate Elevation
                     </button>
-                    <a type="button" class="btn btn-light btn-sm ms-5" th:href="${'/download/'+trackmetadata.id}">
+                    <div>
+                    <a type="button" class="btn btn-light btn-sm mt-3" th:href="${'/download/'+trackmetadata.id}">
                         Download Original File
                     </a>
+                    </div>
                     <h6 class="mt-3">Privacy</h6>
                     <div class="form-check form-switch mt-3">
                         <input class="form-check-input" type="checkbox" id="publicChecked"
@@ -353,7 +355,8 @@
             <div class="modal-body">
                 <div class="alert alert-danger" style="display: none;" id="errormessagerecalculateHeight" role="alert">
                 </div>
-                <p>Discard your existing elevation data and recalculate from the height model.</p>
+                <p>Discard your elevation data and recalculate from the height model.</p>
+                <p>Note that elevation data from devices with barometers are usually more accurate.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

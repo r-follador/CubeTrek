@@ -114,12 +114,24 @@ function saveEdit() {
 
 function recalculateHeight() {
     fetch(sharedObjects.root+"modify/recalculateHeight/id="+sharedObjects.trackid, {
-        method: 'GET',
-        cache: 'no-store'
+        method: 'GET'
     }).then(res => {
         res.json().then(response => {
             if (res.ok) {
-                location.reload();
+
+                var myHeaders = new Headers();
+                myHeaders.append('pragma', 'no-cache');
+                myHeaders.append('cache-control', 'no-cache');
+
+                //force cache override
+                fetch(sharedObjects.root + "geojson/"+sharedObjects.trackid+".geojson", {
+                    method: 'GET',
+                    headers: myHeaders,
+                    cache: 'reload'
+                }).then(response => {
+                    location.reload()
+                }
+            )
             } else {
                 //not good
             }

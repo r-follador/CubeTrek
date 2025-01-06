@@ -836,6 +836,8 @@ function settings() {
     }
 }
 
+settings()
+
 // Watch for browser/canvas resize events
 window.addEventListener("resize", function () {
     graph = new drawGraph(graphYAxis, graphXAxis);
@@ -1078,6 +1080,36 @@ function setTrackShare(state) {
                     document.getElementById("publicChecked").checked = false;
                     document.getElementById("publicCheckedLabel").innerText = "Private, only you can view this track";
                 }
+            } else {
+                //not good
+            }
+        });
+    }).catch(error => {
+        console.log("--error");
+        console.log(error);
+    });
+}
+
+function recalculateHeight() {
+    fetch(root+"modify/recalculateHeight/id="+trackid, {
+        method: 'GET'
+    }).then(res => {
+        res.json().then(response => {
+            if (res.ok) {
+
+                var myHeaders = new Headers();
+                myHeaders.append('pragma', 'no-cache');
+                myHeaders.append('cache-control', 'no-cache');
+
+                //force cache override
+                fetch(root + "geojson/"+trackid+".geojson", {
+                    method: 'GET',
+                    headers: myHeaders,
+                    cache: 'reload'
+                }).then(response => {
+                        location.reload()
+                    }
+                )
             } else {
                 //not good
             }

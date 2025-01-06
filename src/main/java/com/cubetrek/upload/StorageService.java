@@ -452,10 +452,10 @@ public class StorageService {
                         up += ele;
 
                     if (elevationData[i] > highestpoint) {
-                        highestpoint = ele;
+                        highestpoint = elevationData[i];
                     }
                     if (elevationData[i] < lowestpoint) {
-                        lowestpoint = ele;
+                        lowestpoint = elevationData[i];
                     }
                 }
             }
