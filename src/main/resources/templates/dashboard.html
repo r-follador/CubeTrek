@@ -641,7 +641,8 @@
     }
 
     function generateCumulativeGraph(activitytype) {
-        const thisYearString = new Date().getFullYear().toString();
+        const thisYear = new Date().getFullYear();
+        const thisYearString = thisYear.toString();
 
         const filteredData = datacumulative.filter(d => d.activitytype === activitytype);
         const parseTime = d3.timeParse("%Y-%m-%dT%H:%M:%S%Z");
@@ -650,14 +651,14 @@
         let cumulativeData = {};
         filteredData.forEach(d => {
             const year = parseTime(d.trackdata_day).getFullYear();
-            const date = (parseTime(d.trackdata_day)).setFullYear(2024);
+            const date = (parseTime(d.trackdata_day)).setFullYear(thisYear);
             cumulativeData[year] = cumulativeData[year] || [];
             cumulativeData[year].push({date: date, dist: (d.day_dist/1000)*(metric?1:miles_per_km), show: true});
         });
 
         // Adding zero data point for the first day of each year if it doesn't exist
         Object.keys(cumulativeData).forEach(year => {
-            const jan1 = new Date(2024, 0, 1);
+            const jan1 = new Date(thisYear, 0, 1);
             if (!cumulativeData[year].some(d => +d.date === +jan1)) {
                 cumulativeData[year].push({
                     date: jan1,
@@ -671,10 +672,10 @@
         //last day of the year for the first year
         Object.keys(cumulativeData).forEach(year => {
             let lastDay;
-            if (year === (new Date().getFullYear().toString())) {
+            if (year === thisYearString) {
                 lastDay = new Date();
             } else {
-                lastDay = new Date(2024, 11, 31);
+                lastDay = new Date(thisYear, 11, 31);
             }
             if (!cumulativeData[year].some(d => +d.date === +lastDay)) {
                 cumulativeData[year].push({
@@ -721,7 +722,7 @@
 
         const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-        x.domain([new Date(2024, 0, 1), new Date(2024, 11, 31)]);
+        x.domain([new Date(thisYear, 0, 1), new Date(thisYear, 11, 31)]);
         y.domain([0, d3.max(Object.values(cumulativeData).flat(), d => d.cumulative)]);
         // Draw lines for each year
         Object.keys(cumulativeData).forEach(year => {
@@ -770,7 +771,7 @@
                 .attr("y", index * (legendSize + legendSpacing))
                 .attr("width", legendSize)
                 .attr("height", legendSize)
-                .style("fill", year === (new Date().getFullYear().toString()) ? "#ff8001" : "darkgrey");
+                .style("fill", year === (thisYearString) ? "#ff8001" : "darkgrey");
             legend.append("text")
                 .attr("x", legendSize + legendSpacing)
                 .attr("y", index * (legendSize + legendSpacing) + legendSize / 2)
