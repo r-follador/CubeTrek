@@ -627,12 +627,16 @@
     var entries = new Map();
 
 
-    const orderedActivityTypes = Object.entries(datacumulative.reduce((acc, {activitytype}) => {
-        acc[activitytype] = (acc[activitytype] || 0) + 1;
-        return acc;
-    }, {}))
-        .sort((a, b) => b[1] - a[1])
-        .map(item => parseInt(item[0]));
+    const orderedActivityTypes = (!datacumulative || datacumulative.length === 0)
+        ? [1,2,3,4]
+        : Object.entries(
+            datacumulative.reduce((acc, { activitytype }) => {
+                acc[activitytype] = (acc[activitytype] || 0) + 1;
+                return acc;
+            }, {})
+        )
+            .sort((a, b) => b[1] - a[1])
+            .map(item => parseInt(item[0]));
 
     for (let act of orderedActivityTypes) {
         var node = document.createElement("li");
@@ -839,6 +843,9 @@
             let activitytype = datamonthly[i].activitytype;
             bargraphdatasMonthly.push({'date' : date, 'monthly_dist' : monthly_dist, 'monthly_elevationup' : datamonthly[i].monthly_elevationup, 'activitytype' : activitytype});
         }
+        if (bargraphdatasMonthly.length === 0) {
+            bargraphdatasMonthly.push({'date' : new Date(new Date().setHours(12, 0, 0, 0)), 'monthly_dist' : 0, 'monthly_elevationup' : 0, 'activitytype' : 0});
+        }
 
         for (var i=0; i<datayearly.length; i++) {
             let date = parseDate(datayearly[i].trackdata_year);
@@ -847,8 +854,16 @@
             let activitytype = datayearly[i].activitytype;
             bargraphdatasYearly.push({'date' : date, 'yearly_dist' : yearly_dist, 'yearly_elevationup' : datayearly[i].yearly_elevationup, 'activitytype' : activitytype});
         }
+        if (bargraphdatasYearly.length === 0) {
+            bargraphdatasYearly.push({'date' : new Date(new Date().setHours(12, 0, 0, 0)), 'yearly_dist' : 0, 'yearly_elevationup' : 0, 'activitytype' : 0});
+        }
 
-        const uniqueActivities = [...new Set(bargraphdatasMonthly.map(item => item.activitytype))];
+        const uniqueActivities = [
+            ...new Set([
+                ...bargraphdatasMonthly.map(item => item.activitytype),
+                ...bargraphdatasYearly.map(item => item.activitytype)
+            ])
+        ];
         document.getElementById("barGraphButton").innerText = icons[Object.keys(icons)[uniqueActivities[0]]][1];
         bargraphActivity = uniqueActivities[0];
         for (let act of uniqueActivities) {
@@ -1350,7 +1365,6 @@
         // Call chart.update(activitytype, measuretype, yearlySum) to transition to new data.
         return Object.assign(svg.node(), {
             update(activitytype, measuretype, yearlySum) {
-
                 if (yearlySum) {
                     X_yearly = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.date);
                     switch (measuretype) {

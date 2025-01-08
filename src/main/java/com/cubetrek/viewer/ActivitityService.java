@@ -34,11 +34,17 @@ public class ActivitityService {
     }
 
     public String getMonthlyTotalAsJSON(Users user, String timeZone) {
-        return trackDataRepository.getMonthlyAggregatedStatsAsJSON(user.getId(), timeZone);
+        String out = trackDataRepository.getMonthlyAggregatedStatsAsJSON(user.getId(), timeZone);
+        if (out == null || out.isBlank())
+            return "[]";
+        return out;
     }
 
     public String getYearlyTotalAsJSON(Users user, String timeZone) {
-        return trackDataRepository.getYearlyAggregatedStatsAsJSON(user.getId(), timeZone);
+        String out = trackDataRepository.getYearlyAggregatedStatsAsJSON(user.getId(), timeZone);
+        if (out == null || out.isBlank())
+            return "[]";
+        return out;
     }
 
     public List<ActivityCount> getActivityTypeCount(Users user) {
