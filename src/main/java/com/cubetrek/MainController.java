@@ -360,7 +360,7 @@ public class MainController {
     }
 
     @RequestMapping(value = "/api/static_map/{id}/{width}x{height}.png", produces = "image/png")
-    public void getGLTF(@PathVariable("id") Long id, @PathVariable("width") Long width, @PathVariable("height") Long height, HttpServletResponse response) {
+    public void getStaticMap(@PathVariable("id") Long id, @PathVariable("width") Long width, @PathVariable("height") Long height, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String pathenc = trackViewerService.getEncodedPolyline(authentication, id, 50);
         final String color = "rgba(255,128,1,1)";

@@ -29,6 +29,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.TimeZone;
 
 @Service
@@ -158,7 +160,7 @@ public class TrackViewerService {
 
         Track trackReduced = GPXWorker.reduceTrackSegments(trackdata.getTrackgeodata().getMultiLineString(), reduceTrackEpsilon);
 
-        return GPXWorker.encode2EPA(trackReduced.getSegments().get(0));
+        return GPXWorker.encode2EPA(Collections.max(trackReduced.getSegments(), Comparator.comparingInt(segment -> segment.getPoints().size())));
     }
 
     public String getEncodedPolylineSecret(long trackid, double reduceTrackEpsilon) {
@@ -166,7 +168,7 @@ public class TrackViewerService {
 
         Track trackReduced = GPXWorker.reduceTrackSegments(trackdata.getTrackgeodata().getMultiLineString(), reduceTrackEpsilon);
 
-        return GPXWorker.encode2EPA(trackReduced.getSegments().get(0));
+        return GPXWorker.encode2EPA(Collections.max(trackReduced.getSegments(), Comparator.comparingInt(segment -> segment.getPoints().size())));
     }
 
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");
