@@ -25,7 +25,7 @@ export class Map3D {
 
         this.meshes = [];
 
-        this.kdtree = new KdTree(geojson.geometry.coordinates[0]);
+        this.kdtree = new KdTree(geojson.geometry.coordinates);
 
         this.scene = this.delayCreateScene().then(scene => {
             this.scene = scene;
@@ -301,18 +301,32 @@ export class Map3D {
     }
 
     findClosestTrackpoint(lat, lon) {
+        console.log("findclosest", lat, lon)
         if (lat == null) {
             eventBus.emit('hideMarkers', {});
             return;
         }
 
-        let closest = this.kdtree.nearest([lon, lat], 1, 0.00001);
+        let closest = this.kdtree.nearest([lon, lat], 1, 0.0001);
         if (closest.length<1) {
             eventBus.emit('hideMarkers', {});
             return;
         }
-        var index = this.geojson.geometry.coordinates[0].indexOf(closest[0][0]);
-        eventBus.emit('moveMarkers', {lon: closest[0][0][0], lat: closest[0][0][1], datasIndex: index});
+
+        let outerIndex = 0;
+        let innerIndex = 0;
+        let absoluteIndex = 0;
+
+        for (; outerIndex < this.geojson.geometry.coordinates.length; outerIndex++) {
+            let index = this.geojson.geometry.coordinates[outerIndex].indexOf(closest[0][0]);
+            if (index !== -1) {
+                innerIndex = index;
+                absoluteIndex += innerIndex;
+                break;
+            }
+            absoluteIndex += this.geojson.geometry.coordinates[outerIndex].length;
+        }
+        eventBus.emit('moveMarkers', {lon: closest[0][0][0], lat: closest[0][0][1], datasIndex: absoluteIndex});
     }
 
     hideMarker() {

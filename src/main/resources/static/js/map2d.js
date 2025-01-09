@@ -49,7 +49,7 @@ export class Map2D {
         var el = document.createElement('div');
         el.className = 'marker2d';
         this.marker= new maplibregl.Marker({element: el}).setLngLat([0,0]).addTo(this.map);
-        this.kdtree = new KdTree(jsonData.geometry.coordinates[0]);
+        this.kdtree = new KdTree(jsonData.geometry.coordinates);
 
         if (document.getElementById("map2dBtnradioStandard"))
             document.getElementById("map2dBtnradioStandard").addEventListener('click', () =>  {this.changeMapstyle('standard')});
@@ -67,13 +67,25 @@ export class Map2D {
             return;
         }
 
-        let closest = this.kdtree.nearest([lon, lat], 1, 0.00001);
+        let closest = this.kdtree.nearest([lon, lat], 1, 0.0001);
         if (closest.length<1) {
             eventBus.emit('hideMarkers', {});
             return;
         }
-        var index = this.jsonData.geometry.coordinates[0].indexOf(closest[0][0]);
-        eventBus.emit('moveMarkers', {lon: closest[0][0][0], lat: closest[0][0][1], datasIndex: index});
+        let outerIndex = 0;
+        let innerIndex = 0;
+        let absoluteIndex = 0;
+
+        for (; outerIndex < this.jsonData.geometry.coordinates.length; outerIndex++) {
+            let index = this.jsonData.geometry.coordinates[outerIndex].indexOf(closest[0][0]);
+            if (index !== -1) {
+                innerIndex = index;
+                absoluteIndex += innerIndex;
+                break;
+            }
+            absoluteIndex += this.jsonData.geometry.coordinates[outerIndex].length;
+        }
+        eventBus.emit('moveMarkers', {lon: closest[0][0][0], lat: closest[0][0][1], datasIndex: absoluteIndex});
     }
 
     hideMarker() {

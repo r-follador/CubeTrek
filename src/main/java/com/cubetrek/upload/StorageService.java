@@ -37,10 +37,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.IntSummaryStatistics;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
@@ -177,7 +174,7 @@ public class StorageService {
             }
         }
 
-        if (track == null || track.isEmpty() || track.getSegments().isEmpty() || track.getSegments().get(0).getPoints().isEmpty() || track.getSegments().get(0).getPoints().size() < 3) {
+        if (track == null || track.isEmpty() || track.getSegments().isEmpty()) {
             logger.info("File upload - Failed because track is empty - by User "+user.getId());
             if (isFitFile)
                 throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty");
@@ -185,33 +182,50 @@ public class StorageService {
                 throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty; Perhaps a Route only GPX file?");
         }
 
-        Track reduced = GPXWorker.reduceTrackSegments(track, 2);
+        List<TrackSegment> segmentList = null;
 
-        if (reduced.getSegments().get(0).getPoints().size() < 5) {
+        try {
+            segmentList = new ArrayList<>(GPXWorker.reduceTrackSegments(track, 2).getSegments());
+        } catch (IllegalArgumentException e) {
+            logger.info("File upload - File cannot be read or track is empty - by User "+user.getId());
+            if (isFitFile)
+                throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty");
+            else
+                throw new ExceptionHandling.FileNotAccepted("File cannot be read or track is empty; Perhaps a Route only GPX file?");
+        }
+
+        //Remove segments which are too short
+        segmentList.removeIf(segment -> segment.getPoints().size() < 5);
+        if (segmentList.isEmpty()) {
             logger.info("File upload - Failed because too small - by User "+user.getId());
             throw new ExceptionHandling.FileNotAccepted("GPX file is too small");
         }
 
-        if (reduced.getSegments().get(0).getPoints().size() > 20000) {
+        //check for segments which are too long
+        if (segmentList.stream().anyMatch(segment -> segment.getPoints().size() > 20_000)) {
             logger.info("File upload - Failed because too many GPX points - by User "+user.getId());
             throw new ExceptionHandling.FileNotAccepted("GPX file is too large");
         }
 
-        trackData.setBBox(GPXWorker.getTrueTrackBoundingBox(reduced));
-
         //check if timing data is provided
-        if (reduced.getSegments().get(0).getPoints().get(0).getTime().isEmpty()) {
+        segmentList.removeIf(segment -> segment.getPoints().get(0).getTime().isEmpty());
+        if (segmentList.isEmpty()) {
             logger.info("File upload - Failed because track does not contain timing data - by User "+user.getId());
             throw new ExceptionHandling.FileNotAccepted("Track does not contain Timing data.");
         }
 
-        boolean allWayPointsHaveElevation = reduced.getSegments().get(0).getPoints().stream()
-                .allMatch(wayPoint -> wayPoint.getElevation().isPresent());
+        //order segmentlist by time
+        if (segmentList.size() > 1) {
+            segmentList.sort(Comparator.comparing(segment -> segment.getPoints().get(0).getTime().get()));
+        }
 
+        trackData.setBBox(GPXWorker.getTrueTrackBoundingBox(segmentList));
+
+        boolean allWayPointsHaveElevation = segmentList.stream().allMatch(segment -> segment.points().allMatch(point -> point.getElevation().isPresent()));
         //check if elevation data is provided
         if (!allWayPointsHaveElevation) {
             try {
-                reduced = GPXWorker.replaceElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
+                segmentList = GPXWorker.replaceElevationData(segmentList, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
                 trackData.setHeightSource(TrackData.Heightsource.CALCULATED);
             } catch (IOException e) {
                 logger.error("File upload - Failed because reading Elevation Data IOException - by User "+user.getId(), e);
@@ -219,7 +233,7 @@ public class StorageService {
             }
         } else {
             try {
-                reduced = GPXWorker.normalizeElevationData(reduced, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
+                segmentList = GPXWorker.normalizeElevationData(segmentList, hgtFileLoader_1DEM, hgtFileLoader_3DEM);
                 trackData.setHeightSource(TrackData.Heightsource.NORMALIZED);
             } catch (IOException e) {
                 logger.error("File upload - Failed because reading Elevation Data IOException - by User "+user.getId(), e);
@@ -229,7 +243,7 @@ public class StorageService {
 
         //Add the reduced track to Trackdata entity
 
-        int segments = reduced.getSegments().size();
+        int segments = segmentList.size();
         LineString[] lineStrings = new LineString[segments];
         ArrayList<int[]> altitudes = new ArrayList<>();
         ArrayList<ZonedDateTime[]> times = new ArrayList<>();
@@ -239,7 +253,7 @@ public class StorageService {
 
         try {
             for (int i = 0; i < segments; i++) {
-                TrackSegment segment = reduced.getSegments().get(i);
+                TrackSegment segment = segmentList.get(i);
                 int points = segment.getPoints().size();
                 Coordinate[] cs = new Coordinate[points];
                 int[] altitude = new int[points];
@@ -278,7 +292,7 @@ public class StorageService {
         trackData.setDatetrack((track.getSegments().get(0).getPoints().get(0).getTime().orElse(Instant.now())).atZone(zoneId));
         trackData.setTimezone(user.getTimezone());
 
-        GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(reduced);
+        GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(segmentList);
         trackData.setElevationup(trackSummary.elevationUp);
         trackData.setElevationdown(trackSummary.elevationDown);
         trackData.setDuration(trackSummary.duration);

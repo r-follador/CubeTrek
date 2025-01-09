@@ -17,7 +17,7 @@ const distance = function (a, b) {
 
 class KdTree {
     constructor(points_in) {
-        this.points = [...points_in]; //shallow copy to modify
+        this.points = points_in.flat(1);
         this.metric = distance;
 
         function buildTree(points, depth, parent) {

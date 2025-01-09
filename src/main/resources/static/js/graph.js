@@ -10,9 +10,6 @@ export class GraphCube {
         this.graphYAxis = GraphAxis.Elevation;
 
         var parseDate = d3.timeParse("%Y-%m-%dT%H:%M:%S%Z");
-        let previousTime = parseDate(jsonData.geometry.coordinates[0][0][3]);
-        let previousDistance = jsonData.geometry.coordinates[0][0][4];
-        let previousElevation = jsonData.geometry.coordinates[0][0][2];
         let movingTime = 0;
 
         let verticalDistSumUp = 0;
@@ -21,37 +18,54 @@ export class GraphCube {
         let verticalTimeSumDown = 0;
         this.datas = [];
 
-        for (let i=0; i<jsonData.geometry.coordinates[0].length; i++) {
-            let time = parseDate(jsonData.geometry.coordinates[0][i][3]);
-            let elevation = jsonData.geometry.coordinates[0][i][2];
-            let distance = jsonData.geometry.coordinates[0][i][4];
+        let distance_offset = 0;
 
-            let time_diff_hour = (time-previousTime)/3600000;
-            let verticalSpeed_m_per_h = (elevation-previousElevation)/time_diff_hour;
-            if (isNaN(verticalSpeed_m_per_h))
-                verticalSpeed_m_per_h = 0;
-            let horizontalSpeed_km_per_h = ((distance-previousDistance)/1000)/(time_diff_hour);
-            if (isNaN(horizontalSpeed_km_per_h))
-                horizontalSpeed_km_per_h = 0;
+        for (let j=0;j<jsonData.geometry.coordinates.length;j++) {
+            let previousTime = parseDate(jsonData.geometry.coordinates[j][0][3]);
+            let previousDistance = jsonData.geometry.coordinates[j][0][4];
+            let previousElevation = jsonData.geometry.coordinates[j][0][2];
 
-            if ((time-previousTime)/1000 < (60) || Math.abs(elevation-previousElevation)>3) {
-                movingTime += (time - previousTime);
-                if (elevation-previousElevation > 0) {
-                    verticalDistSumUp += (elevation-previousElevation);
-                    verticalTimeSumUp += (time - previousTime);
-                } else if (elevation-previousElevation < 0) {
-                    verticalDistSumDown += (previousElevation-elevation);
-                    verticalTimeSumDown += (time - previousTime);
+            for (let i = 0; i < jsonData.geometry.coordinates[j].length; i++) {
+                let time = parseDate(jsonData.geometry.coordinates[j][i][3]);
+                let elevation = jsonData.geometry.coordinates[j][i][2];
+                let distance = jsonData.geometry.coordinates[j][i][4];
+
+                let time_diff_hour = (time - previousTime) / 3600000;
+                let verticalSpeed_m_per_h = (elevation - previousElevation) / time_diff_hour;
+                if (isNaN(verticalSpeed_m_per_h))
+                    verticalSpeed_m_per_h = 0;
+                let horizontalSpeed_km_per_h = ((distance - previousDistance) / 1000) / (time_diff_hour);
+                if (isNaN(horizontalSpeed_km_per_h))
+                    horizontalSpeed_km_per_h = 0;
+
+                if ((time - previousTime) / 1000 < (60) || Math.abs(elevation - previousElevation) > 3) {
+                    movingTime += (time - previousTime);
+                    if (elevation - previousElevation > 0) {
+                        verticalDistSumUp += (elevation - previousElevation);
+                        verticalTimeSumUp += (time - previousTime);
+                    } else if (elevation - previousElevation < 0) {
+                        verticalDistSumDown += (previousElevation - elevation);
+                        verticalTimeSumDown += (time - previousTime);
+                    }
                 }
-            }
 
-            previousTime = time;
-            previousElevation = elevation;
-            previousDistance = distance;
-            this.datas.push({'time' : time, 'altitude' : elevation, 'distance' : distance, 'vertical_speed' : verticalSpeed_m_per_h, 'horizontal_speed' : horizontalSpeed_km_per_h, 'moving_time' : movingTime});
+                previousTime = time;
+                previousElevation = elevation;
+                previousDistance = distance;
+
+                this.datas.push({
+                    'time': time,
+                    'altitude': elevation,
+                    'distance': distance_offset+distance,
+                    'vertical_speed': verticalSpeed_m_per_h,
+                    'horizontal_speed': horizontalSpeed_km_per_h,
+                    'moving_time': movingTime
+                });
+            }
+            distance_offset = distance_offset + previousDistance;
         }
 
-        this.horizontal_average = ((previousDistance)/(movingTime/3600));
+        this.horizontal_average = ((distance_offset)/(movingTime/3600));
         this.vertical_down_average = (verticalDistSumDown)/(verticalTimeSumDown/3600000);
         this.vertical_up_average = (verticalDistSumUp)/(verticalTimeSumUp/3600000);
         let movingTimeMinutes = movingTime/60000;
@@ -295,7 +309,7 @@ export class GraphCube {
         const selectedData = this.datas[i];
         if (!selectedData) return;
 
-        const [lon, lat] = this.jsonData.geometry.coordinates[0][i];
+        const [lon, lat] = getJaggedElement(this.jsonData.geometry.coordinates, i);
         eventBus.emit('moveMarkers', { lon, lat, datasIndex: i });
     }
 
@@ -377,4 +391,17 @@ class GraphAxis {
     constructor(name) {
         this.name = name
     }
+}
+
+function getJaggedElement(arr, index) {
+    let leftover = index;
+
+    for (let i = 0; i < arr.length; i++) {
+        if (leftover < arr[i].length) {
+            return arr[i][leftover];
+        } else {
+            leftover -= arr[i].length;
+        }
+    }
+    return undefined;
 }
