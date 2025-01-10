@@ -11,6 +11,7 @@ import com.cubetrek.viewer.TrackViewerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sunlocator.topolibrary.LatLonBoundingBox;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -368,6 +375,35 @@ public class MainController {
         response.setHeader("Location", maptilerUrl);
         response.addHeader("Cache-Control", "max-age=864000, public");
         response.setStatus(302);
+    }
+
+    @RequestMapping(value = "/api/static_map_download/{id}/{width}x{height}.png", produces = "image/png")
+    public void getDownloadedStaticMap(@PathVariable("id") Long id, @PathVariable("width") Long width, @PathVariable("height") Long height, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String pathenc = trackViewerService.getEncodedPolyline(authentication, id, 50);
+        final String color = "rgba(255,128,1,1)";
+        String maptilerUrl = String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/static/auto/%dx%d.png?key=%s&attribution=false&scale=@2x&path=stroke:%s|width:3|fill:none|enc:%s",width, height, maptilerApiKey, color, pathenc);
+        response.setContentType("image/png");
+        response.setHeader("Cache-Control", "max-age=864000, public");
+
+        logger.info("Downloading StaticMap for id "+id);
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(maptilerUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(3_000);
+            connection.setReadTimeout(5_000);
+            InputStream in = connection.getInputStream();
+            OutputStream out = response.getOutputStream();
+            IOUtils.copy(in, out);
+            out.flush();
+        } catch (IOException e) {
+            logger.warn("Downloading StaticMap failed: {}", e.getMessage());
+            throw new ExceptionHandling.UnnamedException("Something went wrong :(", "Could not get the static map");
+        } finally {
+            if (connection != null)
+                connection.disconnect();
+        }
     }
 
     @RequestMapping(value = "/api/static_map_secret/{id}/{width}x{height}.png", produces = "image/png")

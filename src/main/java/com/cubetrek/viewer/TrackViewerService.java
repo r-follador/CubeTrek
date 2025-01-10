@@ -171,7 +171,8 @@ public class TrackViewerService {
         return GPXWorker.encode2EPA(Collections.max(trackReduced.getSegments(), Comparator.comparingInt(segment -> segment.getPoints().size())));
     }
 
-    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");
+    final DateTimeFormatter formatter_datetime = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy HH:mm z");
+    final DateTimeFormatter formatter_date = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy");
 
     @Transactional(readOnly  = true)
     public String mapView3D(Authentication authentication, long trackid, Model model) {
@@ -184,7 +185,8 @@ public class TrackViewerService {
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
-        model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
+        model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
+        model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
@@ -210,7 +212,8 @@ public class TrackViewerService {
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
-        model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
+        model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
+        model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
@@ -237,7 +240,8 @@ public class TrackViewerService {
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
-        model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter));
+        model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
+        model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());

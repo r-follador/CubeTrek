@@ -214,7 +214,7 @@ function clickdelete(confirmed) {
 
 function clickshare() {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('sharemodal')).show();
-    document.getElementById("sharelink").value = window.location.href;
+    document.getElementById("sharelink").value = window.location.origin + window.location.pathname;
     document.getElementById("sharelinkalert").style.visibility = 'hidden';
 }
 
