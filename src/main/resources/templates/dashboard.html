@@ -1053,9 +1053,6 @@
             bargraphdatasYearly.push({'date' : new Date(new Date().setHours(12, 0, 0, 0)), 'yearly_dist' : 0, 'yearly_elevationup' : 0, 'activitytype' : 0});
         }
 
-
-        console.log(bargraphdatasYearly);
-
         const uniqueActivities = [
             ...new Set([
                 ...bargraphdatasMonthly.map(item => item.activitytype),
@@ -1439,7 +1436,6 @@
 			}).attr("fill", i => xcolorsMonthly(i))
 			.style("mix-blend-mode", "multiply");
 
-        console.log("xDomain_yearly", xDomain_yearly);
         const rect_yearly = svg.append("g")
             .selectAll("rect")
             .data(xDomain_yearly)
@@ -1518,15 +1514,12 @@
 
         function position_yearly(rect, xdomaindate, measuretype) {
             let index = X_yearly.findIndex(element => element.getTime() === xdomaindate.getTime());
-            console.log("X_yearly", X_yearly);
-            console.log("Y", Y_yearly);
             let y = 0;
             if (index != -1) {
                 y = yScale(Y_yearly[index]);
             } else {
                 y = yScale(0);
             }
-            console.log(index, y);
             var height = yScale(0) - y;
             var rect= rect
                 .attr("width", xScaleYear_yearly.bandwidth())
@@ -1572,7 +1565,6 @@
             update(activitytype, measuretype, yearlySum) {
                 if (yearlySum) {
                     X_yearly = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.date);
-                    console.log("X_yearly", X_yearly);
                     switch (measuretype) {
                         case 'distance':
                             Y_yearly = d3.map(data_yearly.filter(d => d.activitytype === activitytype), d => d.yearly_dist*(metric?1:miles_per_km));
@@ -1584,7 +1576,6 @@
                             break;
                     }
                     yearaxis.transition().call(xAxis_year_yearly);
-                    console.log("Y", Y_yearly);
                     monthAxis.style("visibility", "hidden");
                     yDomain = [0, d3.max(Y_yearly)];
                 } else {
