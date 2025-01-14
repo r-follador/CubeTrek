@@ -247,6 +247,7 @@ public class StorageService {
         LineString[] lineStrings = new LineString[segments];
         ArrayList<int[]> altitudes = new ArrayList<>();
         ArrayList<ZonedDateTime[]> times = new ArrayList<>();
+        ArrayList<int[]> heartrates = new ArrayList<>();
 
         LatLon highestPoint = null;
         int highestPointEle = -200;
@@ -257,12 +258,18 @@ public class StorageService {
                 int points = segment.getPoints().size();
                 Coordinate[] cs = new Coordinate[points];
                 int[] altitude = new int[points];
+                int[] heartrate = new int[points];
                 ZonedDateTime[] time = new ZonedDateTime[points];
 
                 for (int j = 0; j < points; j++) {
                     cs[j] = new Coordinate(segment.getPoints().get(j).getLongitude().doubleValue(), segment.getPoints().get(j).getLatitude().doubleValue());
                     altitude[j] = segment.getPoints().get(j).getElevation().get().intValue();
                     time[j] = segment.getPoints().get(j).getTime().get().atZone(zoneId);
+                    //DGPSID is misused for heartrates, see implementation inpackage com.sunlocator.topolibrary.GPX.Converter
+                    if (segment.getPoints().get(j).getDGPSID().isPresent())
+                        heartrate[j] = segment.getPoints().get(j).getDGPSID().get().intValue();
+                    else
+                        heartrate[j] = -1;
                     if (altitude[j] > highestPointEle) {
                         highestPointEle = altitude[j];
                         highestPoint = new LatLon(cs[j].y, cs[j].x);
@@ -272,6 +279,7 @@ public class StorageService {
                 lineStrings[i] = new LineString(fs, gf);
                 altitudes.add(altitude);
                 times.add(time);
+                heartrates.add(heartrate);
             }
         } catch (Exception e) {
             logger.error("File upload - Failed because general exception in conversion to LineString - by User "+user.getId(), e);
@@ -293,12 +301,16 @@ public class StorageService {
         trackData.setTimezone(user.getTimezone());
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(segmentList);
+
+        logger.warn(trackSummary.toString());
+
         trackData.setElevationup(trackSummary.elevationUp);
         trackData.setElevationdown(trackSummary.elevationDown);
         trackData.setDuration(trackSummary.duration);
         trackData.setDistance(trackSummary.distance);
         trackData.setLowestpoint(trackSummary.lowestpointEle);
         trackData.setHighestpoint(trackSummary.highestpointEle);
+        trackData.setHasHeartrate(trackSummary.containsHeartRate());
         trackData.setComment("");
 
         trackData.setTitle(createTitlePreliminary(trackData, user.getTimezone()));
@@ -318,6 +330,12 @@ public class StorageService {
             logger.info("File upload - Upload of duplicate Track '" + ur.getTrackID() + "' - by User '" + user.getId() + "'");
             return ur;
             //throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
+        }
+
+        if (trackData.getHasHeartrate()) {
+            TrackDataExtensions trackDataExtensions = new TrackDataExtensions();
+            trackDataExtensions.setHeartrate(heartrates);
+            trackData.setTrackDataExtensions(trackDataExtensions);
         }
 
         trackDataRepository.saveAndFlush(trackData);
