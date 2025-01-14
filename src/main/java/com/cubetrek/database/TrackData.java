@@ -21,8 +21,6 @@ import org.springframework.web.util.HtmlUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Date;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -83,6 +81,12 @@ public class TrackData implements Serializable {
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "trackgeodata_id", referencedColumnName = "id") //creates a foreign key column called trackdata_id
     private TrackGeodata trackgeodata;
+
+    @Getter
+    @Setter
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "trackdataextensions_id", referencedColumnName = "id") //creates a foreign key column called trackextendeddata_id
+    private TrackDataExtensions trackDataExtensions;
 
     @Getter
     @Setter
@@ -225,6 +229,11 @@ public class TrackData implements Serializable {
     @Setter
     @Column(name = "trackgroup")
     private Long trackgroup;
+
+    @Getter
+    @Setter
+    @Column(name = "has_heartrate")
+    private Boolean hasHeartrate;
 
     public void setBBox(LatLonBoundingBox bbox) {
         setBbox_N((float)bbox.getN_Bound());
