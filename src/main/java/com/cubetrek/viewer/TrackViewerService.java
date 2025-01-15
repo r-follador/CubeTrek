@@ -103,7 +103,13 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
-        return new TrackGeojson(track);
+        //Force-load the lazy association while the session is still open
+        track.getTrackgeodata().getAltitudes().size();
+        if (track.getHasHeartrate()) {
+            track.getTrackDataExtensions().getHeartrate().size();
+        }
+
+        return new TrackGeojson(track, isWriteAccessAllowed(authentication, track));
     }
 
     /**
@@ -181,12 +187,15 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate());
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
@@ -208,12 +217,15 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate());
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
@@ -236,14 +248,17 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate());
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
-        model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
+        model.addAttribute("writeAccess", isWriteAccessAllowed);
         model.addAttribute("owner", track.getOwner().getName());
         model.addAttribute("ownerIsSupporter", track.getOwner().getUserTier()== Users.UserTier.PAID);
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));
