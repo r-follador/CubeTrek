@@ -59,7 +59,8 @@ export class GraphCube {
                     'distance': distance_offset+distance,
                     'vertical_speed': verticalSpeed_m_per_h,
                     'horizontal_speed': horizontalSpeed_km_per_h,
-                    'moving_time': movingTime
+                    'moving_time': movingTime,
+                    ...(jsonData.geometry.coordinates[j][i].length > 5 ? {heartrate : jsonData.geometry.coordinates[j][i][5]} : {})
                 });
             }
             distance_offset = distance_offset + previousDistance;
@@ -79,6 +80,11 @@ export class GraphCube {
         document.getElementById("graphYElevation").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.Elevation)});
         document.getElementById("graphYHorizontalspeed").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.HorizontalSpeed)});
         document.getElementById("graphYVerticalspeed").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.VerticalSpeed)});
+        if (document.getElementById("graphYHeartrate")) {
+            document.getElementById("graphYHeartrate").addEventListener('click', () => {
+                this.changeGraphY(GraphAxis.Heartrate)
+            });
+        }
         document.getElementById("graphXElapsedtime").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.ElapsedTime)});
         document.getElementById("graphXMovingtime").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.MovingTime)});
         document.getElementById("graphXDistance").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.Distance)});
@@ -97,6 +103,7 @@ export class GraphCube {
     }
 
     drawGraph() {
+        console.log(this.graphYAxis);
         this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
         this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
@@ -142,6 +149,12 @@ export class GraphCube {
                 this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.horizontal_speed*(sharedObjects.metric?1:miles_per_km)); }));
                 this.functionpath.y((d) => { return this.yScale(d.horizontal_speed*(sharedObjects.metric?1:miles_per_km)) });
                 this.regressionGenerator.y(d => d.horizontal_speed*(sharedObjects.metric?1:miles_per_km));
+                break;
+            case GraphAxis.Heartrate:
+                document.getElementById("dropdowngraphyaxis").innerText = "Heart Rate";
+                this.yScale = d3.scaleLinear().domain(d3.extent(this.datas.filter(d => d.heartrate !== -1), function(d) { return (d.heartrate); }));
+                this.functionpath.y((d) => { return this.yScale(d.heartrate) });
+                this.regressionGenerator.y(d => d.heartrate);
                 break;
             default:
                 break;
@@ -190,7 +203,7 @@ export class GraphCube {
             .call(this.yAxisLabel);
 
         this.svg.append("path")
-            .datum(this.datas)
+            .datum(this.graphYAxis === GraphAxis.Heartrate ? this.datas.filter(d => d.heartrate !== -1) : this.datas)
             .attr("fill", "none")
             .attr("stroke", "#ff8001")
             .attr("stroke-width", 2)
@@ -353,6 +366,10 @@ export class GraphCube {
                 ydata = (selectedData.horizontal_speed*(sharedObjects.metric?1:miles_per_km));
                 ytext = ydata.toFixed(1) + (sharedObjects.metric?" km/h":" mph");
                 break;
+            case GraphAxis.Heartrate:
+                ydata = (selectedData.heartrate);
+                ytext = ydata.toFixed(0) + (" bpm");
+                break;
         }
 
         this.focus
@@ -387,6 +404,7 @@ class GraphAxis {
     static Distance = new GraphAxis("distance");
     static HorizontalSpeed = new GraphAxis("horizontal_speed");
     static VerticalSpeed = new GraphAxis("vertical_speed");
+    static Heartrate = new GraphAxis("heart_rate");
 
     constructor(name) {
         this.name = name
