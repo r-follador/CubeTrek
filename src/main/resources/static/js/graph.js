@@ -103,6 +103,7 @@ export class GraphCube {
     }
 
     drawGraph() {
+        console.log(this.graphYAxis);
         this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
         this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;

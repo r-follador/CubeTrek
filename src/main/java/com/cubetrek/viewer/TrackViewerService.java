@@ -242,7 +242,8 @@ public class TrackViewerService {
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
-        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate());if (isWriteAccessAllowed)
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate());
+        if (isWriteAccessAllowed)
             model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(track.getOwner()));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
