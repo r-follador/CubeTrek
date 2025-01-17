@@ -301,7 +301,6 @@ export class Map3D {
     }
 
     findClosestTrackpoint(lat, lon) {
-        console.log("findclosest", lat, lon)
         if (lat == null) {
             eventBus.emit('hideMarkers', {});
             return;

@@ -457,6 +457,10 @@
     /*]]>*/
 </script>
 
+<script th:if="${heartrateZones != null}" th:inline="javascript">
+    var heartrateZones = [[${heartrateZones}]];
+</script>
+
 
 <script>
     const sharedObjects = {

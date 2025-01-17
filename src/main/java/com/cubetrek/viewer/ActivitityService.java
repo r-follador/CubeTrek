@@ -47,6 +47,23 @@ public class ActivitityService {
         return out;
     }
 
+    public String getHeartrateZonesAsJSON(Users user) {
+        return """
+                {
+                    ["zoneName": "Zone 1",
+                    "zoneThreshold": 99],
+                    ["zoneName": "Zone 2",
+                    "zoneThreshold": 115],
+                    ["zoneName": "Zone 3",
+                    "zoneThreshold": 132],
+                    ["zoneName": "Zone 4",
+                    "zoneThreshold": 149],
+                    ["zoneName": "Zone 5",
+                    "zoneThreshold": 999999]
+                }
+                """;
+    }
+
     public List<ActivityCount> getActivityTypeCount(Users user) {
         //convert List of ActivityCountInterface to list of ActivityCount
         return trackDataRepository.getActivityCounts(user.getId()).stream()
