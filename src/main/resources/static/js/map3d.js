@@ -116,13 +116,15 @@ export class Map3D {
         particleSystem.maxSize = 150*Math.pow(2,14-this.zoomfactor);
         particleSystem.emitter.z = -2000;
 
+        this.changeMapstyle(sharedObjects.maptype);
+
         return scene;
     }
 
     async loadMeshAndTexture(scene) {
         try {
             const rootPath = sharedObjects.root + "gltf/";
-            const fileName = sharedObjects.trackid + ".gltf";
+            const fileName = sharedObjects.trackid + ".gltf?maptype="+sharedObjects.maptype;
 
             // Progress callback
             const onProgress = (evt) => {
@@ -161,7 +163,7 @@ export class Map3D {
             const textureSize = 512;
             let textureContexts = [];
             const strokeStyle = "#ff8001";
-            const lineWidth = 3;
+            const lineWidth = 5;
 
             //Create an emissive, dynamic texture for each mesh
             for (let i =0; i < this.meshes.length; i++ ) {
@@ -345,23 +347,27 @@ export class Map3D {
     changeMapstyle(style) {
         let styletype;
         switch(style) {
-            case 'standard':
-                styletype = 'standard';
-                this.helperLight.intensity=0.6;
-                break;
             case 'satellite':
                 styletype = 'satellite';
                 this.helperLight.intensity=0.8;
+                document.getElementById("btnradio3").checked = true;
                 break;
             default:
-                this.styletype = 'standard';
+                styletype = 'standard';
                 this.helperLight.intensity=0.6;
+                document.getElementById("btnradio1").checked = true;
         }
 
+        history.replaceState(null, null, `/view/${sharedObjects.trackid}?maptype=${styletype}`);
+
+        if (styletype === sharedObjects.maptype)
+            return;
+
+        sharedObjects.maptype = styletype;
         //exchange texture for each mesh
         for (let i =0; i < this.meshes.length; i++ ) {
             this.meshes[i].material.albedoTexture.dispose();
-            let url = sharedObjects.root + `gltf/map/${styletype}/${this.geojson.properties.tileBBoxes[i].tile_zoom}/${this.geojson.properties.tileBBoxes[i].tile_x}/${this.geojson.properties.tileBBoxes[i].tile_y}.png`;
+            let url = sharedObjects.root + `gltf/map/${sharedObjects.maptype}/${this.geojson.properties.tileBBoxes[i].tile_zoom}/${this.geojson.properties.tileBBoxes[i].tile_x}/${this.geojson.properties.tileBBoxes[i].tile_y}.png`;
             this.meshes[i].material.albedoTexture = new BABYLON.Texture(url, this.scene);
             this.meshes[i].material.albedoTexture.vScale = -1;
         }
