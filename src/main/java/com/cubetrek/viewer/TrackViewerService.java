@@ -111,12 +111,6 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
-        //Force-load the lazy association while the session is still open
-        track.getTrackgeodata().getAltitudes().size();
-        if (track.getHasHeartrate()!= null && track.getHasHeartrate()) {
-            track.getTrackDataExtensions().getHeartrate().size();
-        }
-
         return new TrackGeojson(track, isWriteAccessAllowed(authentication, track));
     }
 
@@ -210,7 +204,7 @@ public class TrackViewerService {
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
-        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate());
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate()!=null && track.getHasHeartrate());
         if (isWriteAccessAllowed)
             model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(track.getOwner()));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
