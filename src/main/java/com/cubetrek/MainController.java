@@ -264,11 +264,11 @@ public class MainController {
     }
 
     @GetMapping(value="/view/{itemid}")
-    public String viewTrack(@PathVariable("itemid") long trackid, Model model)
+    public String viewTrack(@PathVariable("itemid") long trackid, @RequestParam Optional<String> maptype, Model model)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         model.addAttribute("maptilerApiKey", maptilerApiKey);
-        return trackViewerService.mapView3D(authentication, trackid, model);
+        return trackViewerService.mapView3D(authentication, trackid, model, maptype);
     }
 
     @GetMapping(value="/view2d/{itemid}")
@@ -338,14 +338,14 @@ public class MainController {
 
     @ResponseBody
     @GetMapping(value = "/api/gltf/{itemid}.gltf", produces = "text/plain")
-    public String getGLTF(@PathVariable("itemid") long trackid, HttpServletResponse response) {
+    public String getGLTF(@PathVariable("itemid") long trackid, @RequestParam Optional<String> maptype, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         response.addHeader("Cache-Control", "max-age=86400, public");
-        return trackViewerService.getGLTF(authentication, trackid);
+        return trackViewerService.getGLTF(authentication, trackid, maptype);
     }
 
     @RequestMapping(value = "/api/gltf/map/{type}/{zoom}/{x}/{y}.png", produces = "image/png")
-    public void getGLTF(@PathVariable("type") String type, @PathVariable("zoom") int zoom, @PathVariable("x") int x, @PathVariable("y") int y, HttpServletResponse response) {
+    public void getMaptile(@PathVariable("type") String type, @PathVariable("zoom") int zoom, @PathVariable("x") int x, @PathVariable("y") int y, HttpServletResponse response) {
         //LatLonBoundingBox CHBox = new LatLonBoundingBox(47.9163, 45.6755, 5.7349, 10.6677);
         String mapaccession = switch (type) {
             case "winter" ->
@@ -354,9 +354,8 @@ public class MainController {
                     String.format("https://api.maptiler.com/tiles/satellite-v2/%d/%d/%d.jpg?key=%s", zoom, x, y, maptilerApiKey);
             case "satellite_ch" ->
                     String.format("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/%d/%d/%d.jpeg", zoom, x, y);
-            case "standard" -> {
-                    yield String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=%s", zoom, x, y, maptilerApiKey);
-            }
+            case "standard" ->
+                    String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=%s", zoom, x, y, maptilerApiKey);
             default ->
                     String.format("https://api.maptiler.com/maps/ch-swisstopo-lbm/%d/%d/%d.png?key=%s", zoom, x, y, maptilerApiKey);
         };

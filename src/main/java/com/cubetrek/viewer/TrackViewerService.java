@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.TimeZone;
 
 @Service
@@ -61,15 +62,20 @@ public class TrackViewerService {
 
     Logger logger = LoggerFactory.getLogger(TrackViewerService.class);
 
-    public String getGLTF(Authentication authentication, long trackid) {
+    public String getGLTF(Authentication authentication, long trackid, Optional<String> maptype) {
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackViewerException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
         LatLonBoundingBox boundingBox = addPadding(track.getBBox());
         String output;
+        String maptypeSanitized;
+        switch(maptype.orElse("standard")) {
+            case "satellite" ->  maptypeSanitized = "satellite";
+            default -> maptypeSanitized = "standard";
+        }
         try {
-            output = getGLTFString_cacheable(trackid, boundingBox);
+            output = getGLTFString_cacheable(trackid, boundingBox, maptypeSanitized);
         } catch (IOException e) {
             logger.error("",e);
             e.printStackTrace(System.err);
@@ -80,8 +86,8 @@ public class TrackViewerService {
 
     //make this function cacheable end using the id as key
     @Cacheable(cacheNames = "gltf", key = "#id")
-    public String getGLTFString_cacheable(long id, LatLonBoundingBox boundingBox) throws IOException {
-        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_3DEM).setZoomlevel(calculateZoomlevel(boundingBox)).setEnclosement(true).setTextureUrl("map/standard/%d/%d/%d.png").build();
+    public String getGLTFString_cacheable(long id, LatLonBoundingBox boundingBox, String maptype) throws IOException {
+        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_3DEM).setZoomlevel(calculateZoomlevel(boundingBox)).setEnclosement(true).setTextureUrl("map/"+maptype+"/%d/%d/%d.png").build();
         return gltfDatafile.getString();
     }
 
@@ -175,11 +181,18 @@ public class TrackViewerService {
     final DateTimeFormatter formatter_date = DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy");
 
     @Transactional(readOnly  = true)
-    public String mapView3D(Authentication authentication, long trackid, Model model) {
+    public String mapView3D(Authentication authentication, long trackid, Model model, Optional<String> maptype) {
         logger.info("View Track ID '"+trackid+"' by " + (authentication instanceof AnonymousAuthenticationToken?"Anonymous":("User ID '"+((Users) authentication.getPrincipal()).getId()+"'")));
         TrackData track = trackDataRepository.findById(trackid).orElseThrow(() -> new ExceptionHandling.TrackAccessException(noAccessMessage));
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
+
+        String maptypeSanitized;
+        switch(maptype.orElse("satellite")) {
+            case "satellite" ->  maptypeSanitized = "satellite";
+            default -> maptypeSanitized = "standard";
+        }
+        model.addAttribute("maptype", maptypeSanitized);
 
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
