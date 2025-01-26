@@ -36,7 +36,7 @@ public class TrackGeojson implements Serializable{
     public TrackGeojson(TrackData metadata, boolean includeHeartrate) {
         this.metadata = metadata;
         data =metadata.getTrackgeodata();
-        if (includeHeartrate && metadata.getHasHeartrate()!=null && metadata.getHasHeartrate())
+        if (includeHeartrate && metadata.getHasHeartrate().orElse(false))
             trackDataExtensions = metadata.getTrackDataExtensions();
     }
 

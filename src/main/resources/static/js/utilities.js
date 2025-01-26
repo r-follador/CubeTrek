@@ -14,10 +14,8 @@ export function settings() {
         document.getElementById("metricChecked").addEventListener('click', clickSettingsMetric);
         if (sharedObjects.metric) {
             document.getElementById("metricChecked").checked = true;
-            setMetric();
         } else {
             document.getElementById("metricChecked").checked = false;
-            setMetric();
         }
 
 
@@ -70,7 +68,7 @@ export function clickSettingsMetric() {
     setMetric();
 }
 
-function setMetric() {
+export function setMetric() {
     document.getElementById("metricCheckedLabel").innerText=(sharedObjects.metric?"Metric Units":"Imperial Units");
     document.getElementById("value_distance").innerText = (sharedObjects.distance/1000*(sharedObjects.metric?1:miles_per_km)).toFixed(1) + (sharedObjects.metric?" km":" mi");
     document.getElementById("value_elevation_up").innerText = (sharedObjects.elevationUp*(sharedObjects.metric?1:feet_per_m)).toFixed(0) + (sharedObjects.metric?" m":" ft");
@@ -78,8 +76,15 @@ function setMetric() {
     document.getElementById("value_highest_point").innerText = (sharedObjects.highestElevationPoint*(sharedObjects.metric?1:feet_per_m)).toFixed(0) + (sharedObjects.metric?" m":" ft");
     document.getElementById("value_lowest_point").innerText = (sharedObjects.lowestElevationPoint*(sharedObjects.metric?1:feet_per_m)).toFixed(0) + (sharedObjects.metric?" m":" ft");
     document.getElementById("value_horizontal_average").innerText=(sharedObjects.horizontal_average*(sharedObjects.metric?1:miles_per_km)).toFixed(1)+(sharedObjects.metric?" km/h":" mph");
-    document.getElementById("value_vertical_down_average").innerText=(sharedObjects.ertical_down_average*(sharedObjects.metric?1:feet_per_m)).toFixed(1)+(sharedObjects.metric?" m/h":" ft/h");
+    document.getElementById("value_vertical_down_average").innerText=(sharedObjects.vertical_down_average*(sharedObjects.metric?1:feet_per_m)).toFixed(1)+(sharedObjects.metric?" m/h":" ft/h");
     document.getElementById("value_vertical_up_average").innerText=(sharedObjects.vertical_up_average*(sharedObjects.metric?1:feet_per_m)).toFixed(1)+(sharedObjects.metric?" m/h":" ft/h")
+    let movingTimeMinutes = sharedObjects.moving_time/60000;
+    document.getElementById("movingtime").innerText = Math.floor(movingTimeMinutes/60)+":"+Math.floor(movingTimeMinutes%60).toString().padStart(2,"0");
+
+    let paceSeconds = 3600.0/(sharedObjects.horizontal_average*(sharedObjects.metric?1:miles_per_km));
+
+    document.getElementById("value_pace_average").innerText=Math.floor(paceSeconds/60)+":"+Math.floor(paceSeconds%60).toString().padStart(2,"0")+(sharedObjects.metric?" min/km":" min/mile");
+
 
     //graph = new drawGraph(graphYAxis, graphXAxis);
 }

@@ -89,6 +89,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" id="graphYDistance">Distance</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYElevation" >Elevation</a></li>
+                            <li th:if="${hasHeartrate}"}><a class="dropdown-item" href="#" id="graphYHeartrate" >Heartrate</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYHorizontalspeed" >Horizontal Speed</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYVerticalspeed" >Vertical Speed</a></li>
                         </ul>
@@ -186,6 +187,24 @@
                         <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small>
                             <div id="value_vertical_down_average">...</div>
                         </h5>
+                    </div>
+                    <div class="row">
+                        <h5 class="h5 col"><small class="text-muted fw-light">Pace</small>
+                            <div id="value_pace_average">...</div>
+                        </h5>
+                    </div>
+                    <div th:if="${hasHeartrate}" class="row">
+                        <div class="row">
+                            <h4 class="h4 col"><small class="text-muted fw-light">Heartrate</small></h4>
+                        </div>
+                        <div class="row">
+                            <h5 class="h5 col"><small class="text-muted fw-light">Average Heartrate</small>
+                                <div id="heartrate_average">...</div>
+                            </h5>
+                            <h5 class="h5 col"><small class="text-muted fw-light">Max Heartrate</small>
+                                <div id="heartrate_max">...</div>
+                            </h5>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -454,6 +473,10 @@
     /*<![CDATA[*/
     var maptilerApiKey = [[${maptilerApiKey}]];
     /*]]>*/
+</script>
+
+<script th:if="${heartrateZones != null}" th:inline="javascript">
+    var heartrateZones = [(${heartrateZones})];
 </script>
 
 
