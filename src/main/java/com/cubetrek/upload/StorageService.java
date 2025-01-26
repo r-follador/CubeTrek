@@ -332,7 +332,7 @@ public class StorageService {
             //throw new ExceptionHandling.FileNotAccepted("Duplicate: File already exists.");
         }
 
-        if (trackData.getHasHeartrate()) {
+        if (trackData.getHasHeartrate().orElse(false)) {
             TrackDataExtensions trackDataExtensions = new TrackDataExtensions();
             trackDataExtensions.setHeartrate(heartrates);
             trackData.setTrackDataExtensions(trackDataExtensions);

@@ -53,6 +53,8 @@ export class GraphCube {
                 previousElevation = elevation;
                 previousDistance = distance;
 
+                let hasHeartrate = (jsonData.geometry.coordinates[j][i].length > 5);
+
                 this.datas.push({
                     'time': time,
                     'altitude': elevation,
@@ -60,36 +62,33 @@ export class GraphCube {
                     'vertical_speed': verticalSpeed_m_per_h,
                     'horizontal_speed': horizontalSpeed_km_per_h,
                     'moving_time': movingTime,
-                    ...(jsonData.geometry.coordinates[j][i].length > 5 ? {heartrate : jsonData.geometry.coordinates[j][i][5]} : {})
+                    ...(hasHeartrate ? {heartrate : jsonData.geometry.coordinates[j][i][5]} : {})
                 });
+
+                this.hasHeartrate = this.hasHeartrate || hasHeartrate;
             }
             distance_offset = distance_offset + previousDistance;
         }
 
-        this.horizontal_average = ((distance_offset)/(movingTime/3600));
-        this.vertical_down_average = (verticalDistSumDown)/(verticalTimeSumDown/3600000);
-        this.vertical_up_average = (verticalDistSumUp)/(verticalTimeSumUp/3600000);
-        let movingTimeMinutes = movingTime/60000;
-
-        document.getElementById("value_horizontal_average").innerText=(this.horizontal_average*(sharedObjects.metric?1:miles_per_km)).toFixed(1)+(sharedObjects.metric?" km/h":" mph");
-        document.getElementById("value_vertical_down_average").innerText=(this.vertical_down_average*(sharedObjects.metric?1:feet_per_m)).toFixed(1)+(sharedObjects.metric?" m/h":" ft/h");
-        document.getElementById("value_vertical_up_average").innerText=(this.vertical_up_average*(sharedObjects.metric?1:feet_per_m)).toFixed(1)+(sharedObjects.metric?" m/h":" ft/h");
-        document.getElementById("movingtime").innerText = Math.floor(movingTimeMinutes/60)+":"+Math.floor(movingTimeMinutes%60).toString().padStart(2,"0");
+        sharedObjects.horizontal_average = ((distance_offset)/(movingTime/3600));
+        sharedObjects.vertical_down_average = (verticalDistSumDown)/(verticalTimeSumDown/3600000);
+        sharedObjects.vertical_up_average = (verticalDistSumUp)/(verticalTimeSumUp/3600000);
+        sharedObjects.moving_time = movingTime;
 
         document.getElementById("graphYDistance").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.Distance)});
         document.getElementById("graphYElevation").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.Elevation)});
         document.getElementById("graphYHorizontalspeed").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.HorizontalSpeed)});
         document.getElementById("graphYVerticalspeed").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.VerticalSpeed)});
         if (document.getElementById("graphYHeartrate")) {
-            document.getElementById("graphYHeartrate").addEventListener('click', () => {
-                this.changeGraphY(GraphAxis.Heartrate)
-            });
+            document.getElementById("graphYHeartrate").addEventListener('click', () => {this.changeGraphY(GraphAxis.Heartrate)});
         }
         document.getElementById("graphXElapsedtime").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.ElapsedTime)});
         document.getElementById("graphXMovingtime").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.MovingTime)});
         document.getElementById("graphXDistance").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.Distance)});
 
         this.drawGraph();
+        if (this.hasHeartrate)
+            this.heartrateGraph = new GraphHeartrate(this.datas);
     }
 
     changeGraphX(type) {
@@ -103,7 +102,6 @@ export class GraphCube {
     }
 
     drawGraph() {
-        console.log(this.graphYAxis);
         this.margingraph = {top: 10, right: 5, bottom: 25, left: 40};
 
         this.width = document.getElementById('graph').clientWidth-this.margingraph.left-this.margingraph.right;
@@ -248,7 +246,54 @@ export class GraphCube {
                 .attr("d", this.areaDown)
         }
 
-        if (this.graphYAxis === GraphAxis.HorizontalSpeed || this.graphYAxis === GraphAxis.VerticalSpeed) {
+        if (this.graphYAxis === GraphAxis.Heartrate) {
+            heartrateZones.forEach((zone, index) => {
+                let y0 = index===0 ? 0 : heartrateZones[index-1].zoneThreshold;
+                let y1 = zone.zoneThreshold;
+
+                let zoneBand = d3.area()
+                    .y0(this.height)
+                    .y1((d) => {
+                        if (y0 <= d.heartrate)
+                            return this.yScale(d.heartrate);
+                        else
+                            return this.height;
+                    })
+                    .x((d) => {
+                        switch (this.graphXAxis) {
+                            case GraphAxis.MovingTime:
+                                return this.xScale(d.moving_time);
+                            case GraphAxis.ElapsedTime:
+                                return this.xScale(d.time);
+                            case GraphAxis.Distance:
+                                return this.xScale(d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000));
+                        }
+                    })
+
+                const defs = this.svg.append("defs");
+                const gradientId = "zoneBandGradient" + index;
+                const gradient = defs.append("linearGradient")
+                    .attr("id", gradientId)
+                    .attr("x1", "0%")
+                    .attr("y1", "0%")
+                    .attr("x2", "0%")
+                    .attr("y2", "100%");
+                gradient.append("stop")
+                    .attr("offset", "0%")
+                    .attr("stop-color", d3.interpolateTurbo(index / heartrateZones.length))
+                    .attr("stop-opacity", 1);
+                gradient.append("stop")
+                    .attr("offset", "100%")
+                    .attr("stop-color", d3.interpolateTurbo(index / heartrateZones.length))
+                    .attr("stop-opacity", 0.2);
+
+                this.svg.append("path")
+                    .datum(this.datas)
+                    .attr("class","zoneband"+index)
+                    .attr("fill", d3.interpolateTurbo((index+0.5) / heartrateZones.length))
+                    .attr("d", zoneBand)
+            })
+        } else if (this.graphYAxis === GraphAxis.HorizontalSpeed || this.graphYAxis === GraphAxis.VerticalSpeed) {
             this.regressionpath = d3.line()
                 .x(d => this.xScale(d[0]))
                 .y(d => this.yScale(d[1]));
@@ -424,4 +469,31 @@ function getJaggedElement(arr, index) {
         }
     }
     return undefined;
+}
+
+export class GraphHeartrate {
+    constructor(datas) {
+        this.datas = datas.filter(item => item.heartrate !== -1);
+
+        this.heartrateBuckets = new Array(heartrateZones.length).fill(0);
+
+        let heartrateSum = 0;
+
+        for (let i = 1; i < this.datas.length; i++) {
+            let time = (this.datas[i].moving_time - this.datas[i-1].moving_time)/1000; //in secs
+            let avgHeartrate = ((this.datas[i].heartrate+this.datas[i-1].heartrate)/2);
+            heartrateSum += time * avgHeartrate;
+            this.heartrateBuckets[this._getZone(avgHeartrate)] += time;
+        }
+        this.averageHeartrate = heartrateSum*1000 / sharedObjects.moving_time;
+        this.maxHeartrate = Math.max(...this.datas.map(item => item.heartrate));
+
+        document.getElementById("heartrate_average").innerText = Math.floor(this.averageHeartrate) + " bpm";
+        document.getElementById("heartrate_max").innerText = Math.floor(this.maxHeartrate)  + " bpm";
+
+    }
+
+    _getZone(heartrate) {
+        return heartrateZones.findIndex((zone) => heartrate < zone.zoneThreshold);
+    }
 }

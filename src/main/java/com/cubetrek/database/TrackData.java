@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @Entity(name = "trackdata")
 @Table(name = "trackdata")
@@ -230,10 +231,13 @@ public class TrackData implements Serializable {
     @Column(name = "trackgroup")
     private Long trackgroup;
 
-    @Getter
     @Setter
     @Column(name = "has_heartrate")
     private Boolean hasHeartrate;
+
+    public Optional<Boolean> getHasHeartrate() {
+        return Optional.ofNullable(this.hasHeartrate);
+    }
 
     public void setBBox(LatLonBoundingBox bbox) {
         setBbox_N((float)bbox.getN_Bound());
