@@ -270,27 +270,10 @@ export class GraphCube {
                         }
                     })
 
-                const defs = this.svg.append("defs");
-                const gradientId = "zoneBandGradient" + index;
-                const gradient = defs.append("linearGradient")
-                    .attr("id", gradientId)
-                    .attr("x1", "0%")
-                    .attr("y1", "0%")
-                    .attr("x2", "0%")
-                    .attr("y2", "100%");
-                gradient.append("stop")
-                    .attr("offset", "0%")
-                    .attr("stop-color", d3.interpolateTurbo(index / heartrateZones.length))
-                    .attr("stop-opacity", 1);
-                gradient.append("stop")
-                    .attr("offset", "100%")
-                    .attr("stop-color", d3.interpolateTurbo(index / heartrateZones.length))
-                    .attr("stop-opacity", 0.2);
-
                 this.svg.append("path")
                     .datum(this.datas)
                     .attr("class","zoneband"+index)
-                    .attr("fill", d3.interpolateTurbo((index+0.5) / heartrateZones.length))
+                    .attr("fill", getHeartrateZoneColors(index, heartrateZones))
                     .attr("d", zoneBand)
             })
         } else if (this.graphYAxis === GraphAxis.HorizontalSpeed || this.graphYAxis === GraphAxis.VerticalSpeed) {
@@ -471,6 +454,10 @@ function getJaggedElement(arr, index) {
     return undefined;
 }
 
+function getHeartrateZoneColors(index, heartrateZones) {
+    return d3.interpolateTurbo((index+0.5) / heartrateZones.length);
+}
+
 export class GraphHeartrate {
     constructor(datas) {
         this.datas = datas.filter(item => item.heartrate !== -1);
@@ -488,12 +475,98 @@ export class GraphHeartrate {
         this.averageHeartrate = heartrateSum*1000 / sharedObjects.moving_time;
         this.maxHeartrate = Math.max(...this.datas.map(item => item.heartrate));
 
-        document.getElementById("heartrate_average").innerText = Math.floor(this.averageHeartrate) + " bpm";
-        document.getElementById("heartrate_max").innerText = Math.floor(this.maxHeartrate)  + " bpm";
+        if (document.getElementById("heartrate_average"))
+            document.getElementById("heartrate_average").innerText = Math.floor(this.averageHeartrate) + " bpm";
+        if (document.getElementById("heartrate_max"))
+            document.getElementById("heartrate_max").innerText = Math.floor(this.maxHeartrate)  + " bpm";
 
+        this.tooltip = d3.select("body")
+            .append("div")
+            .style("position", "absolute")
+            .style("opacity", 0)
+            .attr("text-anchor", "left")
+            .attr("alignment-baseline", "middle")
+
+        this.drawDonut();
     }
 
     _getZone(heartrate) {
         return heartrateZones.findIndex((zone) => heartrate < zone.zoneThreshold);
+    }
+
+    drawDonut() {
+
+        const width = document.getElementById('heartrateDonut').clientWidth;
+        const height = document.getElementById('heartrateDonut').clientHeight;
+
+        const radius = Math.min(width, height) / 2;
+
+        this.svg = d3.select("#heartrateDonut")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+            .attr("transform",
+                "translate(" + width/2 + "," + height/2 + ")");
+
+        const arc = d3.arc()
+            .innerRadius(radius * 0.4)
+            .outerRadius(radius);
+
+        const arcOver = d3.arc()
+            .innerRadius(radius * 0.4)
+            .outerRadius(radius * 1.08); // ~8% bigger
+
+
+        const pie = d3.pie()
+            .padAngle(1 / radius)
+            .sort(null)
+            .value(d => d);
+
+
+        const self = this;
+
+        this.svg.append("g")
+            .selectAll()
+            .data(pie(this.heartrateBuckets))
+            .join("path")
+            .attr("fill", (d,i) => getHeartrateZoneColors(i, heartrateZones))
+            .attr("d", arc)
+            .on('mousemove', (event, d) => this.mousemove(event, d))
+            .on("mouseover", function() {
+                d3.select(this) // "this" is the path
+                    .transition()
+                    .duration(200)
+                    .attr("d", arcOver);
+            })
+            .on("mouseout", function() {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("d", arc);
+                self.tooltip.style("opacity", 0);
+            });
+
+
+
+    }
+
+    mousemove(event, d) {
+        const [x, y] = d3.pointer(event, this.svg.node());
+
+        const hours = Math.floor(d.value / 3600);
+        const minutes = Math.floor((d.value % 3600) / 60);
+        const seconds = d.value % 60;
+        const hh = String(hours).padStart(2, "0");
+        const mm = String(minutes).padStart(2, "0");
+        const ss = String(seconds).padStart(2, "0");
+
+        const stringtime = hours===0?`${mm}:${ss}`:`${hh}:${mm}:${ss}`;
+
+        this.tooltip
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY + 10) + "px")
+            .html(`${heartrateZones[d.index].zoneName} - ${stringtime}`);
+        this.tooltip.style("opacity",1)
     }
 }
