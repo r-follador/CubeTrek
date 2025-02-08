@@ -51,13 +51,13 @@ public class ActivitityService {
         return """
                 [
                     {"zoneName": "Zone 1",
-                    "zoneThreshold": 105},
+                    "zoneThreshold": 108},
                     {"zoneName": "Zone 2",
-                    "zoneThreshold": 123},
+                    "zoneThreshold": 126},
                     {"zoneName": "Zone 3",
-                    "zoneThreshold": 140},
+                    "zoneThreshold": 144},
                     {"zoneName": "Zone 4",
-                    "zoneThreshold": 158},
+                    "zoneThreshold": 162},
                     {"zoneName": "Zone 5",
                     "zoneThreshold": 999999}
                 ]

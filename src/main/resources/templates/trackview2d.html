@@ -105,8 +105,20 @@
                     </div>
                 </div>
             </div>
-            <div class="w-100" style="height: 25vh; min-height: 250px">
-                <div id="mapkill" style="height: 100%; width: 100%; min-width: 100px;"></div>
+            <div class="d-flex flex-column flex-fill w-100" style="height: 25vh; min-height: 250px">
+                <div id="heartratediv" th:if="${hasHeartrate}" class="mt-5 d-flex flex-column flex-grow-1" style="max-height:15vh;">
+                    <div class="row flex-grow-1">
+                        <div class="col d-flex align-items-center justify-content-center" id="heartrateDonut"></div>
+                        <div class="col d-flex flex-column justify-content-center">
+                            <h5 class="h5"><small class="text-muted fw-light">Heart Rate Average</small>
+                                <div id="heartrate_average">...</div>
+                            </h5>
+                            <h5 class="h5"><small class="text-muted fw-light">Heart Rate Max</small>
+                                <div id="heartrate_max">...</div>
+                            </h5>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -192,23 +204,6 @@
                         <h5 class="h5 col"><small class="text-muted fw-light">Pace</small>
                             <div id="value_pace_average">...</div>
                         </h5>
-                    </div>
-                    <div th:if="${hasHeartrate}" class="row">
-                        <div class="row">
-                            <h4 class="h4 col"><small class="text-muted fw-light">Heartrate</small></h4>
-                        </div>
-                        <div class="row">
-                            <div class="col" id="heartrateDonut"></div>
-                            <div class="col">
-                                <h5 class="h5 row"><small class="text-muted fw-light">Average</small>
-                                    <div id="heartrate_average">...</div>
-                                </h5>
-                                <h5 class="h5 row"><small class="text-muted fw-light">Max</small>
-                                    <div id="heartrate_max">...</div>
-                                </h5>
-                            </div>
-
-                        </div>
                     </div>
                 </div>
             </div>
