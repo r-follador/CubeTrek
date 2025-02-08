@@ -88,7 +88,7 @@ export class GraphCube {
 
         this.drawGraph();
         if (this.hasHeartrate)
-            this.heartrateGraph = new GraphHeartrate(this.datas);
+            this.heartrateGraph = new GraphHeartrate(this.datas, document.getElementById("heartrateDonut"), document.getElementById("heartrate_average"), document.getElementById("heartrate_max"));
     }
 
     changeGraphX(type) {
@@ -128,13 +128,11 @@ export class GraphCube {
                 document.getElementById("dropdowngraphyaxis").innerText = "Elevation";
                 this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.altitude*(sharedObjects.metric?1:feet_per_m)); }));
                 this.functionpath.y((d) => { return this.yScale(d.altitude*(sharedObjects.metric?1:feet_per_m)) });
-                this.regressionGenerator.y(d => d.altitude*(sharedObjects.metric?1:feet_per_m));
                 break;
             case GraphAxis.Distance:
                 document.getElementById("dropdowngraphyaxis").innerText = "Distance";
                 this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)); }));
                 this.functionpath.y((d) => {return this.yScale(d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)) });
-                this.regressionGenerator.y(d => d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000));
                 break;
             case GraphAxis.VerticalSpeed:
                 document.getElementById("dropdowngraphyaxis").innerText = "Vertical Speed";
@@ -152,7 +150,6 @@ export class GraphCube {
                 document.getElementById("dropdowngraphyaxis").innerText = "Heart Rate";
                 this.yScale = d3.scaleLinear().domain(d3.extent(this.datas.filter(d => d.heartrate !== -1), function(d) { return (d.heartrate); }));
                 this.functionpath.y((d) => { return this.yScale(d.heartrate) });
-                this.regressionGenerator.y(d => d.heartrate);
                 break;
             default:
                 break;
@@ -248,16 +245,16 @@ export class GraphCube {
 
         if (this.graphYAxis === GraphAxis.Heartrate) {
             heartrateZones.forEach((zone, index) => {
-                let y0 = index===0 ? 0 : heartrateZones[index-1].zoneThreshold;
+                let lower_zone_limit = index===0 ? 0 : heartrateZones[index-1].zoneThreshold;
                 let y1 = zone.zoneThreshold;
 
                 let zoneBand = d3.area()
-                    .y0(this.height)
+                    .y0(Math.min(this.yScale(lower_zone_limit), this.height))
                     .y1((d) => {
-                        if (y0 <= d.heartrate)
+                        if (lower_zone_limit <= d.heartrate)
                             return this.yScale(d.heartrate);
                         else
-                            return this.height;
+                            return Math.min(this.yScale(lower_zone_limit), this.height);
                     })
                     .x((d) => {
                         switch (this.graphXAxis) {
@@ -400,8 +397,6 @@ export class GraphCube {
                 break;
         }
 
-
-
         this.focus
             .attr("cx", this.xScale(xdata))
             .attr("cy", this.yScale(ydata))
@@ -455,12 +450,25 @@ function getJaggedElement(arr, index) {
 }
 
 function getHeartrateZoneColors(index, heartrateZones) {
-    return d3.interpolateTurbo((index+0.5) / heartrateZones.length);
+    //return d3.interpolateOrRd((index + 0.5) / heartrateZones.length);
+    //return d3.interpolateTurbo((index + 0.5) / heartrateZones.length);
+    return d3.interpolateMagma(1-((index) / heartrateZones.length));
+    //Polar palette
+    switch(index) {
+        case 0: return d3.rgb(218,218,218);
+        case 1: return d3.rgb(30,185,219);
+        case 2: return d3.rgb(163,185,40);
+        case 3: return d3.rgb(248,196,0);
+        case 4: return d3.rgb(221,3,82);
+    }
 }
 
 export class GraphHeartrate {
-    constructor(datas) {
+    constructor(datas, donut_element, heartrate_everage_element, heartrate_max_element) {
         this.datas = datas.filter(item => item.heartrate !== -1);
+        this.donut_element = d3.select(donut_element);
+        this.heartrate_everage_element = heartrate_everage_element;
+        this.heartrate_max_element = heartrate_max_element;
 
         this.heartrateBuckets = new Array(heartrateZones.length).fill(0);
 
@@ -475,17 +483,22 @@ export class GraphHeartrate {
         this.averageHeartrate = heartrateSum*1000 / sharedObjects.moving_time;
         this.maxHeartrate = Math.max(...this.datas.map(item => item.heartrate));
 
-        if (document.getElementById("heartrate_average"))
-            document.getElementById("heartrate_average").innerText = Math.floor(this.averageHeartrate) + " bpm";
-        if (document.getElementById("heartrate_max"))
-            document.getElementById("heartrate_max").innerText = Math.floor(this.maxHeartrate)  + " bpm";
+        if (this.heartrate_everage_element)
+            this.heartrate_everage_element.innerText = Math.floor(this.averageHeartrate) + " bpm";
+        if (this.heartrate_max_element)
+            this.heartrate_max_element.innerText = Math.floor(this.maxHeartrate)  + " bpm";
 
-        this.tooltip = d3.select("body")
-            .append("div")
-            .style("position", "absolute")
-            .style("opacity", 0)
-            .attr("text-anchor", "left")
-            .attr("alignment-baseline", "middle")
+        if (d3.select("body").select(".tooltip").empty()) {
+            this.tooltip = d3.select("body")
+                .append("div")
+                .attr("class", "tooltip")
+                .style("position", "absolute")
+                .style("opacity", 0)
+                .attr("text-anchor", "left")
+                .attr("alignment-baseline", "middle");
+        } else {
+            this.tooltip = d3.select("body").select(".tooltip");
+        }
 
         this.drawDonut();
     }
@@ -495,13 +508,12 @@ export class GraphHeartrate {
     }
 
     drawDonut() {
-
         const width = document.getElementById('heartrateDonut').clientWidth;
         const height = document.getElementById('heartrateDonut').clientHeight;
 
         const radius = Math.min(width, height) / 2;
 
-        this.svg = d3.select("#heartrateDonut")
+        this.svg = this.donut_element
             .append("svg")
             .attr("width", width)
             .attr("height", height)
@@ -511,11 +523,11 @@ export class GraphHeartrate {
 
         const arc = d3.arc()
             .innerRadius(radius * 0.4)
-            .outerRadius(radius);
+            .outerRadius(radius * 0.95);
 
         const arcOver = d3.arc()
-            .innerRadius(radius * 0.4)
-            .outerRadius(radius * 1.08); // ~8% bigger
+            .innerRadius(radius * 0.35)
+            .outerRadius(radius);
 
 
         const pie = d3.pie()

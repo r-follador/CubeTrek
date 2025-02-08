@@ -193,6 +193,23 @@
                             <div id="value_pace_average">...</div>
                         </h5>
                     </div>
+                    <div th:if="${hasHeartrate}" class="row">
+                        <div class="row">
+                            <h4 class="h4 col"><small class="text-muted fw-light">Heartrate</small></h4>
+                        </div>
+                        <div class="row">
+                            <div class="col" id="heartrateDonut"></div>
+                            <div class="col">
+                                <h5 class="h5 row"><small class="text-muted fw-light">Average</small>
+                                    <div id="heartrate_average">...</div>
+                                </h5>
+                                <h5 class="h5 row"><small class="text-muted fw-light">Max</small>
+                                    <div id="heartrate_max">...</div>
+                                </h5>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
