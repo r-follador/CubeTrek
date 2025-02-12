@@ -450,17 +450,7 @@ function getJaggedElement(arr, index) {
 }
 
 function getHeartrateZoneColors(index, heartrateZones) {
-    //return d3.interpolateOrRd((index + 0.5) / heartrateZones.length);
-    //return d3.interpolateTurbo((index + 0.5) / heartrateZones.length);
-    return d3.interpolateMagma(1-((index) / heartrateZones.length));
-    //Polar palette
-    switch(index) {
-        case 0: return d3.rgb(218,218,218);
-        case 1: return d3.rgb(30,185,219);
-        case 2: return d3.rgb(163,185,40);
-        case 3: return d3.rgb(248,196,0);
-        case 4: return d3.rgb(221,3,82);
-    }
+    return d3.interpolateOrRd((index + 0.5) / heartrateZones.length);
 }
 
 export class GraphHeartrate {
