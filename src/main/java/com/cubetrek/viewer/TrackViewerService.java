@@ -198,6 +198,8 @@ public class TrackViewerService {
         }
         model.addAttribute("maptype", maptypeSanitized);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
