@@ -42,9 +42,7 @@ public class CorospingController {
         //logger.info("Client: "+client);
         //logger.info("Secret: "+secret);
 
-
-        ArrayList<String> fitUrls = new ArrayList<>();
-        String openId = null;
+        ArrayList<FitUrlandOpenid> fitUrlandOpenids = new ArrayList<>();
 
         if (!(client.equals(corosClientId) && secret.equals(corosClientSecret))) {
             logger.error("Coros Ping Error: corosClientId or corosClientSecret is incorrect");
@@ -53,24 +51,23 @@ public class CorospingController {
 
         try {
             JsonNode rootNode = (new ObjectMapper()).readTree(payload);
-            findFitUrls(rootNode, fitUrls);
-            openId = findOpenId(rootNode);
+            findFitUrlsAndOpenid(rootNode, fitUrlandOpenids);
 
         } catch (JsonProcessingException e) {
             logger.error("Coros: Failed parsing ping payload",e);
             logger.error("Coros: Payload that failed: "+payload);
         }
 
-        if (openId == null || openId.isEmpty() || fitUrls.isEmpty()) {
+        if (fitUrlandOpenids.isEmpty()) {
             logger.error("Coros: Failed parsing ping payload; could not find fitUrl and/or openId");
             logger.error("Coros: Payload that failed: "+payload);
         } else {
             //Publish async event; handled by CorosNewFileEventListener
             synchronized (this) {
-                for (String fitUrl : fitUrls) {
-                    if (!fitUrlSet.contains(fitUrl)) {
-                        fitUrlSet.add(fitUrl);
-                        eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(openId, fitUrl));
+                for (FitUrlandOpenid fitUrl : fitUrlandOpenids) {
+                    if (!fitUrlSet.contains(fitUrl.fitUrl)) {
+                        fitUrlSet.add(fitUrl.fitUrl);
+                        eventPublisher.publishEvent(new CorosNewFileEventListener.OnEvent(fitUrl.openId, fitUrl.fitUrl));
                     }
                 }
             }
@@ -82,10 +79,14 @@ public class CorospingController {
                 """);
     }
 
+    private record FitUrlandOpenid(String fitUrl, String openId) {};
+
     // Recursive method to search for fitUrl in all nodes
-    public static void findFitUrls(JsonNode node, List<String> fitUrls) {
-        if (node.has("fitUrl")) {
-            fitUrls.add(node.get("fitUrl").asText());
+    private static void findFitUrlsAndOpenid(JsonNode node, List<FitUrlandOpenid> fitUrls) {
+        if (node.has("fitUrl") && node.has("openId")) {
+            String fitUrl = node.get("fitUrl").asText();
+            String openId = node.get("openId").asText();
+            fitUrls.add(new FitUrlandOpenid(fitUrl, openId));
         }
 
         // Iterate over all the child nodes (if the node is an object or array)
@@ -93,25 +94,9 @@ public class CorospingController {
             Iterator<JsonNode> elements = node.elements();
             while (elements.hasNext()) {
                 JsonNode childNode = elements.next();
-                findFitUrls(childNode, fitUrls);
+                findFitUrlsAndOpenid(childNode, fitUrls);
             }
         }
-    }
-
-    public static String findOpenId(JsonNode node) {
-        if (node.has("openId")) {
-            return node.get("openId").asText();
-        }
-
-        // Iterate over all the child nodes (if the node is an object or array)
-        if (node.isObject() || node.isArray()) {
-            Iterator<JsonNode> elements = node.elements();
-            while (elements.hasNext()) {
-                JsonNode childNode = elements.next();
-                return findOpenId(childNode);
-            }
-        }
-        return null;
     }
 
     //Service Status Check, Chapter 5.3

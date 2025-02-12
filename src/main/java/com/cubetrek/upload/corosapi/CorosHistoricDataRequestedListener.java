@@ -20,6 +20,8 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 
 @Component
@@ -83,13 +85,30 @@ public class CorosHistoricDataRequestedListener implements ApplicationListener<C
 
         try {
             JsonNode rootNode = (new ObjectMapper()).readTree(response);
-            CorospingController.findFitUrls(rootNode, fitUrls);
+            findFitUrls(rootNode, fitUrls);
         } catch (JsonProcessingException e) {
             logger.error("Coros: Failed getting historic data",e);
             return null;
         }
 
         return fitUrls;
+    }
+
+    // Recursive method to search for fitUrl in all nodes
+    private static void findFitUrls(JsonNode node, List<String> fitUrls) {
+        if (node.has("fitUrl")) {
+            String fitUrl = node.get("fitUrl").asText();
+            fitUrls.add(fitUrl);
+        }
+
+        // Iterate over all the child nodes (if the node is an object or array)
+        if (node.isObject() || node.isArray()) {
+            Iterator<JsonNode> elements = node.elements();
+            while (elements.hasNext()) {
+                JsonNode childNode = elements.next();
+                findFitUrls(childNode, fitUrls);
+            }
+        }
     }
 
     @Getter
