@@ -110,7 +110,6 @@ public class MainController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        ActivitityService.TopActivities bla = activitityService.getTopActivities(user);
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
         model.addAttribute("activityCumulativeJSON", activitityService.getActivityCumulativeAsJSON(user, user.getTimezone()));
@@ -119,6 +118,7 @@ public class MainController {
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
         model.addAttribute("favoriteTracks",  activitityService.getFavoriteActivities(user));
         model.addAttribute("totalActivities", activitityService.getActivityCount(user));
+        model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(user));
         logger.info("View Dashboard by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "dashboard";
     }

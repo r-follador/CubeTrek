@@ -3,22 +3,18 @@ import eventBus from './EventBus.js';
 const miles_per_km = 0.621371;
 const feet_per_m = 3.28084;
 
-export class GraphCube {
+export class ConvertedDatas {
     constructor(jsonData) {
-        this.jsonData = jsonData;
-        this.graphXAxis = GraphAxis.Distance;
-        this.graphYAxis = GraphAxis.Elevation;
+        this.datas = [];
+        this.movingTime = 0;
+        this.verticalDistSumUp = 0;
+        this.verticalTimeSumUp = 0;
+        this.verticalDistSumDown = 0;
+        this.verticalTimeSumDown = 0;
+        this.distance_offset = 0;
+        this.hasHeartrate = false;
 
         var parseDate = d3.timeParse("%Y-%m-%dT%H:%M:%S%Z");
-        let movingTime = 0;
-
-        let verticalDistSumUp = 0;
-        let verticalTimeSumUp = 0;
-        let verticalDistSumDown = 0;
-        let verticalTimeSumDown = 0;
-        this.datas = [];
-
-        let distance_offset = 0;
 
         for (let j=0;j<jsonData.geometry.coordinates.length;j++) {
             let previousTime = parseDate(jsonData.geometry.coordinates[j][0][3]);
@@ -39,13 +35,13 @@ export class GraphCube {
                     horizontalSpeed_km_per_h = 0;
 
                 if ((time - previousTime) / 1000 < (60) || Math.abs(elevation - previousElevation) > 3) {
-                    movingTime += (time - previousTime);
+                    this.movingTime += (time - previousTime);
                     if (elevation - previousElevation > 0) {
-                        verticalDistSumUp += (elevation - previousElevation);
-                        verticalTimeSumUp += (time - previousTime);
+                        this.verticalDistSumUp += (elevation - previousElevation);
+                        this.verticalTimeSumUp += (time - previousTime);
                     } else if (elevation - previousElevation < 0) {
-                        verticalDistSumDown += (previousElevation - elevation);
-                        verticalTimeSumDown += (time - previousTime);
+                        this.verticalDistSumDown += (previousElevation - elevation);
+                        this.verticalTimeSumDown += (time - previousTime);
                     }
                 }
 
@@ -58,22 +54,32 @@ export class GraphCube {
                 this.datas.push({
                     'time': time,
                     'altitude': elevation,
-                    'distance': distance_offset+distance,
+                    'distance': this.distance_offset+distance,
                     'vertical_speed': verticalSpeed_m_per_h,
                     'horizontal_speed': horizontalSpeed_km_per_h,
-                    'moving_time': movingTime,
-                    ...(hasHeartrate ? {heartrate : jsonData.geometry.coordinates[j][i][5]} : {})
+                    'moving_time': this.movingTime,
+                    ...(hasHeartrate ? {'heartrate' : jsonData.geometry.coordinates[j][i][5]} : {})
                 });
 
                 this.hasHeartrate = this.hasHeartrate || hasHeartrate;
             }
-            distance_offset = distance_offset + previousDistance;
+            this.distance_offset = this.distance_offset + previousDistance;
         }
+    }
+}
 
-        sharedObjects.horizontal_average = ((distance_offset)/(movingTime/3600));
-        sharedObjects.vertical_down_average = (verticalDistSumDown)/(verticalTimeSumDown/3600000);
-        sharedObjects.vertical_up_average = (verticalDistSumUp)/(verticalTimeSumUp/3600000);
-        sharedObjects.moving_time = movingTime;
+export class GraphCube {
+    constructor(jsonData) {
+        this.jsonData = jsonData;
+        this.graphXAxis = GraphAxis.Distance;
+        this.graphYAxis = GraphAxis.Elevation;
+
+        this.convertedData = new ConvertedDatas(jsonData);
+
+        sharedObjects.horizontal_average = ((this.convertedData.distance_offset)/(this.convertedData.movingTime/3600));
+        sharedObjects.vertical_down_average = (this.convertedData.verticalDistSumDown)/(this.convertedData.verticalTimeSumDown/3600000);
+        sharedObjects.vertical_up_average = (this.convertedData.verticalDistSumUp)/(this.convertedData.verticalTimeSumUp/3600000);
+        sharedObjects.moving_time = this.convertedData.movingTime;
 
         document.getElementById("graphYDistance").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.Distance)});
         document.getElementById("graphYElevation").addEventListener('click', () =>  {this.changeGraphY(GraphAxis.Elevation)});
@@ -87,8 +93,8 @@ export class GraphCube {
         document.getElementById("graphXDistance").addEventListener('click', () =>  {this.changeGraphX(GraphAxis.Distance)});
 
         this.drawGraph();
-        if (this.hasHeartrate)
-            this.heartrateGraph = new GraphHeartrate(this.datas, document.getElementById("heartrateDonut"), document.getElementById("heartrate_average"), document.getElementById("heartrate_max"));
+        if (this.convertedData.hasHeartrate)
+            this.heartrateGraph = new GraphHeartrate(this.convertedData, document.getElementById("heartrateDonut"), document.getElementById("heartrate_average"), document.getElementById("heartrate_max"));
     }
 
     changeGraphX(type) {
@@ -126,29 +132,29 @@ export class GraphCube {
         switch (this.graphYAxis) {
             case GraphAxis.Elevation:
                 document.getElementById("dropdowngraphyaxis").innerText = "Elevation";
-                this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.altitude*(sharedObjects.metric?1:feet_per_m)); }));
+                this.yScale = d3.scaleLinear().domain(d3.extent(this.convertedData.datas, function(d) { return (d.altitude*(sharedObjects.metric?1:feet_per_m)); }));
                 this.functionpath.y((d) => { return this.yScale(d.altitude*(sharedObjects.metric?1:feet_per_m)) });
                 break;
             case GraphAxis.Distance:
                 document.getElementById("dropdowngraphyaxis").innerText = "Distance";
-                this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)); }));
+                this.yScale = d3.scaleLinear().domain(d3.extent(this.convertedData.datas, function(d) { return (d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)); }));
                 this.functionpath.y((d) => {return this.yScale(d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)) });
                 break;
             case GraphAxis.VerticalSpeed:
                 document.getElementById("dropdowngraphyaxis").innerText = "Vertical Speed";
-                this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.vertical_speed*(sharedObjects.metric?1:feet_per_m)); }));
+                this.yScale = d3.scaleLinear().domain(d3.extent(this.convertedData.datas, function(d) { return (d.vertical_speed*(sharedObjects.metric?1:feet_per_m)); }));
                 this.functionpath.y((d) => {return this.yScale(d.vertical_speed*(sharedObjects.metric?1:feet_per_m)) });
                 this.regressionGenerator.y(d => d.vertical_speed*(sharedObjects.metric?1:feet_per_m));
                 break;
             case GraphAxis.HorizontalSpeed:
                 document.getElementById("dropdowngraphyaxis").innerText = "Horizontal Speed";
-                this.yScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.horizontal_speed*(sharedObjects.metric?1:miles_per_km)); }));
+                this.yScale = d3.scaleLinear().domain(d3.extent(this.convertedData.datas, function(d) { return (d.horizontal_speed*(sharedObjects.metric?1:miles_per_km)); }));
                 this.functionpath.y((d) => { return this.yScale(d.horizontal_speed*(sharedObjects.metric?1:miles_per_km)) });
                 this.regressionGenerator.y(d => d.horizontal_speed*(sharedObjects.metric?1:miles_per_km));
                 break;
             case GraphAxis.Heartrate:
                 document.getElementById("dropdowngraphyaxis").innerText = "Heart Rate";
-                this.yScale = d3.scaleLinear().domain(d3.extent(this.datas.filter(d => d.heartrate !== -1), function(d) { return (d.heartrate); }));
+                this.yScale = d3.scaleLinear().domain(d3.extent(this.convertedData.datas.filter(d => d.heartrate !== -1), function(d) { return (d.heartrate); }));
                 this.functionpath.y((d) => { return this.yScale(d.heartrate) });
                 break;
             default:
@@ -158,19 +164,19 @@ export class GraphCube {
         switch (this.graphXAxis) {
             case GraphAxis.ElapsedTime:
                 document.getElementById("dropdowngraphxaxis").innerText = "Elapsed time";
-                this.xScale = d3.scaleTime().domain(d3.extent(this.datas, function(d) { return d.time; }));
+                this.xScale = d3.scaleTime().domain(d3.extent(this.convertedData.datas, function(d) { return d.time; }));
                 this.functionpath.x((d) => { return this.xScale(d.time) });
                 this.regressionGenerator.x(d => d.time);
                 break;
             case GraphAxis.Distance:
                 document.getElementById("dropdowngraphxaxis").innerText = "Distance";
-                this.xScale = d3.scaleLinear().domain(d3.extent(this.datas, function(d) { return (d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)); }));
+                this.xScale = d3.scaleLinear().domain(d3.extent(this.convertedData.datas, function(d) { return (d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)); }));
                 this.functionpath.x((d) => { return this.xScale(d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000)) });
                 this.regressionGenerator.x(d => d.distance*(sharedObjects.metric?1/1000:miles_per_km/1000));
                 break;
             case GraphAxis.MovingTime:
                 document.getElementById("dropdowngraphxaxis").innerText = "Moving Time";
-                this.xScale = d3.scaleTime().domain(d3.extent(this.datas, function(d) { return d.moving_time; }));
+                this.xScale = d3.scaleTime().domain(d3.extent(this.convertedData.datas, function(d) { return d.moving_time; }));
                 this.functionpath.x((d) => { return this.xScale(d.moving_time) });
                 this.regressionGenerator.x(d => d.moving_time);
                 break;
@@ -198,7 +204,7 @@ export class GraphCube {
             .call(this.yAxisLabel);
 
         this.svg.append("path")
-            .datum(this.graphYAxis === GraphAxis.Heartrate ? this.datas.filter(d => d.heartrate !== -1) : this.datas)
+            .datum(this.graphYAxis === GraphAxis.Heartrate ? this.convertedData.datas.filter(d => d.heartrate !== -1) : this.convertedData.datas)
             .attr("fill", "none")
             .attr("stroke", "#ff8001")
             .attr("stroke-width", 2)
@@ -231,13 +237,13 @@ export class GraphCube {
             }
 
             this.svg.append("path")
-                .datum(this.datas)
+                .datum(this.convertedData.datas)
                 .attr("class","areaUp")
                 .attr("fill", "#ffd3fe")
                 .attr("d", this.areaUp)
 
             this.svg.append("path")
-                .datum(this.datas)
+                .datum(this.convertedData.datas)
                 .attr("class","areaUp")
                 .attr("fill", "#caf6b9")
                 .attr("d", this.areaDown)
@@ -268,7 +274,7 @@ export class GraphCube {
                     })
 
                 this.svg.append("path")
-                    .datum(this.datas)
+                    .datum(this.convertedData.datas)
                     .attr("class","zoneband"+index)
                     .attr("fill", getHeartrateZoneColors(index, heartrateZones))
                     .attr("d", zoneBand)
@@ -283,7 +289,7 @@ export class GraphCube {
                 .attr("stroke-width", 1);
 
             this.svg.append("path")
-                .datum(this.regressionGenerator(this.datas))
+                .datum(this.regressionGenerator(this.convertedData.datas))
                 .attr("class","graphregression")
                 .attr("fill", "none")
                 .attr("stroke", "#ff8001")
@@ -343,8 +349,8 @@ export class GraphCube {
     mousemove = (event) => {
         const [x] = d3.pointer(event, event.target);
         const x0 = this.xScale.invert(x);
-        const i = this.bisect(this.datas, x0, 1);
-        const selectedData = this.datas[i];
+        const i = this.bisect(this.convertedData.datas, x0, 1);
+        const selectedData = this.convertedData.datas[i];
         if (!selectedData) return;
 
         const [lon, lat] = getJaggedElement(this.jsonData.geometry.coordinates, i);
@@ -356,7 +362,7 @@ export class GraphCube {
     }
 
     moveMarker = (datasIndex) => {
-        let selectedData = this.datas[datasIndex];
+        let selectedData = this.convertedData.datas[datasIndex];
         let xtext, ytext, xdata, ydata;
 
         switch (this.graphXAxis) {
@@ -454,8 +460,8 @@ function getHeartrateZoneColors(index, heartrateZones) {
 }
 
 export class GraphHeartrate {
-    constructor(datas, donut_element, heartrate_everage_element, heartrate_max_element) {
-        this.datas = datas.filter(item => item.heartrate !== -1);
+    constructor(convertedDatas, donut_element, heartrate_everage_element, heartrate_max_element) {
+        this.datas = convertedDatas.datas.filter(item => item.heartrate !== -1);
         this.donut_element = d3.select(donut_element);
         this.heartrate_everage_element = heartrate_everage_element;
         this.heartrate_max_element = heartrate_max_element;
@@ -470,7 +476,7 @@ export class GraphHeartrate {
             heartrateSum += time * avgHeartrate;
             this.heartrateBuckets[this._getZone(avgHeartrate)] += time;
         }
-        this.averageHeartrate = heartrateSum*1000 / sharedObjects.moving_time;
+        this.averageHeartrate = heartrateSum*1000 / convertedDatas.movingTime;
         this.maxHeartrate = Math.max(...this.datas.map(item => item.heartrate));
 
         if (this.heartrate_everage_element)
@@ -498,8 +504,8 @@ export class GraphHeartrate {
     }
 
     drawDonut() {
-        const width = document.getElementById('heartrateDonut').clientWidth;
-        const height = document.getElementById('heartrateDonut').clientHeight;
+        const width = this.donut_element.node().clientWidth;
+        const height = this.donut_element.node().clientHeight;
 
         const radius = Math.min(width, height) / 2;
 

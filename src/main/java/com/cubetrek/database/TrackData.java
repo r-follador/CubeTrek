@@ -297,6 +297,8 @@ public class TrackData implements Serializable {
         Instant getDatetrack();
         Integer getDuration();
 
+        Optional<Boolean> getHasHeartrate();
+
         @Value("#{@activitytypeConverter.convertToEntityAttribute(target.activitytype)}")
         Activitytype getActivitytype();
         boolean isHidden();
