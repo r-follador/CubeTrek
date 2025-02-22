@@ -9,10 +9,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.Date;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Entity(name = "users")
 @Table(name = "users")
@@ -87,6 +84,15 @@ public class Users implements UserDetails {
     @Setter
     @Column(name = "sharing", columnDefinition = "integer default 0") //default 0=private
     private TrackData.Sharing sharing;
+
+    @Setter
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "usersextensions_id", referencedColumnName = "id") //creates a foreign key column called trackextendeddata_id
+    private UsersExtensions usersExtensions;
+
+    public Optional<UsersExtensions> getUsersExtensions() {
+        return Optional.ofNullable(this.usersExtensions);
+    }
 
     @Override
     public String getUsername() {

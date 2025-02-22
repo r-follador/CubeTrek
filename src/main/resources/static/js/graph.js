@@ -500,7 +500,13 @@ export class GraphHeartrate {
     }
 
     _getZone(heartrate) {
-        return heartrateZones.findIndex((zone) => heartrate < zone.zoneThreshold);
+        let zone = heartrateZones.findIndex((zone) => heartrate < zone.zoneThreshold);
+        if (zone < 0) {
+            if (heartrate > heartrateZones.at(-1).zoneThreshold)
+                return heartrateZones.length-1;
+            return 0;
+        }
+        return zone;
     }
 
     drawDonut() {
