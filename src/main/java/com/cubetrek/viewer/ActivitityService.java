@@ -4,6 +4,9 @@ import com.cubetrek.ExceptionHandling;
 import com.cubetrek.database.TrackData;
 import com.cubetrek.database.TrackDataRepository;
 import com.cubetrek.database.Users;
+import com.cubetrek.database.UsersExtensions;
+import jakarta.transaction.Transactional;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -11,7 +14,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.yaml.snakeyaml.nodes.Tag.STR;
 
 @Service
 public class ActivitityService {
@@ -45,6 +51,30 @@ public class ActivitityService {
         if (out == null || out.isBlank())
             return "[]";
         return out;
+    }
+
+    public String getHeartrateZonesAsJSON(Users user) {
+        int maxHeartrate = user.getUsersExtensions().flatMap(UsersExtensions::getMaximumHeartRate).orElse(180);
+        return String.format("""
+                [
+                    {"zoneName": "Zone 1",
+                    "zoneThreshold": %d},
+                    {"zoneName": "Zone 2",
+                    "zoneThreshold": %d},
+                    {"zoneName": "Zone 3",
+                    "zoneThreshold": %d},
+                    {"zoneName": "Zone 4",
+                    "zoneThreshold": %d},
+                    {"zoneName": "Zone 5",
+                    "zoneThreshold": %d}
+                ]
+                """,
+                Math.round(maxHeartrate*0.6),
+                Math.round(maxHeartrate*0.7),
+                Math.round(maxHeartrate*0.8),
+                Math.round(maxHeartrate*0.9),
+                maxHeartrate);
+
     }
 
     public List<ActivityCount> getActivityTypeCount(Users user) {

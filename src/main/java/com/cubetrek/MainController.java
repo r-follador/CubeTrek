@@ -107,10 +107,8 @@ public class MainController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
-        ActivitityService.TopActivities bla = activitityService.getTopActivities(user);
         model.addAttribute("user", user);
         model.addAttribute("activityHeatmapJSON", activitityService.getActivityHeatmapAsJSON(user, user.getTimezone()));
         model.addAttribute("activityCumulativeJSON", activitityService.getActivityCumulativeAsJSON(user, user.getTimezone()));
@@ -119,6 +117,7 @@ public class MainController {
         model.addAttribute("topTracks", activitityService.getTopActivities(user));
         model.addAttribute("favoriteTracks",  activitityService.getFavoriteActivities(user));
         model.addAttribute("totalActivities", activitityService.getActivityCount(user));
+        model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(user));
         logger.info("View Dashboard by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "dashboard";
     }
@@ -202,13 +201,17 @@ public class MainController {
         model.addAttribute("isPolarConnected", utc != null && utc.isPolarEnabled());
         model.addAttribute("isCorosConnected", utc != null && utc.isCorosEnabled());
         model.addAttribute("userTier", usersRepository.findById(user.getId()).get().getUserTier()); //force load from database, user might be stale
+        model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(user));
         logger.info("View Profile by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "profile";
     }
 
     @PostMapping("/profile")
     public String saveProfileChanges(
-            @ModelAttribute("user") @Valid UserDto_minimal userDto, BindingResult bindingResult, Model model) {
+            @ModelAttribute("user") @Valid UserDto_minimal userDto,
+            BindingResult bindingResult,
+            @RequestParam(name = "maxHeartrate", required = false) Integer maxHeartrate,
+            Model model) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
@@ -229,6 +232,15 @@ public class MainController {
         try {
             user.setSharing(userDto.getSharing());
             user.setName(userDto.getName());
+
+            if (maxHeartrate != null) {
+                if (user.getUsersExtensions().isEmpty()) {
+                    UsersExtensions ue = new UsersExtensions();
+                    ue.setMaximumHeartrate(maxHeartrate);
+                    user.setUsersExtensions(ue);
+                } else
+                    user.getUsersExtensions().get().setMaximumHeartrate(maxHeartrate);
+            }
             usersRepository.save(user);
         } catch (RuntimeException ex) {
             logger.error("Registration Error", ex);

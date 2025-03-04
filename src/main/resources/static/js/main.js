@@ -1,5 +1,5 @@
 import  eventBus from './EventBus.js';
-import { settings } from "./utilities.js";
+import { settings, setMetric } from "./utilities.js";
 import { Map2D } from "./map2d.js";
 import { GraphCube } from "./graph.js";
 import { Map3D } from "./map3d.js";
@@ -25,6 +25,7 @@ function init() {
             map3d = new Map3D(geojson);
         else
             document.getElementById("progressdiv").style.display = "none";
+        setMetric();
     });
 }
 

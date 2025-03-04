@@ -51,6 +51,8 @@ public class TrackViewerService {
 
     HGTFileLoader_LocalStorage hgtFileLoader_3DEM;
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
+    @Autowired
+    private ActivitityService activitityService;
 
     @PostConstruct
     public void init() {
@@ -109,7 +111,7 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackViewerException(noAccessMessage);
 
-        return new TrackGeojson(track);
+        return new TrackGeojson(track, isWriteAccessAllowed(authentication, track));
     }
 
     /**
@@ -187,6 +189,8 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         String maptypeSanitized;
         switch(maptype.orElse("satellite")) {
             case "satellite" ->  maptypeSanitized = "satellite";
@@ -200,6 +204,9 @@ public class TrackViewerService {
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate().orElse(false));
+        if (isWriteAccessAllowed)
+            model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(track.getOwner()));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
@@ -221,12 +228,17 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate().orElse(false));
+        if (isWriteAccessAllowed)
+            model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(track.getOwner()));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
         model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
         model.addAttribute("owner", track.getOwner().getName());
@@ -249,14 +261,19 @@ public class TrackViewerService {
         if (!isReadAccessAllowed(authentication, track))
             throw new ExceptionHandling.TrackAccessException(noAccessMessage);
 
+        boolean isWriteAccessAllowed = isWriteAccessAllowed(authentication, track);
+
         model.addAttribute("trackmetadata", track);
         int hours = track.getDuration() / 60;
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
+        model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate().orElse(false));
+        if (isWriteAccessAllowed)
+            model.addAttribute("heartrateZones", activitityService.getHeartrateZonesAsJSON(track.getOwner()));
         model.addAttribute("formattedNote", markdownToHTML(track.getComment()));
-        model.addAttribute("writeAccess", isWriteAccessAllowed(authentication, track));
+        model.addAttribute("writeAccess", isWriteAccessAllowed);
         model.addAttribute("owner", track.getOwner().getName());
         model.addAttribute("ownerIsSupporter", track.getOwner().getUserTier()== Users.UserTier.PAID);
         model.addAttribute("isLoggedIn", !(authentication instanceof AnonymousAuthenticationToken));

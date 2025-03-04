@@ -89,6 +89,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" id="graphYDistance">Distance</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYElevation" >Elevation</a></li>
+                            <li th:if="${hasHeartrate && ownerIsSupporter}"}><a class="dropdown-item" href="#" id="graphYHeartrate" >Heartrate</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYHorizontalspeed" >Horizontal Speed</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYVerticalspeed" >Vertical Speed</a></li>
                         </ul>
@@ -104,8 +105,28 @@
                     </div>
                 </div>
             </div>
-            <div class="w-100" style="height: 25vh; min-height: 250px">
-                <div id="mapkill" style="height: 100%; width: 100%; min-width: 100px;"></div>
+            <div class="d-flex flex-column flex-fill w-100" style="height: 25vh; min-height: 250px">
+                <div id="heartratediv" th:if="${hasHeartrate}" class="mt-5 d-flex flex-column flex-grow-1" style="max-height:15vh;">
+                    <div th:if="${ownerIsSupporter}" class="row flex-grow-1">
+                        <div class="col d-flex align-items-center justify-content-center" id="heartrateDonut"></div>
+                        <div class="col d-flex flex-column justify-content-center">
+                            <h5 class="h5"><small class="text-muted fw-light">Heart Rate Average</small>
+                                <div id="heartrate_average">...</div>
+                            </h5>
+                            <h5 class="h5"><small class="text-muted fw-light">Heart Rate Max</small>
+                                <div id="heartrate_max">...</div>
+                            </h5>
+                        </div>
+                    </div>
+                    <div th:unless="${ownerIsSupporter}" class="row">
+                        <div class="mt-2 d-flex flex-row h-50 justify-content-center align-items-center text-center" onclick="window.location='/subscribe';">
+                                <span>
+                                    🧡 Heart rate data is currently in testing phase for 🏆
+                                    <a href="/subscribe">subscribers</a>.<br>Become a subscriber or check back later.
+                                </span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -185,6 +206,11 @@
                         </h5>
                         <h5 class="h5 col"><small class="text-muted fw-light">Vertical↓</small>
                             <div id="value_vertical_down_average">...</div>
+                        </h5>
+                    </div>
+                    <div class="row">
+                        <h5 class="h5 col"><small class="text-muted fw-light">Pace</small>
+                            <div id="value_pace_average">...</div>
                         </h5>
                     </div>
                 </div>
@@ -454,6 +480,10 @@
     /*<![CDATA[*/
     var maptilerApiKey = [[${maptilerApiKey}]];
     /*]]>*/
+</script>
+
+<script th:if="${heartrateZones != null}" th:inline="javascript">
+    var heartrateZones = [(${heartrateZones})];
 </script>
 
 

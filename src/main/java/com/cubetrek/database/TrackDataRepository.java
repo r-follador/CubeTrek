@@ -20,7 +20,7 @@ public interface TrackDataRepository extends JpaRepository<TrackData, Long>, Jpa
     void deleteById(Long id);
 
     @Cacheable(value = "trackdata", key = "#id")
-    @EntityGraph(attributePaths={"trackgeodata", "owner"})
+    @EntityGraph(attributePaths={"trackgeodata", "owner", "trackDataExtensions"})
     Optional<TrackData> findById(Long id);
 
     Optional<TrackData.TrackMetadata> findTrackMetadataById(Long id);

@@ -21,12 +21,11 @@ import org.springframework.web.util.HtmlUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Date;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @Entity(name = "trackdata")
 @Table(name = "trackdata")
@@ -83,6 +82,12 @@ public class TrackData implements Serializable {
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "trackgeodata_id", referencedColumnName = "id") //creates a foreign key column called trackdata_id
     private TrackGeodata trackgeodata;
+
+    @Getter
+    @Setter
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "trackdataextensions_id", referencedColumnName = "id") //creates a foreign key column called trackextendeddata_id
+    private TrackDataExtensions trackDataExtensions;
 
     @Getter
     @Setter
@@ -226,6 +231,14 @@ public class TrackData implements Serializable {
     @Column(name = "trackgroup")
     private Long trackgroup;
 
+    @Setter
+    @Column(name = "has_heartrate")
+    private Boolean hasHeartrate;
+
+    public Optional<Boolean> getHasHeartrate() {
+        return Optional.ofNullable(this.hasHeartrate);
+    }
+
     public void setBBox(LatLonBoundingBox bbox) {
         setBbox_N((float)bbox.getN_Bound());
         setBbox_E((float)bbox.getE_Bound());
@@ -283,6 +296,8 @@ public class TrackData implements Serializable {
         @JsonSerialize(using = TimestampSerializer.class)
         Instant getDatetrack();
         Integer getDuration();
+
+        Optional<Boolean> getHasHeartrate();
 
         @Value("#{@activitytypeConverter.convertToEntityAttribute(target.activitytype)}")
         Activitytype getActivitytype();

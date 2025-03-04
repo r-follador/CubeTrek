@@ -12,6 +12,17 @@
     <script src=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js "></script>
     <link href=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css " rel="stylesheet">
     <link href="../css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+    <style>
+        .heartrate-border {
+            border: 1px solid darkgrey;  /* Thin dark grey outer border */
+            border-collapse: collapse;  /* Ensures inner borders connect */
+        }
+        .heartrate-border th,
+        .heartrate-border td {
+            border: 1px solid darkgrey;  /* Inner borders for cells */
+        }
+    </style>
 </head>
 <body>
 <header th:replace="~{dashboard.html :: header}">
@@ -34,7 +45,8 @@
                 </div>
                 <div th:if="${userTier==userTier.FREE}">
                     Your not a Subscriber yet 😔<br>
-                    Help CubeTrek pay the server bills by buying a subscription.<br>
+                    ⇢ Help CubeTrek pay the server bills by buying a subscription.<br>
+                    ⇢ Get the latest features earlier.<br>
                     <a type="button" class="btn btn-warning" href="/subscribe">Subscribe to CubeTrek</a>
                 </div>
                 <div th:if="${userTier==userTier.PAID}">
@@ -84,10 +96,57 @@
                                     Public - <i>Tracks are visible for everyone</i>
                                 </label>
                             </div>
+                            <div>
+                                <small><i>Note:</i> Sharing settings affect only future uploaded tracks.<br>
+                                    Settings can be changed individually for each track.</small>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        Note: Sharing settings affect only future uploaded tracks. Settings can be changed individually for each track.
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Heart Rate<br>Zones</span>
+                        <div class="form-control">
+                            <table class="heartrate-border">
+                                <thead>
+                                <tr>
+                                    <th>Zone</th>
+                                    <th>% of Max</th>
+                                    <th>Heartrate (bpm)</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr class="zone1">
+                                    <td id="hrzone0_color">Zone 1</td>
+                                    <td>&lt;60%</td>
+                                    <td id="hrzone0_txt"></td>
+                                </tr>
+                                <tr class="zone2">
+                                    <td id="hrzone1_color">Zone 2</td>
+                                    <td>60-70%</td>
+                                    <td id="hrzone1_txt"></td>
+                                </tr>
+                                <tr class="zone3">
+                                    <td id="hrzone2_color">Zone 3</td>
+                                    <td>70-80%</td>
+                                    <td id="hrzone2_txt"></td>
+                                </tr>
+                                <tr class="zone4">
+                                    <td id="hrzone3_color">Zone 4</td>
+                                    <td>80-90%</td>
+                                    <td id="hrzone3_txt"></td>
+                                </tr>
+                                <tr class="zone5">
+                                    <td id="hrzone4_color">Zone 5</td>
+                                    <td>90-100%</td>
+                                    <td id="hrzone4_txt"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                            <div class="d-flex align-items-center gap-2 mt-3">
+                                <input type="range" id="maxHeartrateSlider" name="maxHeartrateSlider" min="60" max="230" class="form-range w-75" />
+                                <label for="maxHeartrateSlider" class="fw-bold">Max Heart Rate</label>
+                            </div>
+                            <input type="hidden" id="maxHeartrate" name="maxHeartrate">
+                        </div>
                     </div>
 
                     <button class="col-4 btn btn-primary mt-2" type="submit" id="savechange" disabled>Save Changes</button>
@@ -229,8 +288,40 @@
     </div>
 </div>
 
+<script th:if="${heartrateZones != null}" th:inline="javascript">
+    var heartrateZones = [(${heartrateZones})];
+</script>
 
 <script>
+    let maxHeartrate = 0;
+    function initHeartrateZones() {
+        heartrateZones.forEach((zone, index) => {
+            document.getElementById(`hrzone${index}_color`).style.backgroundColor = d3.interpolateOrRd((index + 0.5) / heartrateZones.length);
+        });
+        maxHeartrate = heartrateZones.at(-1).zoneThreshold;
+        document.getElementById("maxHeartrateSlider").value = maxHeartrate;
+        document.getElementById("maxHeartrateSlider").addEventListener("input", function(event) {
+            maxHeartrate = event.target.value;
+            document.getElementById("maxHeartrate").value = maxHeartrate;
+            updateHeartrateZones();
+            enableButton();
+        });
+        updateHeartrateZones();
+    }
+    function updateHeartrateZones() {
+        for (let i=0; i<5; i++) {
+            let lower = Math.round(((5+i)/10)*maxHeartrate);
+            let higher = Math.round(((6+i)/10)*maxHeartrate);
+            if (i===0)
+                document.getElementById(`hrzone${i}_txt`).innerText=`<${higher} bpm`;
+            else if (i===4)
+                document.getElementById(`hrzone${i}_txt`).innerHTML=`${lower}-<b>${higher}</b> bpm`;
+            else
+                document.getElementById(`hrzone${i}_txt`).innerText=`${lower}-${higher} bpm`;
+        }
+    }
+    initHeartrateZones();
+
     function enableButton() {
         document.getElementById('savechange').disabled=false;
     }

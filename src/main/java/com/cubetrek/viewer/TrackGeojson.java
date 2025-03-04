@@ -1,5 +1,6 @@
 package com.cubetrek.viewer;
 
+import com.cubetrek.database.TrackDataExtensions;
 import com.cubetrek.database.TrackGeodata;
 import com.cubetrek.database.TrackData;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -29,14 +30,16 @@ public class TrackGeojson implements Serializable{
 
     TrackData metadata;
     TrackGeodata data;
+    TrackDataExtensions trackDataExtensions;
 
 
-    public TrackGeojson(TrackData metadata) {
+    public TrackGeojson(TrackData metadata, boolean includeHeartrate) {
         this.metadata = metadata;
         data =metadata.getTrackgeodata();
+        if (includeHeartrate && metadata.getHasHeartrate().orElse(false))
+            trackDataExtensions = metadata.getTrackDataExtensions();
     }
 
-    @Transactional
     protected static class GeojsonSerializer extends JsonSerializer<TrackGeojson> {
         @Override
         public void serialize(TrackGeojson value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
@@ -69,7 +72,9 @@ public class TrackGeojson implements Serializable{
                             gen.writeNumber((float)cs[j].y); //lat
                             gen.writeNumber(value.data.getAltitudes().get(i)[j]); //elevation
                             gen.writeObject(value.data.getTimes().get(i)[j]); //datetime
-                            gen.writeObject((int)dist);
+                            gen.writeObject((int)dist); //distance
+                            if (value.trackDataExtensions != null)
+                                gen.writeNumber(value.trackDataExtensions.getHeartrate().get(i)[j]); //heartrate if present
                         gen.writeEndArray();
                     }
                     gen.writeEndArray();
