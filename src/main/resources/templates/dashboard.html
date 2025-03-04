@@ -621,6 +621,8 @@
 
     var datacumulative = [(${activityCumulativeJSON})];
 
+    var isFreeTier = [[${user.getUserTier()==T(com.cubetrek.database.Users.UserTier).FREE}]] ? true : false;
+
 </script>
 <script th:if="${heartrateZones != null}" th:inline="javascript">
     var heartrateZones = [(${heartrateZones})];
@@ -1549,6 +1551,7 @@
     }
 
     async function addRowInfo(row, entry) {
+
         row.innerHTML =
             `
     <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
@@ -1577,7 +1580,7 @@
             <div class="m-2"><span class='fw-light'>Pace</span> <span class="fs-3">${minFractionToString(parseFloat(entry.duration) / (parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)))} ${metric ? "min/km" : "min/mi"}</span></div>
         </div>
         <div class="col-lg-4 p-3">
-            <div class="d-flex flex-column ${entry.hasHeartrate ? "h-50":"h-100"} ">
+            <div class="d-flex flex-column ${entry.hasHeartrate ? "h-50" : "h-100"} ">
                 <div class="flex-grow-1">
                     <a href="${entry.trackgroup ? '/matching/' + entry.trackgroup : '/view/' + entry.id}">
                         <div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;"></div>
@@ -1585,8 +1588,8 @@
                 </div>
                 ${entry.trackgroup ? "<span class='fw-light'>Percentile</span> <span class='fs-6' id='trackgroupRank" + entry.id + "'></span>" : "<span class='fw-light mt-3'>Highest Point ASL</span><span class='fs-6'>" + (entry.highestpoint * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft") + "</span>"}
             </div>
-            ${entry.hasHeartrate ?
-            `<div class="d-flex flex-row h-50">
+            ${entry.hasHeartrate & !isFreeTier ?
+                `<div class="d-flex flex-row h-50">
                 <div class="flex-grow-1 col">
                     <a href="/view/${entry.id}">
                         <div id="heartrate${entry.id}" style="width: 100%; height: 100%; min-height: 60px;"></div>
@@ -1597,9 +1600,17 @@
                     <span class='fw-light mt-3'>Max Heartrate</span><span id="heartrate_max${entry.id}" class='fs-6'>666</span>
                 </div>
             </div>` : ""}
+            ${entry.hasHeartrate && isFreeTier ?
+                `<div class="d-flex flex-row h-50 justify-content-center align-items-center text-center" onclick="window.location='/subscribe';">
+                    <span>
+                        🧡 Heart rate data is currently in testing phase for 🏆
+                        <a href="/subscribe">subscribers</a>.<br>Become a subscriber or check back later.
+                    </span>
+                </div>
+                ` : ""}
         </div>
     </div>
-            `;
+        `;
 
         let convertedData;
         if (entry.hasHeartrate || !entry.trackgroup) {
@@ -1608,35 +1619,35 @@
         }
 
         if (entry.trackgroup) {
-            const matchingGraph = new MatchingGraph("graph"+entry.id, entry.trackgroup, entry.id);
-            document.getElementById("trackgroupRank"+entry.id).innerText = await matchingGraph.initialize();
+            const matchingGraph = new MatchingGraph("graph" + entry.id, entry.trackgroup, entry.id);
+            document.getElementById("trackgroupRank" + entry.id).innerText = await matchingGraph.initialize();
         } else {
-            const altitudeGraph = new AltitudeGraph("graph"+entry.id, entry.id);
+            const altitudeGraph = new AltitudeGraph("graph" + entry.id, entry.id);
             altitudeGraph.initialize(convertedData);
         }
 
         if (entry.hasHeartrate) {
-            const heartrateGraph = new GraphHeartrate(convertedData, document.getElementById("heartrate"+entry.id), document.getElementById("heartrate_avg"+entry.id), document.getElementById("heartrate_max"+entry.id));
+            const heartrateGraph = new GraphHeartrate(convertedData, document.getElementById("heartrate" + entry.id), document.getElementById("heartrate_avg" + entry.id), document.getElementById("heartrate_max" + entry.id));
         }
 
-/**
-        row.setAttribute("onclick","openPane("+entry.id+");");
-        row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
-        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
-        row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
-        row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
-        row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
-        row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
-        row.insertCell().innerHTML = (entry.trackgroup?"<a href='/matching/"+entry.trackgroup+"'><img title='Matching Activities' src='/assets/matched.svg'></a>":"");
- **/
+        /**
+         row.setAttribute("onclick","openPane("+entry.id+");");
+         row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
+         row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString();
+         row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
+         row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
+         row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
+         row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
+         row.insertCell().innerHTML = (entry.trackgroup?"<a href='/matching/"+entry.trackgroup+"'><img title='Matching Activities' src='/assets/matched.svg'></a>":"");
+         **/
     }
 
-    var menu = function(id) {
+    var menu = function (id) {
         document.getElementById("successmessageedit").style.display = "none";
         selectedtrackid = id;
         var entry = entries.get(id);
         bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
-        document.getElementById("inputTitle").value = (new DOMParser().parseFromString(entry.title, "text/html")).documentElement.textContent ;
+        document.getElementById("inputTitle").value = (new DOMParser().parseFromString(entry.title, "text/html")).documentElement.textContent;
         document.getElementById("inputType").value = entry.activitytype;
         document.getElementById("favoriteChecked").checked = entry.favorite;
 

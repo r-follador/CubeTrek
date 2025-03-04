@@ -86,7 +86,7 @@ public class Users implements UserDetails {
     private TrackData.Sharing sharing;
 
     @Setter
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "usersextensions_id", referencedColumnName = "id") //creates a foreign key column called trackextendeddata_id
     private UsersExtensions usersExtensions;
 

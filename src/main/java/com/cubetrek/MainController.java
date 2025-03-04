@@ -107,7 +107,6 @@ public class MainController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users)authentication.getPrincipal();
         model.addAttribute("user", user);

@@ -89,7 +89,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" id="graphYDistance">Distance</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYElevation" >Elevation</a></li>
-                            <li th:if="${hasHeartrate}"}><a class="dropdown-item" href="#" id="graphYHeartrate" >Heartrate</a></li>
+                            <li th:if="${hasHeartrate && ownerIsSupporter}"}><a class="dropdown-item" href="#" id="graphYHeartrate" >Heartrate</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYHorizontalspeed" >Horizontal Speed</a></li>
                             <li><a class="dropdown-item" href="#" id="graphYVerticalspeed" >Vertical Speed</a></li>
                         </ul>
@@ -197,7 +197,7 @@
                         <div class="row">
                             <h4 class="h4 col"><small class="text-muted fw-light">Heartrate</small></h4>
                         </div>
-                        <div class="row">
+                        <div th:if="${ownerIsSupporter}" class="row">
                             <div class="col" id="heartrateDonut"></div>
                             <div class="col">
                                 <h5 class="h5 row"><small class="text-muted fw-light">Average</small>
@@ -207,7 +207,14 @@
                                     <div id="heartrate_max">...</div>
                                 </h5>
                             </div>
-
+                        </div>
+                        <div th:unless="${ownerIsSupporter}" class="row">
+                            <div class="mt-2 d-flex flex-row h-50 justify-content-center align-items-center text-center" onclick="window.location='/subscribe';">
+                                <span>
+                                    🧡 Heart rate data is currently in testing phase for 🏆
+                                    <a href="/subscribe">subscribers</a>.<br>Become a subscriber or check back later.
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -481,6 +488,7 @@
 
 <script th:if="${heartrateZones != null}" th:inline="javascript">
     var heartrateZones = [(${heartrateZones})];
+    var ownerIsSupporter = [(${ownerIsSupporter})];
 </script>
 
 

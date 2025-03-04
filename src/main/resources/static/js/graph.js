@@ -510,6 +510,8 @@ export class GraphHeartrate {
     }
 
     drawDonut() {
+        if (this.donut_element.node() === null)
+            return;
         const width = this.donut_element.node().clientWidth;
         const height = this.donut_element.node().clientHeight;
 
