@@ -301,9 +301,6 @@ public class StorageService {
         trackData.setTimezone(user.getTimezone());
 
         GPXWorker.TrackSummary trackSummary = GPXWorker.getTrackSummary(segmentList);
-
-        logger.warn(trackSummary.toString());
-
         trackData.setElevationup(trackSummary.elevationUp);
         trackData.setElevationdown(trackSummary.elevationDown);
         trackData.setDuration(trackSummary.duration);
