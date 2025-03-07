@@ -53,6 +53,7 @@ public class ActivitityService {
         return out;
     }
 
+    @Transactional
     public String getHeartrateZonesAsJSON(Users user) {
         int maxHeartrate = user.getUsersExtensions().flatMap(UsersExtensions::getMaximumHeartRate).orElse(180);
         return String.format("""
