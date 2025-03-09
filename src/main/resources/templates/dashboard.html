@@ -620,9 +620,6 @@
     var datayearly = [(${yearlyTotalJSON})];
 
     var datacumulative = [(${activityCumulativeJSON})];
-
-    var isFreeTier = [[${user.getUserTier()==T(com.cubetrek.database.Users.UserTier).FREE}]] ? true : false;
-
 </script>
 <script th:if="${heartrateZones != null}" th:inline="javascript">
     var heartrateZones = [(${heartrateZones})];
@@ -1588,7 +1585,7 @@
                 </div>
                 ${entry.trackgroup ? "<span class='fw-light'>Percentile</span> <span class='fs-6' id='trackgroupRank" + entry.id + "'></span>" : "<span class='fw-light mt-3'>Highest Point ASL</span><span class='fs-6'>" + (entry.highestpoint * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft") + "</span>"}
             </div>
-            ${entry.hasHeartrate & !isFreeTier ?
+            ${entry.hasHeartrate ?
                 `<div class="d-flex flex-row h-50">
                 <div class="flex-grow-1 col">
                     <a href="/view/${entry.id}">
@@ -1600,14 +1597,6 @@
                     <span class='fw-light mt-3'>Max Heartrate</span><span id="heartrate_max${entry.id}" class='fs-6'>666</span>
                 </div>
             </div>` : ""}
-            ${entry.hasHeartrate && isFreeTier ?
-                `<div class="d-flex flex-row h-50 justify-content-center align-items-center text-center" onclick="window.location='/subscribe';">
-                    <span>
-                        🧡 Heart rate data is currently in testing phase for 🏆
-                        <a href="/subscribe">subscribers</a>.<br>Become a subscriber or check back later.
-                    </span>
-                </div>
-                ` : ""}
         </div>
     </div>
         `;
