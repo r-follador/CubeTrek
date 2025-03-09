@@ -1,10 +1,7 @@
 package com.cubetrek.viewer;
 
 import com.cubetrek.ExceptionHandling;
-import com.cubetrek.database.TrackData;
-import com.cubetrek.database.TrackDataRepository;
-import com.cubetrek.database.Users;
-import com.cubetrek.database.UsersExtensions;
+import com.cubetrek.database.*;
 import jakarta.transaction.Transactional;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +21,9 @@ public class ActivitityService {
 
     @Autowired
     TrackDataRepository trackDataRepository;
+
+    @Autowired
+    UsersRepository usersRepository;
 
     public String getActivityHeatmapAsJSON(Users user, String timeZone) {
         String out = trackDataRepository.getDailyAggregatedStatsAsJSON(user.getId(), timeZone);
@@ -53,9 +53,9 @@ public class ActivitityService {
         return out;
     }
 
-    @Transactional
     public String getHeartrateZonesAsJSON(Users user) {
-        int maxHeartrate = user.getUsersExtensions().flatMap(UsersExtensions::getMaximumHeartRate).orElse(180);
+        Optional<UsersExtensions> usersExtensions = usersRepository.findById(user.getId()).get().getUsersExtensions();
+        int maxHeartrate = usersExtensions.flatMap(UsersExtensions::getMaximumHeartRate).orElse(180);
         return String.format("""
                 [
                     {"zoneName": "Zone 1",
