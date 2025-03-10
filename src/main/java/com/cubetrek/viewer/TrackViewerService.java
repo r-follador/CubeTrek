@@ -89,7 +89,12 @@ public class TrackViewerService {
     //make this function cacheable end using the id as key
     @Cacheable(cacheNames = "gltf", key = "#id")
     public String getGLTFString_cacheable(long id, LatLonBoundingBox boundingBox, String maptype) throws IOException {
-        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_3DEM).setZoomlevel(calculateZoomlevel(boundingBox)).setEnclosement(true).setTextureUrl("map/"+maptype+"/%d/%d/%d.png").build();
+        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_3DEM)
+                .setZoomlevel(calculateZoomlevel(boundingBox))
+                .setEnclosement(true)
+                .setTextureUrl("map/"+maptype+"/%d/%d/%d.png")
+                .setHeightOffset(20)
+                .build();
         return gltfDatafile.getString();
     }
 
