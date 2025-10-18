@@ -208,6 +208,7 @@ public class TrackViewerService {
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
+        model.addAttribute("device", track.getDevice());
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
         model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate().orElse(false));
         if (isWriteAccessAllowed)
@@ -240,6 +241,7 @@ public class TrackViewerService {
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
+        model.addAttribute("device", track.getDevice());
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
         model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate().orElse(false));
         if (isWriteAccessAllowed)
@@ -273,6 +275,7 @@ public class TrackViewerService {
         int minutes = track.getDuration() % 60;
         model.addAttribute("timeString", String.format("%d:%02d", hours, minutes));
         model.addAttribute("datetimeCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_datetime));
+        model.addAttribute("device", track.getDevice());
         model.addAttribute("dateCreatedString", track.getDatetrack().atZone(TimeZone.getDefault().toZoneId()).format(formatter_date));
         model.addAttribute("hasHeartrate", isWriteAccessAllowed && track.getHasHeartrate().orElse(false));
         if (isWriteAccessAllowed)

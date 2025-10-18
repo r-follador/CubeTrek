@@ -235,6 +235,11 @@ public class TrackData implements Serializable {
     @Column(name = "has_heartrate")
     private Boolean hasHeartrate;
 
+    @Getter
+    @Setter
+    @Column(name = "device")
+    private String device;
+
     public Optional<Boolean> getHasHeartrate() {
         return Optional.ofNullable(this.hasHeartrate);
     }
@@ -276,6 +281,7 @@ public class TrackData implements Serializable {
                 "activitytype=" + activitytype + '\'' +
                 "comment=" + comment + '\'' +
                 "timezone=" + timezone + '\'' +
+                "device=" + device + '\'' +
                 '}';
     }
 

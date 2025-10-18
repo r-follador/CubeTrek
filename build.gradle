@@ -1,12 +1,12 @@
 plugins {
-    id 'org.springframework.boot' version '3.2.1'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'java'
 }
 
 group = 'com.cubetrek'
 version = '1.1-SNAPSHOT'
-sourceCompatibility = '21'
+sourceCompatibility = '23'
 
 configurations {
     compileOnly {
@@ -30,7 +30,7 @@ dependencies {
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
-    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.3-SNAPSHOT.jar')
+    implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/build/libs/TopoLibrary-2.4-SNAPSHOT.jar')
     implementation files('/home/rainer/Software_Dev/IdeaProjects/TopoLibrary/libs/fit.jar')
     implementation 'io.jenetics:jpx:3.2.1'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'

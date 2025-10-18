@@ -145,7 +145,10 @@
                 </div>
                 <div class="card-body">
                     <div class="row pb-2">
-                        <div class="figure-caption">[[${datetimeCreatedString}]]</div>
+                        <div class="figure-caption d-flex justify-content-between align-items-center">
+                            <span>[[${datetimeCreatedString}]]</span>
+                            <small th:if="${device != null}" class="text-muted ms-2 text-end" th:text="${device}"></small>
+                        </div>
                         <div class="display-6"
                              th:attr="data-bs-toggle=${writeAccess?'modal':''}, data-bs-target=${writeAccess?'#editModal':''}"
                              th:attrappend="onmouseout=${writeAccess?'document.getElementById(''edittitle'').style.visibility = ''hidden'';':''}, onmouseover=${writeAccess?'document.getElementById(''edittitle'').style.visibility = ''visible'';':''}"

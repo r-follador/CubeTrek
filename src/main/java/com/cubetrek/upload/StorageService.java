@@ -312,6 +312,7 @@ public class StorageService {
 
         trackData.setTitle(createTitlePreliminary(trackData, user.getTimezone()));
         trackData.setActivitytype(getActivitytype(conversionOutput));
+        trackData.setDevice(conversionOutput.device == null || conversionOutput.device.isEmpty()?null:conversionOutput.device);
 
         //Check if duplicate
         if (trackDataRepository.existsByOwnerAndDatetrackAndCenterAndDistanceAndDuration(user, trackData.getDatetrack(), trackData.getCenter(), trackData.getDistance(), trackData.getDuration())) {
