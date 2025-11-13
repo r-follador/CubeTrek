@@ -72,6 +72,9 @@ public class MainController {
     @Autowired
     private ActivitityService activitityService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${maptiler.api.key}")
     String maptilerApiKey;
 
@@ -316,7 +319,7 @@ public class MainController {
         model.addAttribute("groupidstring", Long.toString(groupid));
         model.addAttribute("maptilerApiKey", maptilerApiKey);
         try {
-            model.addAttribute("matches", (new ObjectMapper().writeValueAsString(activitityService.getMatchingActivities(user, groupid))));
+            model.addAttribute("matches", objectMapper.writeValueAsString(activitityService.getMatchingActivities(user, groupid)));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
