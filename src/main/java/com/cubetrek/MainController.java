@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,6 +75,9 @@ public class MainController {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserGoalRepository userGoalRepository;
 
     @Value("${maptiler.api.key}")
     String maptilerApiKey;
@@ -159,6 +163,16 @@ public class MainController {
         return "matched_activities_overview";
     }
 
+    @GetMapping("/goals")
+    public String getGoals(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users) authentication.getPrincipal();
+        model.addAttribute("user", user);
+        model.addAttribute("userGoals", userGoalRepository.findByUser(user));
+        logger.info("View Goals by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
+        return "goals";
+    }
+
     @GetMapping("/hidden")
     public String getHiddenList(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -166,6 +180,102 @@ public class MainController {
         model.addAttribute("hiddenList", activitityService.getHiddenList(user));
         logger.info("View Hidden List by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "hidden_list";
+    }
+
+    @PostMapping("/goals")
+    public String createGoal(@RequestParam("activityType") TrackData.Activitytype activityType,
+                             @RequestParam("goalMetric") UserGoal.GoalMetric goalMetric,
+                             @RequestParam("targetValue") Double targetValue,
+                             @RequestParam("periodType") UserGoal.PeriodType periodType,
+                             @RequestParam("startDate") String startDate,
+                             @RequestParam(value = "endDate", required = false) Optional<String> endDate,
+                             @RequestParam(value = "weekStartDay", required = false) Optional<Short> weekStartDay,
+                             @RequestParam("prefersMetric") boolean prefersMetric,
+                             RedirectAttributes redirectAttributes) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users) authentication.getPrincipal();
+
+        UserGoal goal = new UserGoal();
+        applyGoalForm(goal, user, activityType, goalMetric, targetValue, periodType, startDate, endDate, weekStartDay, prefersMetric);
+        userGoalRepository.save(goal);
+
+        redirectAttributes.addFlashAttribute("goalCreated", true);
+        logger.info("Created goal for user id '"+user.getId()+"'; Name '"+user.getName()+"'");
+        return "redirect:/goals";
+    }
+
+    @PostMapping("/goals/{goalId}")
+    public String updateGoal(@PathVariable("goalId") Long goalId,
+                             @RequestParam("activityType") TrackData.Activitytype activityType,
+                             @RequestParam("goalMetric") UserGoal.GoalMetric goalMetric,
+                             @RequestParam("targetValue") Double targetValue,
+                             @RequestParam("periodType") UserGoal.PeriodType periodType,
+                             @RequestParam("startDate") String startDate,
+                             @RequestParam(value = "endDate", required = false) Optional<String> endDate,
+                             @RequestParam(value = "weekStartDay", required = false) Optional<Short> weekStartDay,
+                             @RequestParam("prefersMetric") boolean prefersMetric,
+                             RedirectAttributes redirectAttributes) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users) authentication.getPrincipal();
+        UserGoal goal = getGoalForUser(goalId, user);
+        applyGoalForm(goal, user, activityType, goalMetric, targetValue, periodType, startDate, endDate, weekStartDay, prefersMetric);
+        userGoalRepository.save(goal);
+        redirectAttributes.addFlashAttribute("goalUpdated", true);
+        logger.info("Updated goal id '"+goalId+"' for user id '"+user.getId()+"'");
+        return "redirect:/goals";
+    }
+
+    @PostMapping("/goals/{goalId}/delete")
+    public String deleteGoal(@PathVariable("goalId") Long goalId, RedirectAttributes redirectAttributes) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Users user = (Users) authentication.getPrincipal();
+        UserGoal goal = getGoalForUser(goalId, user);
+
+        userGoalRepository.delete(goal);
+        redirectAttributes.addFlashAttribute("goalDeleted", true);
+        logger.info("Deleted goal id '"+goalId+"' for user id '"+user.getId()+"'");
+        return "redirect:/goals";
+    }
+
+    private void applyGoalForm(UserGoal goal,
+                               Users user,
+                               TrackData.Activitytype activityType,
+                               UserGoal.GoalMetric goalMetric,
+                               Double targetValue,
+                               UserGoal.PeriodType periodType,
+                               String startDate,
+                               Optional<String> endDate,
+                               Optional<Short> weekStartDay,
+                               boolean prefersMetric) {
+        if (startDate == null || startDate.isBlank()) {
+            throw new ExceptionHandling.UnnamedException("Invalid Goal", "Start date is required.");
+        }
+        goal.setUser(user);
+        goal.setActivityType(activityType);
+        goal.setGoalMetric(goalMetric);
+        goal.setTargetValue(convertTargetValue(goalMetric, targetValue, prefersMetric));
+        goal.setPeriodType(periodType);
+        goal.setStartDate(Instant.parse(startDate));
+        goal.setEndDate(endDate.filter(e -> !e.isBlank()).map(Instant::parse).orElse(null));
+        goal.setWeekStartDay(weekStartDay.orElse(null));
+    }
+
+    private UserGoal getGoalForUser(Long goalId, Users user) {
+        return userGoalRepository.findById(goalId)
+                .filter(existingGoal -> existingGoal.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new ExceptionHandling.UnnamedException("Goal not found", "The requested goal cannot be found."));
+    }
+
+    private int convertTargetValue(UserGoal.GoalMetric goalMetric, Double targetValue, boolean prefersMetric) {
+        double normalized = targetValue != null ? targetValue : 0d;
+        if (!prefersMetric) {
+            normalized = switch (goalMetric) {
+                case DISTANCE -> normalized * 1.60934; // miles -> km
+                case ELEVATION -> normalized * 0.3048; // feet -> meters
+                default -> normalized;
+            };
+        }
+        return (int) Math.round(normalized);
     }
 
     @GetMapping("/trekmapper")

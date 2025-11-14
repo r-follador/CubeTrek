@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - Goals</title>
+    <script src=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js "></script>
+    <link href=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css " rel="stylesheet">
+    <link href="../css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+</head>
+<body>
+<header th:replace="~{dashboard.html :: header}">
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav th:replace="~{dashboard.html :: navigation(field='goals')}" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        </nav>
+    </div>
+
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Goals</h1>
+                <button type="button" id="openGoalModalButton" class="btn btn-primary btn-lg">Create a New Goal</button>
+            </div>
+
+            <div class="mb-3">
+                <div th:if="${goalCreated}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    New goal saved successfully.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${goalUpdated}" class="alert alert-info alert-dismissible fade show" role="alert">
+                    Goal updated successfully.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${goalDeleted}" class="alert alert-warning alert-dismissible fade show" role="alert">
+                    Goal deleted.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <section class="mb-4">
+                <div th:if="${userGoals.empty}" class="alert alert-info">
+                    You haven't created any goals yet.
+                    <button type="button" class="btn btn-link p-0 align-baseline" id="emptyStateCreateButton">Create a New Goal</button>
+                    to get started.
+                </div>
+                <div th:unless="${userGoals.empty}" class="table-responsive bg-white border rounded shadow-sm">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col">Activity</th>
+                            <th scope="col">Metric</th>
+                            <th scope="col">Target</th>
+                            <th scope="col">Period</th>
+                            <th scope="col">Date Range</th>
+                            <th scope="col">Week Start</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="goal : ${userGoals}"
+                            th:with="startIso=${goal.startDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.startDate) : ''},
+                                     endIso=${goal.endDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.endDate) : ''},
+                                     startDateDisplay=${startIso != '' ? #strings.substring(startIso, 0, 10) : ''},
+                                     endDateDisplay=${endIso != '' ? #strings.substring(endIso, 0, 10) : ''},
+                                     goalTitle=${goal.activityType.displayValue + ' ' + #strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">
+                            <td>
+                                <span th:text="${goal.activityType.displayValue}">Activity</span>
+                            </td>
+                            <td>
+                                <span th:text="${#strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">Metric</span>
+                            </td>
+                            <td>
+                                <span th:switch="${goal.goalMetric}">
+                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).DISTANCE}"
+                                          th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.1f miles', goal.targetValue * 0.621371) : T(java.lang.String).format('%d km', goal.targetValue)}">Target</span>
+                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).TIME}"
+                                          th:text="${T(java.lang.String).format('%d hours', goal.targetValue)}">Hours</span>
+                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ELEVATION}"
+                                          th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.0f ft', goal.targetValue * 3.28084) : T(java.lang.String).format('%d m', goal.targetValue)}">Elevation</span>
+                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ACTIVITIES}"
+                                          th:text="${T(java.lang.String).format('%d activities', goal.targetValue)}">Activities</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span th:text="${#strings.capitalize(#strings.toLowerCase(goal.periodType.name()))}">Period</span>
+                            </td>
+                            <td>
+                                <span th:text="${startDateDisplay != '' ? startDateDisplay : '-'}">2024-01-01</span>
+                                <span th:if="${endDateDisplay != ''}" th:text="${' – ' + endDateDisplay}"></span>
+                            </td>
+                            <td>
+                                <span th:if="${goal.periodType == T(com.cubetrek.database.UserGoal.PeriodType).WEEKLY}"
+                                      th:text="${goal.weekStartDay == 1 ? 'Monday' : (goal.weekStartDay == 7 ? 'Sunday' : '-')}">Week</span>
+                                <span th:unless="${goal.periodType == T(com.cubetrek.database.UserGoal.PeriodType).WEEKLY}">-</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            data-goal-edit
+                                            th:data-update-action="@{/goals/{goalId}(goalId=${goal.id})}"
+                                            th:data-activity="${goal.activityType}"
+                                            th:data-metric="${goal.goalMetric}"
+                                            th:data-period="${goal.periodType}"
+                                            th:data-target-value="${goal.targetValue}"
+                                            th:data-week-start="${goal.weekStartDay}"
+                                            th:data-start-date="${startDateDisplay}"
+                                            th:data-start-iso="${startIso}"
+                                            th:data-end-date="${endDateDisplay}"
+                                            th:data-end-iso="${endIso}"
+                                            th:data-title="${goalTitle}">
+                                        Edit
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-outline-danger"
+                                            data-goal-delete
+                                            th:data-delete-action="@{/goals/{goalId}/delete(goalId=${goal.id})}"
+                                            th:data-title="${goalTitle}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<div class="modal fade" id="goalModal" tabindex="-1" aria-labelledby="goalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalModalLabel">Create a New Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="goalForm" th:action="@{/goals}" th:data-create-action="@{/goals}" method="post" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="activityType" class="form-label">Activity Type</label>
+                            <select class="form-select" id="activityType" name="activityType" required>
+                                <option value="" selected disabled>Select an activity</option>
+                                <option th:each="activity : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"
+                                        th:value="${activity}"
+                                        th:text="${activity.displayValue}">
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Please choose an activity.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="goalMetric" class="form-label">Goal Metric</label>
+                            <select class="form-select" id="goalMetric" name="goalMetric" required>
+                                <option value="" selected disabled>Select a metric</option>
+                                <option th:each="metric : ${T(com.cubetrek.database.UserGoal.GoalMetric).values()}"
+                                        th:value="${metric}"
+                                        th:text="${#strings.capitalize(#strings.toLowerCase(metric.name()))}">
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Please select the metric you want to improve.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="targetValue" class="form-label">Target Value</label>
+                            <div class="input-group has-validation">
+                                <input type="number" class="form-control" id="targetValue" name="targetValue" min="0.1" step="0.1" inputmode="decimal" required placeholder="Enter the amount to reach">
+                                <span class="input-group-text" id="targetUnitLabel">Units</span>
+                                <div class="invalid-feedback">Please provide a positive target value.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="periodType" class="form-label">Goal Period</label>
+                            <select class="form-select" id="periodType" name="periodType" required>
+                                <option value="" selected disabled>Select timeframe</option>
+                                <option th:each="period : ${T(com.cubetrek.database.UserGoal.PeriodType).values()}"
+                                        th:value="${period}"
+                                        th:text="${#strings.capitalize(#strings.toLowerCase(period.name()))}">
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Please choose how often you want to hit this goal.</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row g-3">
+                        <div class="col-md-6 d-none" id="goalStartDateGroup">
+                            <label for="goalStartDateInput" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="goalStartDateInput">
+                            <div class="invalid-feedback">Provide the start date for custom goals.</div>
+                        </div>
+                        <div class="col-md-6 d-none" id="goalEndDateGroup">
+                            <label for="goalEndDateInput" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="goalEndDateInput">
+                            <div class="invalid-feedback">Provide the end date for custom goals.</div>
+                        </div>
+                        <div class="col-md-6 d-none" id="weekStartGroup">
+                            <label for="weekStartDay" class="form-label">Week Starts On</label>
+                            <select class="form-select" id="weekStartDay" name="weekStartDay" disabled>
+                                <option value="" selected disabled>Select start of week</option>
+                                <option value="1">Monday</option>
+                                <option value="7">Sunday</option>
+                            </select>
+                            <div class="invalid-feedback">Select the day your training week starts.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-danger py-2 px-3 d-none" id="goalDateError"></div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="goalStartDateHidden" name="startDate">
+                    <input type="hidden" id="goalEndDateHidden" name="endDate">
+                    <input type="hidden" id="prefersMetric" name="prefersMetric" th:value="${(user != null ? user.metric : true)}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="goalModalSubmitButton" class="btn btn-primary">Save Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteGoalModal" tabindex="-1" aria-labelledby="deleteGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteGoalModalLabel">Delete Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteGoalForm" th:action="@{/goals}" method="post">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <span id="deleteGoalName" class="fw-semibold">this goal</span>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script th:inline="javascript">
+    const userPrefersMetric = /*[[${user != null ? user.metric : true}]]*/ true;
+    let metric = userPrefersMetric;
+    let metricPreferenceInput;
+    let goalMetricSelectElement;
+    let targetUnitLabelElement;
+    let goalForm;
+    let periodSelect;
+    let weekStartGroup;
+    let weekStartSelect;
+    let goalStartDateGroup;
+    let goalStartDateInput;
+    let goalEndDateGroup;
+    let goalEndDateInput;
+    let goalStartDateHidden;
+    let goalEndDateHidden;
+    let goalModalInstance;
+    let goalModalTitle;
+    let goalModalSubmitButton;
+    let targetValueInput;
+    let goalFormCreateAction;
+    let deleteGoalModalInstance;
+    let deleteGoalForm;
+    let deleteGoalNameElement;
+    let goalDateError;
+    const KM_TO_MILES = 0.621371;
+    const M_TO_FEET = 3.28084;
+
+    function setMetricLabel() {
+        const metricCheckedLabel = document.getElementById("metricCheckedLabel");
+        if (metricCheckedLabel) {
+            metricCheckedLabel.innerText = metric ? "Metric Units" : "Imperial Units";
+        }
+    }
+
+    function showDateError(message) {
+        if (!goalDateError) {
+            return;
+        }
+        goalDateError.textContent = message;
+        goalDateError.classList.remove("d-none");
+    }
+
+    function hideDateError() {
+        if (!goalDateError) {
+            return;
+        }
+        goalDateError.textContent = "";
+        goalDateError.classList.add("d-none");
+    }
+
+    function syncMetricPreferenceInput() {
+        if (metricPreferenceInput) {
+            metricPreferenceInput.value = metric ? "true" : "false";
+        }
+    }
+
+    function getUnitLabel(metricValue) {
+        switch (metricValue) {
+            case "DISTANCE":
+                return metric ? "km" : "miles";
+            case "TIME":
+                return "hours";
+            case "ELEVATION":
+                return metric ? "meters" : "feet";
+            case "ACTIVITIES":
+                return "Activities";
+            default:
+                return "Units";
+        }
+    }
+
+    function updateTargetUnitLabel() {
+        if (!goalMetricSelectElement || !targetUnitLabelElement) {
+            return;
+        }
+        const metricValue = goalMetricSelectElement.value;
+        targetUnitLabelElement.textContent = metricValue ? getUnitLabel(metricValue) : "Units";
+    }
+
+    function settings() {
+        const stored = localStorage.getItem("metric");
+        if (stored !== null) {
+            metric = (stored === "true");
+        } else {
+            localStorage.setItem("metric", metric);
+        }
+        const metricCheckbox = document.getElementById("metricChecked");
+        if (metricCheckbox) {
+            metricCheckbox.checked = metric;
+        }
+        setMetricLabel();
+        syncMetricPreferenceInput();
+        updateTargetUnitLabel();
+    }
+
+    function clickSettingsMetric() {
+        const metricCheckbox = document.getElementById("metricChecked");
+        if (!metricCheckbox) {
+            return;
+        }
+        const previousMetricPreference = metric;
+        metric = metricCheckbox.checked;
+        localStorage.setItem("metric", metric);
+        setMetricLabel();
+        syncMetricPreferenceInput();
+        if (targetValueInput && targetValueInput.value && goalMetricSelectElement && goalMetricSelectElement.value) {
+            const currentValue = Number(targetValueInput.value);
+            if (!Number.isNaN(currentValue)) {
+                targetValueInput.value = convertValueBetweenSystems(goalMetricSelectElement.value, currentValue, previousMetricPreference, metric);
+            }
+        }
+        updateTargetUnitLabel();
+    }
+
+    function roundTo(value, decimals) {
+        const factor = Math.pow(10, decimals);
+        return Math.round(value * factor) / factor;
+    }
+
+    function convertMetricToImperial(metricType, value) {
+        switch (metricType) {
+            case "DISTANCE":
+                return roundTo(value * KM_TO_MILES, 2);
+            case "ELEVATION":
+                return roundTo(value * M_TO_FEET, 0);
+            default:
+                return value;
+        }
+    }
+
+    function convertImperialToMetric(metricType, value) {
+        switch (metricType) {
+            case "DISTANCE":
+                return roundTo(value / KM_TO_MILES, 2);
+            case "ELEVATION":
+                return roundTo(value / M_TO_FEET, 0);
+            default:
+                return value;
+        }
+    }
+
+    function convertValueBetweenSystems(metricType, value, fromMetricUnits, toMetricUnits) {
+        if (fromMetricUnits === toMetricUnits) {
+            return value;
+        }
+        return toMetricUnits ? convertImperialToMetric(metricType, value) : convertMetricToImperial(metricType, value);
+    }
+
+    function convertValueForDisplay(metricType, storedValue) {
+        if (metric) {
+            return storedValue;
+        }
+        return convertMetricToImperial(metricType, storedValue);
+    }
+
+    function formatDateForInput(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function toIsoDateString(value) {
+        if (!value) {
+            return "";
+        }
+        const parts = value.split("-");
+        if (parts.length !== 3) {
+            return "";
+        }
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+            return "";
+        }
+        return new Date(Date.UTC(year, month, day)).toISOString();
+    }
+
+    function setStartDateToToday() {
+        if (!goalStartDateHidden) {
+            return;
+        }
+        const today = new Date();
+        goalStartDateHidden.value = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())).toISOString();
+    }
+
+    function toggleConditionalFields() {
+        if (!periodSelect) {
+            return;
+        }
+        const period = periodSelect.value;
+        const isWeekly = period === "WEEKLY";
+        const isCustom = period === "CUSTOM";
+
+        if (weekStartGroup) {
+            weekStartGroup.classList.toggle("d-none", !isWeekly);
+        }
+        if (weekStartSelect) {
+            weekStartSelect.disabled = !isWeekly;
+            weekStartSelect.required = isWeekly;
+            if (!isWeekly) {
+                weekStartSelect.value = "";
+            }
+        }
+
+        if (goalStartDateGroup) {
+            goalStartDateGroup.classList.toggle("d-none", !isCustom);
+        }
+        if (goalStartDateInput) {
+            goalStartDateInput.disabled = !isCustom;
+            goalStartDateInput.required = isCustom;
+            if (isCustom && !goalStartDateInput.value) {
+                goalStartDateInput.value = formatDateForInput(new Date());
+            }
+            if (!isCustom) {
+                goalStartDateInput.value = "";
+            }
+        }
+
+        if (goalEndDateGroup) {
+            goalEndDateGroup.classList.toggle("d-none", !isCustom);
+        }
+        if (goalEndDateInput) {
+            goalEndDateInput.disabled = !isCustom;
+            goalEndDateInput.required = isCustom;
+            if (!isCustom) {
+                goalEndDateInput.value = "";
+                if (goalEndDateHidden) {
+                    goalEndDateHidden.value = "";
+                }
+            }
+        }
+
+        if (!isCustom && goalStartDateHidden && !goalStartDateHidden.value) {
+            setStartDateToToday();
+        }
+        if (!isCustom) {
+            hideDateError();
+        }
+    }
+
+    function resetGoalForm() {
+        if (!goalForm) {
+            return;
+        }
+        goalForm.reset();
+        goalForm.classList.remove("was-validated");
+        if (goalStartDateHidden) {
+            goalStartDateHidden.value = "";
+        }
+        if (goalEndDateHidden) {
+            goalEndDateHidden.value = "";
+        }
+        if (goalStartDateInput) {
+            goalStartDateInput.value = "";
+        }
+        if (goalEndDateInput) {
+            goalEndDateInput.value = "";
+        }
+        if (weekStartSelect) {
+            weekStartSelect.value = "";
+        }
+        if (targetValueInput) {
+            targetValueInput.value = "";
+        }
+        syncMetricPreferenceInput();
+        toggleConditionalFields();
+        updateTargetUnitLabel();
+        hideDateError();
+    }
+
+    function openGoalModalForCreate() {
+        if (!goalModalInstance) {
+            return;
+        }
+        resetGoalForm();
+        if (goalModalTitle) {
+            goalModalTitle.textContent = "Create a New Goal";
+        }
+        if (goalModalSubmitButton) {
+            goalModalSubmitButton.textContent = "Save Goal";
+        }
+        if (goalForm && goalFormCreateAction) {
+            goalForm.setAttribute("action", goalFormCreateAction);
+        }
+        goalModalInstance.show();
+    }
+
+    function openGoalModalForEdit(button) {
+        if (!goalModalInstance || !button) {
+            return;
+        }
+        resetGoalForm();
+        if (goalModalTitle) {
+            goalModalTitle.textContent = "Edit Goal";
+        }
+        if (goalModalSubmitButton) {
+            goalModalSubmitButton.textContent = "Update Goal";
+        }
+        if (goalForm) {
+            goalForm.setAttribute("action", button.dataset.updateAction || goalFormCreateAction || "/goals");
+        }
+        const activityTypeSelect = document.getElementById("activityType");
+        if (activityTypeSelect) {
+            activityTypeSelect.value = button.dataset.activity || "";
+        }
+        if (goalMetricSelectElement) {
+            goalMetricSelectElement.value = button.dataset.metric || "";
+        }
+        if (periodSelect) {
+            periodSelect.value = button.dataset.period || "";
+        }
+        if (targetValueInput) {
+            const storedValue = Number(button.dataset.targetValue || "0");
+            targetValueInput.value = Number.isNaN(storedValue) ? "" : convertValueForDisplay(button.dataset.metric, storedValue);
+        }
+        if (goalStartDateHidden) {
+            goalStartDateHidden.value = button.dataset.startIso || "";
+        }
+        if (goalEndDateHidden) {
+            goalEndDateHidden.value = button.dataset.endIso || "";
+        }
+        toggleConditionalFields();
+        if (periodSelect && periodSelect.value === "CUSTOM") {
+            if (goalStartDateInput) {
+                goalStartDateInput.value = button.dataset.startDate || "";
+            }
+            if (goalEndDateInput) {
+                goalEndDateInput.value = button.dataset.endDate || "";
+            }
+        }
+        if (weekStartSelect) {
+            weekStartSelect.value = button.dataset.weekStart || "";
+        }
+        updateTargetUnitLabel();
+        goalModalInstance.show();
+    }
+
+    function openDeleteModal(button) {
+        if (!deleteGoalModalInstance || !button || !deleteGoalForm) {
+            return;
+        }
+        deleteGoalForm.setAttribute("action", button.dataset.deleteAction || deleteGoalForm.getAttribute("action") || "/goals");
+        if (deleteGoalNameElement) {
+            deleteGoalNameElement.textContent = button.dataset.title || "this goal";
+        }
+        deleteGoalModalInstance.show();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        metricPreferenceInput = document.getElementById("prefersMetric");
+        goalMetricSelectElement = document.getElementById("goalMetric");
+        targetUnitLabelElement = document.getElementById("targetUnitLabel");
+        targetValueInput = document.getElementById("targetValue");
+        goalForm = document.getElementById("goalForm");
+        periodSelect = document.getElementById("periodType");
+        weekStartGroup = document.getElementById("weekStartGroup");
+        weekStartSelect = document.getElementById("weekStartDay");
+        goalStartDateGroup = document.getElementById("goalStartDateGroup");
+        goalStartDateInput = document.getElementById("goalStartDateInput");
+        goalEndDateGroup = document.getElementById("goalEndDateGroup");
+        goalEndDateInput = document.getElementById("goalEndDateInput");
+        goalStartDateHidden = document.getElementById("goalStartDateHidden");
+        goalEndDateHidden = document.getElementById("goalEndDateHidden");
+        goalModalTitle = document.getElementById("goalModalLabel");
+        goalModalSubmitButton = document.getElementById("goalModalSubmitButton");
+        const goalModalElement = document.getElementById("goalModal");
+        if (goalModalElement && window.bootstrap) {
+            goalModalInstance = bootstrap.Modal.getOrCreateInstance(goalModalElement);
+        }
+        const deleteGoalModalElement = document.getElementById("deleteGoalModal");
+        if (deleteGoalModalElement && window.bootstrap) {
+            deleteGoalModalInstance = bootstrap.Modal.getOrCreateInstance(deleteGoalModalElement);
+        }
+        deleteGoalForm = document.getElementById("deleteGoalForm");
+        deleteGoalNameElement = document.getElementById("deleteGoalName");
+        goalDateError = document.getElementById("goalDateError");
+        if (goalForm) {
+            goalFormCreateAction = goalForm.dataset.createAction || goalForm.getAttribute("action");
+        }
+
+        const openGoalModalButton = document.getElementById("openGoalModalButton");
+        if (openGoalModalButton) {
+            openGoalModalButton.addEventListener("click", openGoalModalForCreate);
+        }
+        const emptyStateCreateButton = document.getElementById("emptyStateCreateButton");
+        if (emptyStateCreateButton) {
+            emptyStateCreateButton.addEventListener("click", openGoalModalForCreate);
+        }
+        document.querySelectorAll("[data-goal-edit]").forEach((button) => {
+            button.addEventListener("click", () => openGoalModalForEdit(button));
+        });
+        document.querySelectorAll("[data-goal-delete]").forEach((button) => {
+            button.addEventListener("click", () => openDeleteModal(button));
+        });
+
+        if (goalStartDateInput) {
+            goalStartDateInput.addEventListener("input", hideDateError);
+        }
+        if (goalEndDateInput) {
+            goalEndDateInput.addEventListener("input", hideDateError);
+        }
+
+        settings();
+
+        if (periodSelect) {
+            periodSelect.addEventListener("change", toggleConditionalFields);
+        }
+        if (goalMetricSelectElement) {
+            goalMetricSelectElement.addEventListener("change", updateTargetUnitLabel);
+        }
+
+        toggleConditionalFields();
+        updateTargetUnitLabel();
+
+        if (goalForm) {
+            goalForm.addEventListener("submit", (event) => {
+                const isCustom = periodSelect && periodSelect.value === "CUSTOM";
+                let customDateValid = true;
+                if (isCustom) {
+                    if (!goalStartDateInput.value || !goalEndDateInput.value) {
+                        customDateValid = false;
+                        showDateError("Please provide both a start and end date.");
+                    } else {
+                        const startDateVal = new Date(goalStartDateInput.value);
+                        const endDateVal = new Date(goalEndDateInput.value);
+                        if (endDateVal < startDateVal) {
+                            customDateValid = false;
+                            showDateError("End date must be on or after the start date.");
+                        } else {
+                            hideDateError();
+                        }
+                    }
+                } else {
+                    hideDateError();
+                }
+
+                if (!customDateValid || goalForm.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    goalForm.classList.add("was-validated");
+                    return;
+                } else if (isCustom) {
+                    if (goalStartDateHidden) {
+                        goalStartDateHidden.value = toIsoDateString(goalStartDateInput.value);
+                    }
+                    if (goalEndDateHidden) {
+                        goalEndDateHidden.value = toIsoDateString(goalEndDateInput.value);
+                    }
+                } else if (!goalStartDateHidden || !goalStartDateHidden.value) {
+                    setStartDateToToday();
+                }
+                if (!isCustom && goalEndDateHidden) {
+                    goalEndDateHidden.value = "";
+                }
+                goalForm.classList.add("was-validated");
+            });
+        }
+    });
+</script>
+</html>
