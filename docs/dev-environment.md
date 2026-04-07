@@ -19,11 +19,11 @@ There are two jars, which cannot be loaded from Gradle/Maven and you need to be 
 - Create a database called cubetrek and a user and create the postgis extension in this database, e.g.
 ```
 sudo -i -u postgres
-creatdb cubetrek
+createdb cubetrek
 createuser cubetrek_postgres
 
 psql
-ALTER USER postgres PASSWORD 'my-super-secure-password'
+ALTER USER postgres PASSWORD 'my-super-secure-password';
 grant all privileges on database cubetrek to cubetrek_postgres;
 
 \c cubetrek
