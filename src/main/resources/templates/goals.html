@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <link rel="icon" type="image/svg" href="/assets/logo.svg">
+    <title>CubeTrek - Goals</title>
+    <script src=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js "></script>
+    <link href=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css " rel="stylesheet">
+    <link href="../css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+    <style>
+        .goals-grid {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 480px));
+            justify-content: start;
+        }
+
+        .goal-card-shell {
+            cursor: pointer;
+            min-height: 440px;
+            perspective: 1200px;
+            width: min(100%, 480px);
+        }
+
+        .goal-card-shell.is-flipped .goal-card {
+            transform: rotateY(180deg);
+        }
+
+        .goal-card-shell.goal-fulfilled .goal-card-face {
+            border-color: rgba(23, 156, 94, .42);
+            box-shadow: 0 18px 46px rgba(23, 156, 94, .24), 0 0 0 1px rgba(23, 156, 94, .12);
+        }
+
+        .goal-card-shell.goal-fulfilled .goal-gauge-progress {
+            stroke: #179c5e;
+        }
+
+        .goal-card-shell.goal-fulfilled .goal-card-face::after {
+            background: radial-gradient(circle, rgba(23, 156, 94, .18), transparent 62%);
+            content: "";
+            height: 170px;
+            pointer-events: none;
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 170px;
+        }
+
+        .goal-card {
+            border-radius: 1.35rem;
+            height: 100%;
+            min-height: 440px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform .65s cubic-bezier(.2, .7, .2, 1);
+        }
+
+        .goal-card-face {
+            --goal-accent: #176b87;
+            --goal-accent-soft: #e5f4f8;
+            --goal-time: #f59f00;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
+            border: 1px solid rgba(23, 107, 135, .14);
+            border-radius: 1.35rem;
+            box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
+            display: flex;
+            flex-direction: column;
+            inset: 0;
+            min-height: 440px;
+            overflow: hidden;
+            padding: 1.5rem;
+            position: absolute;
+            width: 100%;
+        }
+
+        .goal-card-front {
+            transform: rotateY(0deg);
+        }
+
+        .goal-card-back {
+            transform: rotateY(180deg);
+        }
+
+        .goal-flip-hint {
+            color: #78909b;
+            font-size: .78rem;
+            margin-top: auto;
+            padding-top: .8rem;
+        }
+
+        .goal-chart {
+            flex: 1;
+            min-height: 245px;
+        }
+
+        .goal-chart svg {
+            display: block;
+            height: 100%;
+            min-height: 245px;
+            width: 100%;
+        }
+
+        .goal-chart .axis path,
+        .goal-chart .axis line {
+            stroke: #c9d8de;
+        }
+
+        .goal-chart .axis text {
+            fill: #6d7e86;
+            font-size: 11px;
+        }
+
+        .goal-chart .target-line {
+            fill: none;
+            stroke: #f59f00;
+            stroke-dasharray: 5 5;
+            stroke-width: 2;
+        }
+
+        .goal-chart .actual-line {
+            fill: none;
+            stroke: #176b87;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 3;
+        }
+
+        .goal-chart .actual-dot {
+            fill: #176b87;
+            stroke: #fff;
+            stroke-width: 2;
+        }
+
+        .goal-chart-label {
+            color: #526873;
+            font-size: .82rem;
+        }
+
+        .goal-chart-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: .35rem;
+        }
+
+        .goal-chart-legend span {
+            align-items: center;
+            color: #526873;
+            display: inline-flex;
+            font-size: .78rem;
+            gap: .35rem;
+        }
+
+        .goal-chart-legend i {
+            border-radius: 999px;
+            display: inline-block;
+            height: .45rem;
+            width: 1.1rem;
+        }
+
+        .goal-chart-legend .actual-key {
+            background: #176b87;
+        }
+
+        .goal-chart-legend .target-key {
+            background: #f59f00;
+        }
+
+        .goal-card-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .goal-status-badge {
+            align-items: center;
+            background: #179c5e;
+            border-radius: 999px;
+            box-shadow: 0 10px 24px rgba(23, 156, 94, .28);
+            color: #fff;
+            display: inline-flex;
+            font-size: .82rem;
+            font-weight: 700;
+            gap: .35rem;
+            padding: .35rem .7rem;
+        }
+
+        .goal-status-badge .goal-checkmark {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .goal-activity {
+            color: #102a36;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -.01em;
+        }
+
+        .goal-meta {
+            color: #667985;
+            font-size: .82rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .goal-gauge-wrap {
+            align-items: center;
+            display: grid;
+            justify-items: center;
+            margin: .75rem 0 1.15rem;
+            position: relative;
+        }
+
+        .goal-gauge {
+            height: 150px;
+            width: min(100%, 300px);
+        }
+
+        .goal-gauge-track,
+        .goal-gauge-progress {
+            fill: none;
+            stroke-linecap: round;
+            stroke-width: 18;
+        }
+
+        .goal-gauge-track {
+            stroke: #e3edf1;
+        }
+
+        .goal-gauge-progress {
+            stroke: var(--goal-accent);
+            transition: stroke-dasharray .45s ease;
+        }
+
+        .goal-gauge-label {
+            bottom: .15rem;
+            position: absolute;
+            text-align: center;
+        }
+
+        .goal-gauge-percent {
+            color: #102a36;
+            display: block;
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .goal-gauge-caption {
+            color: #667985;
+            font-size: .82rem;
+        }
+
+        .goal-stats {
+            display: grid;
+            gap: .75rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .goal-stat {
+            background: rgba(255, 255, 255, .78);
+            border: 1px solid rgba(23, 107, 135, .1);
+            border-radius: .95rem;
+            padding: .8rem .9rem;
+        }
+
+        .goal-stat-label {
+            color: #6d7e86;
+            display: block;
+            font-size: .78rem;
+            margin-bottom: .15rem;
+        }
+
+        .goal-stat-value {
+            color: #102a36;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .goal-time-row {
+            margin-top: 1rem;
+        }
+
+        .goal-time-copy {
+            align-items: center;
+            color: #405560;
+            display: flex;
+            font-size: .86rem;
+            justify-content: space-between;
+            margin-bottom: .35rem;
+        }
+
+        .goal-time-track {
+            background: #e9eef1;
+            border-radius: 999px;
+            height: .72rem;
+            overflow: hidden;
+        }
+
+        .goal-time-fill {
+            background: linear-gradient(90deg, #f08c00, var(--goal-time));
+            border-radius: inherit;
+            height: 100%;
+            min-width: .35rem;
+        }
+
+        .goal-actions {
+            display: flex;
+            gap: .5rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 575.98px) {
+            .goal-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<header th:replace="~{dashboard.html :: header}">
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav th:replace="~{dashboard.html :: navigation(field='goals')}" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        </nav>
+    </div>
+
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Goals</h1>
+                <button type="button" id="openGoalModalButton" class="btn btn-primary btn-lg">Create a New Goal</button>
+            </div>
+
+            <div class="mb-3">
+                <div th:if="${goalCreated}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    New goal saved successfully.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${goalUpdated}" class="alert alert-info alert-dismissible fade show" role="alert">
+                    Goal updated successfully.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${goalDeleted}" class="alert alert-warning alert-dismissible fade show" role="alert">
+                    Goal deleted.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <section class="mb-4">
+                <div th:if="${userGoals.empty}" class="alert alert-info">
+                    You haven't created any goals yet.
+                    <button type="button" class="btn btn-link p-0 align-baseline" id="emptyStateCreateButton">Create a New Goal</button>
+                    to get started.
+                </div>
+                <div th:unless="${userGoalViews.empty}" class="goals-grid">
+                    <article class="goal-card-shell"
+                             data-goal-card
+                             th:classappend="${view.fulfilled ? ' goal-fulfilled' : ''}"
+                             th:each="view : ${userGoalViews}"
+                             th:with="goal=${view.goal},
+                                     startIso=${goal.startDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.startDate) : ''},
+                                     endIso=${goal.endDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.endDate) : ''},
+                                     startDateDisplay=${startIso != '' ? #strings.substring(startIso, 0, 10) : ''},
+                                     endDateDisplay=${endIso != '' ? #strings.substring(endIso, 0, 10) : ''},
+                                     goalTitle=${goal.activityType.displayValue + ' ' + #strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">
+                        <div class="goal-card">
+                            <div class="goal-card-face goal-card-front">
+                                <div class="goal-card-header">
+                                    <div>
+                                        <div class="goal-meta" th:text="${#strings.capitalize(#strings.toLowerCase(goal.periodType.name())) + ' goal'}">Weekly goal</div>
+                                        <h2 class="goal-activity mb-0" th:text="${goal.activityType.displayValue}">Activity</h2>
+                                    </div>
+                                    <span th:if="${view.fulfilled}" class="goal-status-badge">
+                                        <span class="goal-checkmark" aria-hidden="true">✓</span>
+                                        Done
+                                    </span>
+                                    <span th:unless="${view.fulfilled}"
+                                          class="badge rounded-pill text-bg-light border"
+                                          th:text="${#strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">Metric</span>
+                                </div>
+
+                                <div class="goal-gauge-wrap">
+                                    <svg class="goal-gauge" viewBox="0 0 180 105" role="img" aria-label="Goal progress">
+                                        <path class="goal-gauge-track" d="M 22 88 A 68 68 0 0 1 158 88" pathLength="100"></path>
+                                        <path class="goal-gauge-progress"
+                                              d="M 22 88 A 68 68 0 0 1 158 88"
+                                              pathLength="100"
+                                              th:attr="stroke-dasharray=${view.progressDashArray}"></path>
+                                    </svg>
+                                    <div class="goal-gauge-label">
+                                        <span class="goal-gauge-percent"
+                                              th:text="${T(java.lang.String).format('%.0f%%', view.progressPercentage)}">62%</span>
+                                        <span class="goal-gauge-caption">of target reached</span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-stats">
+                                    <div class="goal-stat">
+                                        <span class="goal-stat-label">Completed</span>
+                                        <span class="goal-stat-value" th:switch="${goal.goalMetric}">
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).DISTANCE}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.1f miles', view.actualValue * 0.621371) : T(java.lang.String).format('%.1f km', view.actualValue)}">Actual</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).TIME}"
+                                                  th:text="${T(java.lang.String).format('%.1f hours', view.actualValue)}">Actual</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ELEVATION}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.0f ft', view.actualValue * 3.28084) : T(java.lang.String).format('%.0f m', view.actualValue)}">Actual</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ACTIVITIES}"
+                                                  th:text="${T(java.lang.String).format('%.0f activities', view.actualValue)}">Actual</span>
+                                        </span>
+                                    </div>
+                                    <div class="goal-stat">
+                                        <span class="goal-stat-label">Target</span>
+                                        <span class="goal-stat-value" th:switch="${goal.goalMetric}">
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).DISTANCE}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.1f miles', goal.targetValue * 0.621371) : T(java.lang.String).format('%d km', goal.targetValue)}">Target</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).TIME}"
+                                                  th:text="${T(java.lang.String).format('%d hours', goal.targetValue)}">Hours</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ELEVATION}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.0f ft', goal.targetValue * 3.28084) : T(java.lang.String).format('%d m', goal.targetValue)}">Elevation</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ACTIVITIES}"
+                                                  th:text="${T(java.lang.String).format('%d activities', goal.targetValue)}">Activities</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-time-row">
+                                    <div class="goal-time-copy">
+                                        <span th:text="${view.windowStartDateDisplay + ' - ' + view.windowEndDateDisplay}">2026-01-01 - 2026-01-31</span>
+                                        <strong th:text="${view.periodEnded ? 'Period ended' : (view.daysRemaining == 1 ? '1 day left' : view.daysRemaining + ' days left')}">8 days left</strong>
+                                    </div>
+                                    <div class="goal-time-track" aria-label="Time elapsed">
+                                        <div class="goal-time-fill"
+                                             th:style="${view.elapsedWidthStyle}"></div>
+                                    </div>
+                                </div>
+
+                                <div class="goal-actions">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            data-goal-edit
+                                            th:data-update-action="@{/goals/{goalId}(goalId=${goal.id})}"
+                                            th:data-activity="${goal.activityType}"
+                                            th:data-metric="${goal.goalMetric}"
+                                            th:data-period="${goal.periodType}"
+                                            th:data-target-value="${goal.targetValue}"
+                                            th:data-week-start="${goal.weekStartDay}"
+                                            th:data-start-date="${startDateDisplay}"
+                                            th:data-start-iso="${startIso}"
+                                            th:data-end-date="${endDateDisplay}"
+                                            th:data-end-iso="${endIso}"
+                                            th:data-title="${goalTitle}">
+                                        Edit
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm"
+                                            data-goal-delete
+                                            th:data-delete-action="@{/goals/{goalId}/delete(goalId=${goal.id})}"
+                                            th:data-title="${goalTitle}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="goal-card-face goal-card-back">
+                                <div class="goal-card-header">
+                                    <div>
+                                        <div class="goal-meta">Progress trend</div>
+                                        <h2 class="goal-activity mb-0" th:text="${goalTitle}">Goal trend</h2>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span th:if="${view.fulfilled}" class="goal-status-badge">
+                                            <span class="goal-checkmark" aria-hidden="true">✓</span>
+                                            Done
+                                        </span>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-goal-flip-back>Back</button>
+                                    </div>
+                                </div>
+                                <div class="goal-chart-label mt-3" th:text="${'Days since ' + view.windowStartDateDisplay}">Days since start</div>
+                                <div class="goal-chart"
+                                     data-goal-chart
+                                     th:data-graph="${view.graphDataJson}"></div>
+                                <div class="goal-chart-legend">
+                                    <span><i class="actual-key"></i>Actual</span>
+                                    <span><i class="target-key"></i>Target pace</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<div class="modal fade" id="goalModal" tabindex="-1" aria-labelledby="goalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalModalLabel">Create a New Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="goalForm" th:action="@{/goals}" th:data-create-action="@{/goals}" method="post" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="activityType" class="form-label">Activity Type</label>
+                            <select class="form-select" id="activityType" name="activityType" required>
+                                <option value="" selected disabled>Select an activity</option>
+                                <option th:each="activity : ${T(com.cubetrek.database.TrackData.Activitytype).values()}"
+                                        th:value="${activity}"
+                                        th:text="${activity.displayValue}">
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Please choose an activity.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="goalMetric" class="form-label">Goal Metric</label>
+                            <select class="form-select" id="goalMetric" name="goalMetric" required>
+                                <option value="" selected disabled>Select a metric</option>
+                                <option th:each="metric : ${T(com.cubetrek.database.UserGoal.GoalMetric).values()}"
+                                        th:value="${metric}"
+                                        th:text="${#strings.capitalize(#strings.toLowerCase(metric.name()))}">
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Please select the metric you want to improve.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="targetValue" class="form-label">Target Value</label>
+                            <div class="input-group has-validation">
+                                <input type="number" class="form-control" id="targetValue" name="targetValue" min="0.1" step="0.1" inputmode="decimal" required placeholder="Enter the amount to reach">
+                                <span class="input-group-text" id="targetUnitLabel">Units</span>
+                                <div class="invalid-feedback">Please provide a positive target value.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="periodType" class="form-label">Goal Period</label>
+                            <select class="form-select" id="periodType" name="periodType" required>
+                                <option value="" selected disabled>Select timeframe</option>
+                                <option th:each="period : ${T(com.cubetrek.database.UserGoal.PeriodType).values()}"
+                                        th:value="${period}"
+                                        th:text="${#strings.capitalize(#strings.toLowerCase(period.name()))}">
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Please choose how often you want to hit this goal.</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row g-3">
+                        <div class="col-md-6 d-none" id="goalStartDateGroup">
+                            <label for="goalStartDateInput" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="goalStartDateInput">
+                            <div class="invalid-feedback">Provide the start date for custom goals.</div>
+                        </div>
+                        <div class="col-md-6 d-none" id="goalEndDateGroup">
+                            <label for="goalEndDateInput" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="goalEndDateInput">
+                            <div class="invalid-feedback">Provide the end date for custom goals.</div>
+                        </div>
+                        <div class="col-md-6 d-none" id="weekStartGroup">
+                            <label for="weekStartDay" class="form-label">Week Starts On</label>
+                            <select class="form-select" id="weekStartDay" name="weekStartDay" disabled>
+                                <option value="" selected disabled>Select start of week</option>
+                                <option value="1">Monday</option>
+                                <option value="7">Sunday</option>
+                            </select>
+                            <div class="invalid-feedback">Select the day your training week starts.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-danger py-2 px-3 d-none" id="goalDateError"></div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="goalStartDateHidden" name="startDate">
+                    <input type="hidden" id="goalEndDateHidden" name="endDate">
+                    <input type="hidden" id="prefersMetric" name="prefersMetric" th:value="${(user != null ? user.metric : true)}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="goalModalSubmitButton" class="btn btn-primary">Save Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="metricChecked" onclick="clickSettingsMetric()">
+                    <label class="form-check-label" for="metricChecked" id="metricCheckedLabel">Metric Units</label>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteGoalModal" tabindex="-1" aria-labelledby="deleteGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteGoalModalLabel">Delete Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteGoalForm" th:action="@{/goals}" method="post">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <span id="deleteGoalName" class="fw-semibold">this goal</span>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script th:inline="javascript">
+    const userPrefersMetric = /*[[${user != null ? user.metric : true}]]*/ true;
+    let metric = userPrefersMetric;
+    let metricPreferenceInput;
+    let goalMetricSelectElement;
+    let targetUnitLabelElement;
+    let goalForm;
+    let periodSelect;
+    let weekStartGroup;
+    let weekStartSelect;
+    let goalStartDateGroup;
+    let goalStartDateInput;
+    let goalEndDateGroup;
+    let goalEndDateInput;
+    let goalStartDateHidden;
+    let goalEndDateHidden;
+    let goalModalInstance;
+    let goalModalTitle;
+    let goalModalSubmitButton;
+    let targetValueInput;
+    let goalFormCreateAction;
+    let deleteGoalModalInstance;
+    let deleteGoalForm;
+    let deleteGoalNameElement;
+    let goalDateError;
+    const KM_TO_MILES = 0.621371;
+    const M_TO_FEET = 3.28084;
+
+    function setMetricLabel() {
+        const metricCheckedLabel = document.getElementById("metricCheckedLabel");
+        if (metricCheckedLabel) {
+            metricCheckedLabel.innerText = metric ? "Metric Units" : "Imperial Units";
+        }
+    }
+
+    function showDateError(message) {
+        if (!goalDateError) {
+            return;
+        }
+        goalDateError.textContent = message;
+        goalDateError.classList.remove("d-none");
+    }
+
+    function hideDateError() {
+        if (!goalDateError) {
+            return;
+        }
+        goalDateError.textContent = "";
+        goalDateError.classList.add("d-none");
+    }
+
+    function syncMetricPreferenceInput() {
+        if (metricPreferenceInput) {
+            metricPreferenceInput.value = metric ? "true" : "false";
+        }
+    }
+
+    function getUnitLabel(metricValue) {
+        switch (metricValue) {
+            case "DISTANCE":
+                return metric ? "km" : "miles";
+            case "TIME":
+                return "hours";
+            case "ELEVATION":
+                return metric ? "meters" : "feet";
+            case "ACTIVITIES":
+                return "Activities";
+            default:
+                return "Units";
+        }
+    }
+
+    function updateTargetUnitLabel() {
+        if (!goalMetricSelectElement || !targetUnitLabelElement) {
+            return;
+        }
+        const metricValue = goalMetricSelectElement.value;
+        targetUnitLabelElement.textContent = metricValue ? getUnitLabel(metricValue) : "Units";
+    }
+
+    function settings() {
+        const stored = localStorage.getItem("metric");
+        if (stored !== null) {
+            metric = (stored === "true");
+        } else {
+            localStorage.setItem("metric", metric);
+        }
+        const metricCheckbox = document.getElementById("metricChecked");
+        if (metricCheckbox) {
+            metricCheckbox.checked = metric;
+        }
+        setMetricLabel();
+        syncMetricPreferenceInput();
+        updateTargetUnitLabel();
+    }
+
+    function clickSettingsMetric() {
+        const metricCheckbox = document.getElementById("metricChecked");
+        if (!metricCheckbox) {
+            return;
+        }
+        const previousMetricPreference = metric;
+        metric = metricCheckbox.checked;
+        localStorage.setItem("metric", metric);
+        setMetricLabel();
+        syncMetricPreferenceInput();
+        if (targetValueInput && targetValueInput.value && goalMetricSelectElement && goalMetricSelectElement.value) {
+            const currentValue = Number(targetValueInput.value);
+            if (!Number.isNaN(currentValue)) {
+                targetValueInput.value = convertValueBetweenSystems(goalMetricSelectElement.value, currentValue, previousMetricPreference, metric);
+            }
+        }
+        updateTargetUnitLabel();
+    }
+
+    function roundTo(value, decimals) {
+        const factor = Math.pow(10, decimals);
+        return Math.round(value * factor) / factor;
+    }
+
+    function convertMetricToImperial(metricType, value) {
+        switch (metricType) {
+            case "DISTANCE":
+                return roundTo(value * KM_TO_MILES, 2);
+            case "ELEVATION":
+                return roundTo(value * M_TO_FEET, 0);
+            default:
+                return value;
+        }
+    }
+
+    function convertImperialToMetric(metricType, value) {
+        switch (metricType) {
+            case "DISTANCE":
+                return roundTo(value / KM_TO_MILES, 2);
+            case "ELEVATION":
+                return roundTo(value / M_TO_FEET, 0);
+            default:
+                return value;
+        }
+    }
+
+    function convertValueBetweenSystems(metricType, value, fromMetricUnits, toMetricUnits) {
+        if (fromMetricUnits === toMetricUnits) {
+            return value;
+        }
+        return toMetricUnits ? convertImperialToMetric(metricType, value) : convertMetricToImperial(metricType, value);
+    }
+
+    function convertValueForDisplay(metricType, storedValue) {
+        if (metric) {
+            return storedValue;
+        }
+        return convertMetricToImperial(metricType, storedValue);
+    }
+
+    function formatDateForInput(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function toIsoDateString(value) {
+        if (!value) {
+            return "";
+        }
+        const parts = value.split("-");
+        if (parts.length !== 3) {
+            return "";
+        }
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+            return "";
+        }
+        return new Date(Date.UTC(year, month, day)).toISOString();
+    }
+
+    function setStartDateToToday() {
+        if (!goalStartDateHidden) {
+            return;
+        }
+        const today = new Date();
+        goalStartDateHidden.value = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())).toISOString();
+    }
+
+    function toggleConditionalFields() {
+        if (!periodSelect) {
+            return;
+        }
+        const period = periodSelect.value;
+        const isWeekly = period === "WEEKLY";
+        const isCustom = period === "CUSTOM";
+
+        if (weekStartGroup) {
+            weekStartGroup.classList.toggle("d-none", !isWeekly);
+        }
+        if (weekStartSelect) {
+            weekStartSelect.disabled = !isWeekly;
+            weekStartSelect.required = isWeekly;
+            if (!isWeekly) {
+                weekStartSelect.value = "";
+            }
+        }
+
+        if (goalStartDateGroup) {
+            goalStartDateGroup.classList.toggle("d-none", !isCustom);
+        }
+        if (goalStartDateInput) {
+            goalStartDateInput.disabled = !isCustom;
+            goalStartDateInput.required = isCustom;
+            if (isCustom && !goalStartDateInput.value) {
+                goalStartDateInput.value = formatDateForInput(new Date());
+            }
+            if (!isCustom) {
+                goalStartDateInput.value = "";
+            }
+        }
+
+        if (goalEndDateGroup) {
+            goalEndDateGroup.classList.toggle("d-none", !isCustom);
+        }
+        if (goalEndDateInput) {
+            goalEndDateInput.disabled = !isCustom;
+            goalEndDateInput.required = isCustom;
+            if (!isCustom) {
+                goalEndDateInput.value = "";
+                if (goalEndDateHidden) {
+                    goalEndDateHidden.value = "";
+                }
+            }
+        }
+
+        if (!isCustom && goalStartDateHidden && !goalStartDateHidden.value) {
+            setStartDateToToday();
+        }
+        if (!isCustom) {
+            hideDateError();
+        }
+    }
+
+    function resetGoalForm() {
+        if (!goalForm) {
+            return;
+        }
+        goalForm.reset();
+        goalForm.classList.remove("was-validated");
+        if (goalStartDateHidden) {
+            goalStartDateHidden.value = "";
+        }
+        if (goalEndDateHidden) {
+            goalEndDateHidden.value = "";
+        }
+        if (goalStartDateInput) {
+            goalStartDateInput.value = "";
+        }
+        if (goalEndDateInput) {
+            goalEndDateInput.value = "";
+        }
+        if (weekStartSelect) {
+            weekStartSelect.value = "";
+        }
+        if (targetValueInput) {
+            targetValueInput.value = "";
+        }
+        syncMetricPreferenceInput();
+        toggleConditionalFields();
+        updateTargetUnitLabel();
+        hideDateError();
+    }
+
+    function openGoalModalForCreate() {
+        if (!goalModalInstance) {
+            return;
+        }
+        resetGoalForm();
+        if (goalModalTitle) {
+            goalModalTitle.textContent = "Create a New Goal";
+        }
+        if (goalModalSubmitButton) {
+            goalModalSubmitButton.textContent = "Save Goal";
+        }
+        if (goalForm && goalFormCreateAction) {
+            goalForm.setAttribute("action", goalFormCreateAction);
+        }
+        goalModalInstance.show();
+    }
+
+    function openGoalModalForEdit(button) {
+        if (!goalModalInstance || !button) {
+            return;
+        }
+        resetGoalForm();
+        if (goalModalTitle) {
+            goalModalTitle.textContent = "Edit Goal";
+        }
+        if (goalModalSubmitButton) {
+            goalModalSubmitButton.textContent = "Update Goal";
+        }
+        if (goalForm) {
+            goalForm.setAttribute("action", button.dataset.updateAction || goalFormCreateAction || "/goals");
+        }
+        const activityTypeSelect = document.getElementById("activityType");
+        if (activityTypeSelect) {
+            activityTypeSelect.value = button.dataset.activity || "";
+        }
+        if (goalMetricSelectElement) {
+            goalMetricSelectElement.value = button.dataset.metric || "";
+        }
+        if (periodSelect) {
+            periodSelect.value = button.dataset.period || "";
+        }
+        if (targetValueInput) {
+            const storedValue = Number(button.dataset.targetValue || "0");
+            targetValueInput.value = Number.isNaN(storedValue) ? "" : convertValueForDisplay(button.dataset.metric, storedValue);
+        }
+        if (goalStartDateHidden) {
+            goalStartDateHidden.value = button.dataset.startIso || "";
+        }
+        if (goalEndDateHidden) {
+            goalEndDateHidden.value = button.dataset.endIso || "";
+        }
+        toggleConditionalFields();
+        if (periodSelect && periodSelect.value === "CUSTOM") {
+            if (goalStartDateInput) {
+                goalStartDateInput.value = button.dataset.startDate || "";
+            }
+            if (goalEndDateInput) {
+                goalEndDateInput.value = button.dataset.endDate || "";
+            }
+        }
+        if (weekStartSelect) {
+            weekStartSelect.value = button.dataset.weekStart || "";
+        }
+        updateTargetUnitLabel();
+        goalModalInstance.show();
+    }
+
+    function openDeleteModal(button) {
+        if (!deleteGoalModalInstance || !button || !deleteGoalForm) {
+            return;
+        }
+        deleteGoalForm.setAttribute("action", button.dataset.deleteAction || deleteGoalForm.getAttribute("action") || "/goals");
+        if (deleteGoalNameElement) {
+            deleteGoalNameElement.textContent = button.dataset.title || "this goal";
+        }
+        deleteGoalModalInstance.show();
+    }
+
+    function drawGoalChart(chartElement) {
+        if (!chartElement || chartElement.dataset.rendered === "true" || !window.d3) {
+            return;
+        }
+        let graphData;
+        try {
+            graphData = JSON.parse(chartElement.dataset.graph || "{}");
+        } catch (error) {
+            graphData = {};
+        }
+
+        const actual = Array.isArray(graphData.actual) ? graphData.actual : [];
+        const target = Array.isArray(graphData.target) ? graphData.target : [];
+        const allValues = actual.concat(target).map((point) => Number(point.value) || 0);
+        const yMax = Math.max(1, ...allValues) * 1.12;
+        const totalDays = Math.max(1, Number(graphData.totalDays) || 1);
+        const width = Math.max(300, chartElement.getBoundingClientRect().width || 300);
+        const height = 245;
+        const margin = {top: 18, right: 18, bottom: 42, left: 48};
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        chartElement.innerHTML = "";
+        const svg = d3.select(chartElement)
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("role", "img")
+                .attr("aria-label", "Goal progress over time");
+
+        const plot = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const xScale = d3.scaleLinear()
+                .domain([0, totalDays])
+                .range([0, innerWidth]);
+        const yScale = d3.scaleLinear()
+                .domain([0, yMax])
+                .nice()
+                .range([innerHeight, 0]);
+
+        const line = d3.line()
+                .x((point) => xScale(Number(point.day) || 0))
+                .y((point) => yScale(Number(point.value) || 0))
+                .curve(d3.curveMonotoneX);
+
+        plot.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(xScale).ticks(Math.min(6, totalDays)).tickFormat((day) => `${day}d`));
+        plot.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale).ticks(5));
+
+        plot.append("text")
+                .attr("x", innerWidth / 2)
+                .attr("y", innerHeight + 36)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#526873")
+                .attr("font-size", 12)
+                .text("Time (days)");
+
+        plot.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -innerHeight / 2)
+                .attr("y", -36)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#526873")
+                .attr("font-size", 12)
+                .text(graphData.yAxisLabel || "Goal");
+
+        plot.append("path")
+                .datum(target)
+                .attr("class", "target-line")
+                .attr("d", line);
+
+        plot.append("path")
+                .datum(actual)
+                .attr("class", "actual-line")
+                .attr("d", line);
+
+        plot.selectAll(".actual-dot")
+                .data(actual)
+                .join("circle")
+                .attr("class", "actual-dot")
+                .attr("cx", (point) => xScale(Number(point.day) || 0))
+                .attr("cy", (point) => yScale(Number(point.value) || 0))
+                .attr("r", 3.5);
+
+        chartElement.dataset.rendered = "true";
+    }
+
+    function initializeGoalCards() {
+        document.querySelectorAll("[data-goal-card]").forEach((card) => {
+            card.setAttribute("role", "button");
+            card.setAttribute("tabindex", "0");
+            const flip = () => {
+                card.classList.toggle("is-flipped");
+                if (card.classList.contains("is-flipped")) {
+                    window.setTimeout(() => drawGoalChart(card.querySelector("[data-goal-chart]")), 260);
+                }
+            };
+            card.addEventListener("click", (event) => {
+                if (event.target.closest("button, a, input, select, textarea, label")) {
+                    return;
+                }
+                flip();
+            });
+            card.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    flip();
+                }
+            });
+            const backButton = card.querySelector("[data-goal-flip-back]");
+            if (backButton) {
+                backButton.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    card.classList.remove("is-flipped");
+                });
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        metricPreferenceInput = document.getElementById("prefersMetric");
+        goalMetricSelectElement = document.getElementById("goalMetric");
+        targetUnitLabelElement = document.getElementById("targetUnitLabel");
+        targetValueInput = document.getElementById("targetValue");
+        goalForm = document.getElementById("goalForm");
+        periodSelect = document.getElementById("periodType");
+        weekStartGroup = document.getElementById("weekStartGroup");
+        weekStartSelect = document.getElementById("weekStartDay");
+        goalStartDateGroup = document.getElementById("goalStartDateGroup");
+        goalStartDateInput = document.getElementById("goalStartDateInput");
+        goalEndDateGroup = document.getElementById("goalEndDateGroup");
+        goalEndDateInput = document.getElementById("goalEndDateInput");
+        goalStartDateHidden = document.getElementById("goalStartDateHidden");
+        goalEndDateHidden = document.getElementById("goalEndDateHidden");
+        goalModalTitle = document.getElementById("goalModalLabel");
+        goalModalSubmitButton = document.getElementById("goalModalSubmitButton");
+        const goalModalElement = document.getElementById("goalModal");
+        if (goalModalElement && window.bootstrap) {
+            goalModalInstance = bootstrap.Modal.getOrCreateInstance(goalModalElement);
+        }
+        const deleteGoalModalElement = document.getElementById("deleteGoalModal");
+        if (deleteGoalModalElement && window.bootstrap) {
+            deleteGoalModalInstance = bootstrap.Modal.getOrCreateInstance(deleteGoalModalElement);
+        }
+        deleteGoalForm = document.getElementById("deleteGoalForm");
+        deleteGoalNameElement = document.getElementById("deleteGoalName");
+        goalDateError = document.getElementById("goalDateError");
+        if (goalForm) {
+            goalFormCreateAction = goalForm.dataset.createAction || goalForm.getAttribute("action");
+        }
+
+        const openGoalModalButton = document.getElementById("openGoalModalButton");
+        if (openGoalModalButton) {
+            openGoalModalButton.addEventListener("click", openGoalModalForCreate);
+        }
+        const emptyStateCreateButton = document.getElementById("emptyStateCreateButton");
+        if (emptyStateCreateButton) {
+            emptyStateCreateButton.addEventListener("click", openGoalModalForCreate);
+        }
+        initializeGoalCards();
+
+        document.querySelectorAll("[data-goal-edit]").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                event.stopPropagation();
+                openGoalModalForEdit(button);
+            });
+        });
+        document.querySelectorAll("[data-goal-delete]").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                event.stopPropagation();
+                openDeleteModal(button);
+            });
+        });
+
+        if (goalStartDateInput) {
+            goalStartDateInput.addEventListener("input", hideDateError);
+        }
+        if (goalEndDateInput) {
+            goalEndDateInput.addEventListener("input", hideDateError);
+        }
+
+        settings();
+
+        if (periodSelect) {
+            periodSelect.addEventListener("change", toggleConditionalFields);
+        }
+        if (goalMetricSelectElement) {
+            goalMetricSelectElement.addEventListener("change", updateTargetUnitLabel);
+        }
+
+        toggleConditionalFields();
+        updateTargetUnitLabel();
+
+        if (goalForm) {
+            goalForm.addEventListener("submit", (event) => {
+                const isCustom = periodSelect && periodSelect.value === "CUSTOM";
+                let customDateValid = true;
+                if (isCustom) {
+                    if (!goalStartDateInput.value || !goalEndDateInput.value) {
+                        customDateValid = false;
+                        showDateError("Please provide both a start and end date.");
+                    } else {
+                        const startDateVal = new Date(goalStartDateInput.value);
+                        const endDateVal = new Date(goalEndDateInput.value);
+                        if (endDateVal < startDateVal) {
+                            customDateValid = false;
+                            showDateError("End date must be on or after the start date.");
+                        } else {
+                            hideDateError();
+                        }
+                    }
+                } else {
+                    hideDateError();
+                }
+
+                if (!customDateValid || goalForm.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    goalForm.classList.add("was-validated");
+                    return;
+                } else if (isCustom) {
+                    if (goalStartDateHidden) {
+                        goalStartDateHidden.value = toIsoDateString(goalStartDateInput.value);
+                    }
+                    if (goalEndDateHidden) {
+                        goalEndDateHidden.value = toIsoDateString(goalEndDateInput.value);
+                    }
+                } else if (!goalStartDateHidden || !goalStartDateHidden.value) {
+                    setStartDateToToday();
+                }
+                if (!isCustom && goalEndDateHidden) {
+                    goalEndDateHidden.value = "";
+                }
+                goalForm.classList.add("was-validated");
+            });
+        }
+    });
+</script>
+</html>
