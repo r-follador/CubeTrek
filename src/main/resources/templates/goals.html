@@ -11,6 +11,319 @@
     <link href=" https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css " rel="stylesheet">
     <link href="../css/dashboard.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+    <style>
+        .goals-grid {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .goal-card-shell {
+            cursor: pointer;
+            min-height: 440px;
+            perspective: 1200px;
+        }
+
+        .goal-card-shell.is-flipped .goal-card {
+            transform: rotateY(180deg);
+        }
+
+        .goal-card-shell.goal-fulfilled .goal-card-face {
+            border-color: rgba(23, 156, 94, .42);
+            box-shadow: 0 18px 46px rgba(23, 156, 94, .24), 0 0 0 1px rgba(23, 156, 94, .12);
+        }
+
+        .goal-card-shell.goal-fulfilled .goal-gauge-progress {
+            stroke: #179c5e;
+        }
+
+        .goal-card-shell.goal-fulfilled .goal-card-face::after {
+            background: radial-gradient(circle, rgba(23, 156, 94, .18), transparent 62%);
+            content: "";
+            height: 170px;
+            pointer-events: none;
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 170px;
+        }
+
+        .goal-card {
+            border-radius: 1.35rem;
+            height: 100%;
+            min-height: 440px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform .65s cubic-bezier(.2, .7, .2, 1);
+        }
+
+        .goal-card-face {
+            --goal-accent: #176b87;
+            --goal-accent-soft: #e5f4f8;
+            --goal-time: #f59f00;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
+            border: 1px solid rgba(23, 107, 135, .14);
+            border-radius: 1.35rem;
+            box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
+            display: flex;
+            flex-direction: column;
+            inset: 0;
+            min-height: 440px;
+            overflow: hidden;
+            padding: 1.5rem;
+            position: absolute;
+            width: 100%;
+        }
+
+        .goal-card-front {
+            transform: rotateY(0deg);
+        }
+
+        .goal-card-back {
+            transform: rotateY(180deg);
+        }
+
+        .goal-flip-hint {
+            color: #78909b;
+            font-size: .78rem;
+            margin-top: auto;
+            padding-top: .8rem;
+        }
+
+        .goal-chart {
+            flex: 1;
+            min-height: 245px;
+        }
+
+        .goal-chart svg {
+            display: block;
+            height: 100%;
+            min-height: 245px;
+            width: 100%;
+        }
+
+        .goal-chart .axis path,
+        .goal-chart .axis line {
+            stroke: #c9d8de;
+        }
+
+        .goal-chart .axis text {
+            fill: #6d7e86;
+            font-size: 11px;
+        }
+
+        .goal-chart .target-line {
+            fill: none;
+            stroke: #f59f00;
+            stroke-dasharray: 5 5;
+            stroke-width: 2;
+        }
+
+        .goal-chart .actual-line {
+            fill: none;
+            stroke: #176b87;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 3;
+        }
+
+        .goal-chart .actual-dot {
+            fill: #176b87;
+            stroke: #fff;
+            stroke-width: 2;
+        }
+
+        .goal-chart-label {
+            color: #526873;
+            font-size: .82rem;
+        }
+
+        .goal-chart-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: .35rem;
+        }
+
+        .goal-chart-legend span {
+            align-items: center;
+            color: #526873;
+            display: inline-flex;
+            font-size: .78rem;
+            gap: .35rem;
+        }
+
+        .goal-chart-legend i {
+            border-radius: 999px;
+            display: inline-block;
+            height: .45rem;
+            width: 1.1rem;
+        }
+
+        .goal-chart-legend .actual-key {
+            background: #176b87;
+        }
+
+        .goal-chart-legend .target-key {
+            background: #f59f00;
+        }
+
+        .goal-card-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .goal-status-badge {
+            align-items: center;
+            background: #179c5e;
+            border-radius: 999px;
+            box-shadow: 0 10px 24px rgba(23, 156, 94, .28);
+            color: #fff;
+            display: inline-flex;
+            font-size: .82rem;
+            font-weight: 700;
+            gap: .35rem;
+            padding: .35rem .7rem;
+        }
+
+        .goal-status-badge .goal-checkmark {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .goal-activity {
+            color: #102a36;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -.01em;
+        }
+
+        .goal-meta {
+            color: #667985;
+            font-size: .82rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .goal-gauge-wrap {
+            align-items: center;
+            display: grid;
+            justify-items: center;
+            margin: .75rem 0 1.15rem;
+            position: relative;
+        }
+
+        .goal-gauge {
+            height: 150px;
+            width: min(100%, 300px);
+        }
+
+        .goal-gauge-track,
+        .goal-gauge-progress {
+            fill: none;
+            stroke-linecap: round;
+            stroke-width: 18;
+        }
+
+        .goal-gauge-track {
+            stroke: #e3edf1;
+        }
+
+        .goal-gauge-progress {
+            stroke: var(--goal-accent);
+            transition: stroke-dasharray .45s ease;
+        }
+
+        .goal-gauge-label {
+            bottom: .15rem;
+            position: absolute;
+            text-align: center;
+        }
+
+        .goal-gauge-percent {
+            color: #102a36;
+            display: block;
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .goal-gauge-caption {
+            color: #667985;
+            font-size: .82rem;
+        }
+
+        .goal-stats {
+            display: grid;
+            gap: .75rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .goal-stat {
+            background: rgba(255, 255, 255, .78);
+            border: 1px solid rgba(23, 107, 135, .1);
+            border-radius: .95rem;
+            padding: .8rem .9rem;
+        }
+
+        .goal-stat-label {
+            color: #6d7e86;
+            display: block;
+            font-size: .78rem;
+            margin-bottom: .15rem;
+        }
+
+        .goal-stat-value {
+            color: #102a36;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .goal-time-row {
+            margin-top: 1rem;
+        }
+
+        .goal-time-copy {
+            align-items: center;
+            color: #405560;
+            display: flex;
+            font-size: .86rem;
+            justify-content: space-between;
+            margin-bottom: .35rem;
+        }
+
+        .goal-time-track {
+            background: #e9eef1;
+            border-radius: 999px;
+            height: .72rem;
+            overflow: hidden;
+        }
+
+        .goal-time-fill {
+            background: linear-gradient(90deg, #f08c00, var(--goal-time));
+            border-radius: inherit;
+            height: 100%;
+            min-width: .35rem;
+        }
+
+        .goal-actions {
+            display: flex;
+            gap: .5rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 575.98px) {
+            .goal-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
 <header th:replace="~{dashboard.html :: header}">
@@ -51,60 +364,91 @@
                     <button type="button" class="btn btn-link p-0 align-baseline" id="emptyStateCreateButton">Create a New Goal</button>
                     to get started.
                 </div>
-                <div th:unless="${userGoals.empty}" class="table-responsive bg-white border rounded shadow-sm">
-                    <table class="table align-middle mb-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th scope="col">Activity</th>
-                            <th scope="col">Metric</th>
-                            <th scope="col">Target</th>
-                            <th scope="col">Period</th>
-                            <th scope="col">Date Range</th>
-                            <th scope="col">Week Start</th>
-                            <th scope="col" class="text-end">Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="goal : ${userGoals}"
-                            th:with="startIso=${goal.startDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.startDate) : ''},
+                <div th:unless="${userGoalViews.empty}" class="goals-grid">
+                    <article class="goal-card-shell"
+                             data-goal-card
+                             th:classappend="${view.fulfilled ? ' goal-fulfilled' : ''}"
+                             th:each="view : ${userGoalViews}"
+                             th:with="goal=${view.goal},
+                                     startIso=${goal.startDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.startDate) : ''},
                                      endIso=${goal.endDate != null ? T(java.time.format.DateTimeFormatter).ISO_INSTANT.format(goal.endDate) : ''},
                                      startDateDisplay=${startIso != '' ? #strings.substring(startIso, 0, 10) : ''},
                                      endDateDisplay=${endIso != '' ? #strings.substring(endIso, 0, 10) : ''},
                                      goalTitle=${goal.activityType.displayValue + ' ' + #strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">
-                            <td>
-                                <span th:text="${goal.activityType.displayValue}">Activity</span>
-                            </td>
-                            <td>
-                                <span th:text="${#strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">Metric</span>
-                            </td>
-                            <td>
-                                <span th:switch="${goal.goalMetric}">
-                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).DISTANCE}"
-                                          th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.1f miles', goal.targetValue * 0.621371) : T(java.lang.String).format('%d km', goal.targetValue)}">Target</span>
-                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).TIME}"
-                                          th:text="${T(java.lang.String).format('%d hours', goal.targetValue)}">Hours</span>
-                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ELEVATION}"
-                                          th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.0f ft', goal.targetValue * 3.28084) : T(java.lang.String).format('%d m', goal.targetValue)}">Elevation</span>
-                                    <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ACTIVITIES}"
-                                          th:text="${T(java.lang.String).format('%d activities', goal.targetValue)}">Activities</span>
-                                </span>
-                            </td>
-                            <td>
-                                <span th:text="${#strings.capitalize(#strings.toLowerCase(goal.periodType.name()))}">Period</span>
-                            </td>
-                            <td>
-                                <span th:text="${startDateDisplay != '' ? startDateDisplay : '-'}">2024-01-01</span>
-                                <span th:if="${endDateDisplay != ''}" th:text="${' – ' + endDateDisplay}"></span>
-                            </td>
-                            <td>
-                                <span th:if="${goal.periodType == T(com.cubetrek.database.UserGoal.PeriodType).WEEKLY}"
-                                      th:text="${goal.weekStartDay == 1 ? 'Monday' : (goal.weekStartDay == 7 ? 'Sunday' : '-')}">Week</span>
-                                <span th:unless="${goal.periodType == T(com.cubetrek.database.UserGoal.PeriodType).WEEKLY}">-</span>
-                            </td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm" role="group">
+                        <div class="goal-card">
+                            <div class="goal-card-face goal-card-front">
+                                <div class="goal-card-header">
+                                    <div>
+                                        <div class="goal-meta" th:text="${#strings.capitalize(#strings.toLowerCase(goal.periodType.name())) + ' goal'}">Weekly goal</div>
+                                        <h2 class="goal-activity mb-0" th:text="${goal.activityType.displayValue}">Activity</h2>
+                                    </div>
+                                    <span th:if="${view.fulfilled}" class="goal-status-badge">
+                                        <span class="goal-checkmark" aria-hidden="true">✓</span>
+                                        Done
+                                    </span>
+                                    <span th:unless="${view.fulfilled}"
+                                          class="badge rounded-pill text-bg-light border"
+                                          th:text="${#strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">Metric</span>
+                                </div>
+
+                                <div class="goal-gauge-wrap">
+                                    <svg class="goal-gauge" viewBox="0 0 180 105" role="img" aria-label="Goal progress">
+                                        <path class="goal-gauge-track" d="M 22 88 A 68 68 0 0 1 158 88" pathLength="100"></path>
+                                        <path class="goal-gauge-progress"
+                                              d="M 22 88 A 68 68 0 0 1 158 88"
+                                              pathLength="100"
+                                              th:attr="stroke-dasharray=${view.progressDashArray}"></path>
+                                    </svg>
+                                    <div class="goal-gauge-label">
+                                        <span class="goal-gauge-percent"
+                                              th:text="${T(java.lang.String).format('%.0f%%', view.progressPercentage)}">62%</span>
+                                        <span class="goal-gauge-caption">of target reached</span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-stats">
+                                    <div class="goal-stat">
+                                        <span class="goal-stat-label">Completed</span>
+                                        <span class="goal-stat-value" th:switch="${goal.goalMetric}">
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).DISTANCE}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.1f miles', view.actualValue * 0.621371) : T(java.lang.String).format('%.1f km', view.actualValue)}">Actual</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).TIME}"
+                                                  th:text="${T(java.lang.String).format('%.1f hours', view.actualValue)}">Actual</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ELEVATION}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.0f ft', view.actualValue * 3.28084) : T(java.lang.String).format('%.0f m', view.actualValue)}">Actual</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ACTIVITIES}"
+                                                  th:text="${T(java.lang.String).format('%.0f activities', view.actualValue)}">Actual</span>
+                                        </span>
+                                    </div>
+                                    <div class="goal-stat">
+                                        <span class="goal-stat-label">Target</span>
+                                        <span class="goal-stat-value" th:switch="${goal.goalMetric}">
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).DISTANCE}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.1f miles', goal.targetValue * 0.621371) : T(java.lang.String).format('%d km', goal.targetValue)}">Target</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).TIME}"
+                                                  th:text="${T(java.lang.String).format('%d hours', goal.targetValue)}">Hours</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ELEVATION}"
+                                                  th:text="${(user != null && !user.metric) ? T(java.lang.String).format('%.0f ft', goal.targetValue * 3.28084) : T(java.lang.String).format('%d m', goal.targetValue)}">Elevation</span>
+                                            <span th:case="${T(com.cubetrek.database.UserGoal.GoalMetric).ACTIVITIES}"
+                                                  th:text="${T(java.lang.String).format('%d activities', goal.targetValue)}">Activities</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="goal-time-row">
+                                    <div class="goal-time-copy">
+                                        <span th:text="${view.windowStartDateDisplay + ' - ' + view.windowEndDateDisplay}">2026-01-01 - 2026-01-31</span>
+                                        <strong th:text="${view.periodEnded ? 'Period ended' : (view.daysRemaining == 1 ? '1 day left' : view.daysRemaining + ' days left')}">8 days left</strong>
+                                    </div>
+                                    <div class="goal-time-track" aria-label="Time elapsed">
+                                        <div class="goal-time-fill"
+                                             th:style="${view.elapsedWidthStyle}"></div>
+                                    </div>
+                                </div>
+
+                                <div class="goal-actions">
                                     <button type="button"
-                                            class="btn btn-outline-secondary"
+                                            class="btn btn-outline-secondary btn-sm"
                                             data-goal-edit
                                             th:data-update-action="@{/goals/{goalId}(goalId=${goal.id})}"
                                             th:data-activity="${goal.activityType}"
@@ -120,17 +464,39 @@
                                         Edit
                                     </button>
                                     <button type="button"
-                                            class="btn btn-outline-danger"
+                                            class="btn btn-outline-danger btn-sm"
                                             data-goal-delete
                                             th:data-delete-action="@{/goals/{goalId}/delete(goalId=${goal.id})}"
                                             th:data-title="${goalTitle}">
                                         Delete
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                            </div>
+                            <div class="goal-card-face goal-card-back">
+                                <div class="goal-card-header">
+                                    <div>
+                                        <div class="goal-meta">Progress trend</div>
+                                        <h2 class="goal-activity mb-0" th:text="${goalTitle}">Goal trend</h2>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span th:if="${view.fulfilled}" class="goal-status-badge">
+                                            <span class="goal-checkmark" aria-hidden="true">✓</span>
+                                            Done
+                                        </span>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-goal-flip-back>Back</button>
+                                    </div>
+                                </div>
+                                <div class="goal-chart-label mt-3" th:text="${'Days since ' + view.windowStartDateDisplay}">Days since start</div>
+                                <div class="goal-chart"
+                                     data-goal-chart
+                                     th:data-graph="${view.graphDataJson}"></div>
+                                <div class="goal-chart-legend">
+                                    <span><i class="actual-key"></i>Actual</span>
+                                    <span><i class="target-key"></i>Target pace</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </section>
         </main>
@@ -625,6 +991,129 @@
         deleteGoalModalInstance.show();
     }
 
+    function drawGoalChart(chartElement) {
+        if (!chartElement || chartElement.dataset.rendered === "true" || !window.d3) {
+            return;
+        }
+        let graphData;
+        try {
+            graphData = JSON.parse(chartElement.dataset.graph || "{}");
+        } catch (error) {
+            graphData = {};
+        }
+
+        const actual = Array.isArray(graphData.actual) ? graphData.actual : [];
+        const target = Array.isArray(graphData.target) ? graphData.target : [];
+        const allValues = actual.concat(target).map((point) => Number(point.value) || 0);
+        const yMax = Math.max(1, ...allValues) * 1.12;
+        const totalDays = Math.max(1, Number(graphData.totalDays) || 1);
+        const width = Math.max(300, chartElement.getBoundingClientRect().width || 300);
+        const height = 245;
+        const margin = {top: 18, right: 18, bottom: 42, left: 48};
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        chartElement.innerHTML = "";
+        const svg = d3.select(chartElement)
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("role", "img")
+                .attr("aria-label", "Goal progress over time");
+
+        const plot = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const xScale = d3.scaleLinear()
+                .domain([0, totalDays])
+                .range([0, innerWidth]);
+        const yScale = d3.scaleLinear()
+                .domain([0, yMax])
+                .nice()
+                .range([innerHeight, 0]);
+
+        const line = d3.line()
+                .x((point) => xScale(Number(point.day) || 0))
+                .y((point) => yScale(Number(point.value) || 0))
+                .curve(d3.curveMonotoneX);
+
+        plot.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(xScale).ticks(Math.min(6, totalDays)).tickFormat((day) => `${day}d`));
+        plot.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale).ticks(5));
+
+        plot.append("text")
+                .attr("x", innerWidth / 2)
+                .attr("y", innerHeight + 36)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#526873")
+                .attr("font-size", 12)
+                .text("Time (days)");
+
+        plot.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -innerHeight / 2)
+                .attr("y", -36)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#526873")
+                .attr("font-size", 12)
+                .text(graphData.yAxisLabel || "Goal");
+
+        plot.append("path")
+                .datum(target)
+                .attr("class", "target-line")
+                .attr("d", line);
+
+        plot.append("path")
+                .datum(actual)
+                .attr("class", "actual-line")
+                .attr("d", line);
+
+        plot.selectAll(".actual-dot")
+                .data(actual)
+                .join("circle")
+                .attr("class", "actual-dot")
+                .attr("cx", (point) => xScale(Number(point.day) || 0))
+                .attr("cy", (point) => yScale(Number(point.value) || 0))
+                .attr("r", 3.5);
+
+        chartElement.dataset.rendered = "true";
+    }
+
+    function initializeGoalCards() {
+        document.querySelectorAll("[data-goal-card]").forEach((card) => {
+            card.setAttribute("role", "button");
+            card.setAttribute("tabindex", "0");
+            const flip = () => {
+                card.classList.toggle("is-flipped");
+                if (card.classList.contains("is-flipped")) {
+                    window.setTimeout(() => drawGoalChart(card.querySelector("[data-goal-chart]")), 260);
+                }
+            };
+            card.addEventListener("click", (event) => {
+                if (event.target.closest("button, a, input, select, textarea, label")) {
+                    return;
+                }
+                flip();
+            });
+            card.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    flip();
+                }
+            });
+            const backButton = card.querySelector("[data-goal-flip-back]");
+            if (backButton) {
+                backButton.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    card.classList.remove("is-flipped");
+                });
+            }
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         metricPreferenceInput = document.getElementById("prefersMetric");
         goalMetricSelectElement = document.getElementById("goalMetric");
@@ -665,11 +1154,19 @@
         if (emptyStateCreateButton) {
             emptyStateCreateButton.addEventListener("click", openGoalModalForCreate);
         }
+        initializeGoalCards();
+
         document.querySelectorAll("[data-goal-edit]").forEach((button) => {
-            button.addEventListener("click", () => openGoalModalForEdit(button));
+            button.addEventListener("click", (event) => {
+                event.stopPropagation();
+                openGoalModalForEdit(button);
+            });
         });
         document.querySelectorAll("[data-goal-delete]").forEach((button) => {
-            button.addEventListener("click", () => openDeleteModal(button));
+            button.addEventListener("click", (event) => {
+                event.stopPropagation();
+                openDeleteModal(button);
+            });
         });
 
         if (goalStartDateInput) {

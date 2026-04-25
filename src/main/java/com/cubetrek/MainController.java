@@ -40,10 +40,20 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TimeZone;
 
 
@@ -167,8 +177,13 @@ public class MainController {
     public String getGoals(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users) authentication.getPrincipal();
+        ZoneId userZone = resolveUserZone(user.getTimezone());
+        List<UserGoal> userGoals = userGoalRepository.findByUser(user);
         model.addAttribute("user", user);
-        model.addAttribute("userGoals", userGoalRepository.findByUser(user));
+        model.addAttribute("userGoals", userGoals);
+        model.addAttribute("userGoalViews", userGoals.stream()
+                .map(goal -> buildGoalView(goal, user, userZone))
+                .toList());
         logger.info("View Goals by user id '"+user.getId()+"'; Name '"+user.getName()+"'");
         return "goals";
     }
@@ -276,6 +291,187 @@ public class MainController {
             };
         }
         return (int) Math.round(normalized);
+    }
+
+    private GoalView buildGoalView(UserGoal goal, Users user, ZoneId userZone) {
+        GoalWindow window = resolveGoalWindow(goal, userZone);
+        double actualValue = Optional.ofNullable(userGoalRepository.calculateFulfillmentValue(
+                user.getId(),
+                goal.getActivityType().ordinal(),
+                goal.getGoalMetric().name(),
+                window.start(),
+                window.endExclusive()
+        )).orElse(0.0);
+        double targetValue = goal.getTargetValue() != null ? goal.getTargetValue() : 0.0;
+        double progressPercentage = targetValue <= 0 ? 0 : (actualValue / targetValue) * 100;
+        double cappedProgressPercentage = clamp(progressPercentage, 0, 100);
+
+        Instant now = Instant.now();
+        long totalSeconds = Math.max(1, Duration.between(window.start(), window.endExclusive()).toSeconds());
+        long elapsedSeconds = Duration.between(window.start(), now).toSeconds();
+        double elapsedPercentage = clamp((elapsedSeconds / (double) totalSeconds) * 100, 0, 100);
+        long remainingSeconds = Math.max(0, Duration.between(now, window.endExclusive()).toSeconds());
+        long daysRemaining = (long) Math.ceil(remainingSeconds / 86400.0);
+        long totalDays = Math.max(1, (long) Math.ceil(totalSeconds / 86400.0));
+
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE.withZone(userZone);
+        return new GoalView(
+                goal,
+                actualValue,
+                progressPercentage,
+                cappedProgressPercentage,
+                elapsedPercentage,
+                daysRemaining,
+                totalDays,
+                formatter.format(window.start()),
+                formatter.format(window.endInclusiveDisplay()),
+                !now.isBefore(window.endExclusive()),
+                Math.round(cappedProgressPercentage) + " 100",
+                "width: " + Math.round(elapsedPercentage) + "%",
+                buildGoalGraphData(goal, user, userZone, window, totalDays),
+                progressPercentage >= 100
+        );
+    }
+
+    private String buildGoalGraphData(UserGoal goal, Users user, ZoneId userZone, GoalWindow window, long totalDays) {
+        List<UserGoalRepository.GoalProgressPoint> progressPoints = userGoalRepository.findProgressPoints(
+                user.getId(),
+                goal.getActivityType().ordinal(),
+                goal.getGoalMetric().name(),
+                window.start(),
+                window.endExclusive()
+        );
+        LocalDate windowStartDate = LocalDate.ofInstant(window.start(), userZone);
+        LocalDate today = LocalDate.now(userZone);
+        long currentDay = Math.max(0, Math.min(totalDays, ChronoUnit.DAYS.between(windowStartDate, today)));
+        Map<Long, Double> dayTotals = new TreeMap<>();
+        for (UserGoalRepository.GoalProgressPoint progressPoint : progressPoints) {
+            LocalDate activityDate = LocalDate.ofInstant(progressPoint.getDatetrack(), userZone);
+            long day = Math.max(0, Math.min(totalDays, ChronoUnit.DAYS.between(windowStartDate, activityDate)));
+            double value = convertGoalValueForDisplay(goal.getGoalMetric(), Optional.ofNullable(progressPoint.getValue()).orElse(0.0), user.isMetric());
+            dayTotals.merge(day, value, Double::sum);
+        }
+
+        List<GoalGraphPoint> actual = new ArrayList<>();
+        actual.add(new GoalGraphPoint(0, 0.0));
+        double cumulative = 0.0;
+        long lastDay = 0;
+        for (Map.Entry<Long, Double> entry : dayTotals.entrySet()) {
+            cumulative += entry.getValue();
+            actual.add(new GoalGraphPoint(entry.getKey(), cumulative));
+            lastDay = entry.getKey();
+        }
+        if (currentDay > lastDay) {
+            actual.add(new GoalGraphPoint(currentDay, cumulative));
+        }
+
+        double targetValue = convertGoalValueForDisplay(goal.getGoalMetric(), goal.getTargetValue(), user.isMetric());
+        GoalGraphData graphData = new GoalGraphData(
+                totalDays,
+                targetValue,
+                getGoalMetricAxisLabel(goal.getGoalMetric(), user.isMetric()),
+                actual,
+                List.of(new GoalGraphPoint(0, 0.0), new GoalGraphPoint(totalDays, targetValue))
+        );
+
+        try {
+            return objectMapper.writeValueAsString(graphData);
+        } catch (JsonProcessingException e) {
+            logger.warn("Failed to serialize goal graph data for goal id '{}'", goal.getId(), e);
+            return "{\"totalDays\":1,\"targetValue\":0,\"yAxisLabel\":\"Goal\",\"actual\":[],\"target\":[]}";
+        }
+    }
+
+    private double convertGoalValueForDisplay(UserGoal.GoalMetric goalMetric, double value, boolean prefersMetric) {
+        if (prefersMetric) {
+            return value;
+        }
+        return switch (goalMetric) {
+            case DISTANCE -> value * 0.621371;
+            case ELEVATION -> value * 3.28084;
+            default -> value;
+        };
+    }
+
+    private String getGoalMetricAxisLabel(UserGoal.GoalMetric goalMetric, boolean prefersMetric) {
+        return switch (goalMetric) {
+            case DISTANCE -> prefersMetric ? "Distance (km)" : "Distance (miles)";
+            case TIME -> "Time (hours)";
+            case ELEVATION -> prefersMetric ? "Elevation (m)" : "Elevation (ft)";
+            case ACTIVITIES -> "Activities";
+        };
+    }
+
+    private GoalWindow resolveGoalWindow(UserGoal goal, ZoneId userZone) {
+        LocalDate today = LocalDate.now(userZone);
+        return switch (goal.getPeriodType()) {
+            case WEEKLY -> {
+                DayOfWeek firstDay = goal.getWeekStartDay() != null && goal.getWeekStartDay() == 7
+                        ? DayOfWeek.SUNDAY
+                        : DayOfWeek.MONDAY;
+                LocalDate startDate = today.with(TemporalAdjusters.previousOrSame(firstDay));
+                yield toGoalWindow(startDate, startDate.plusWeeks(1), userZone);
+            }
+            case MONTHLY -> {
+                LocalDate startDate = today.withDayOfMonth(1);
+                yield toGoalWindow(startDate, startDate.plusMonths(1), userZone);
+            }
+            case YEARLY -> {
+                LocalDate startDate = today.withDayOfYear(1);
+                yield toGoalWindow(startDate, startDate.plusYears(1), userZone);
+            }
+            case CUSTOM -> {
+                Instant start = goal.getStartDate();
+                Instant endExclusive = goal.getEndDate() != null ? goal.getEndDate().plus(Duration.ofDays(1)) : Instant.now();
+                yield new GoalWindow(start, endExclusive, endExclusive.minus(Duration.ofMillis(1)));
+            }
+        };
+    }
+
+    private GoalWindow toGoalWindow(LocalDate startDate, LocalDate endDateExclusive, ZoneId userZone) {
+        Instant start = startDate.atStartOfDay(userZone).toInstant();
+        Instant endExclusive = endDateExclusive.atStartOfDay(userZone).toInstant();
+        return new GoalWindow(start, endExclusive, endExclusive.minus(Duration.ofMillis(1)));
+    }
+
+    private ZoneId resolveUserZone(String timezone) {
+        if (timezone != null && Set.of(TimeZone.getAvailableIDs()).contains(timezone)) {
+            return ZoneId.of(timezone);
+        }
+        return ZoneId.of("Etc/UTC");
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    public record GoalView(UserGoal goal,
+                           double actualValue,
+                           double progressPercentage,
+                           double cappedProgressPercentage,
+                           double elapsedPercentage,
+                           long daysRemaining,
+                           long totalDays,
+                           String windowStartDateDisplay,
+                           String windowEndDateDisplay,
+                           boolean periodEnded,
+                           String progressDashArray,
+                           String elapsedWidthStyle,
+                           String graphDataJson,
+                           boolean fulfilled) {
+    }
+
+    private record GoalWindow(Instant start, Instant endExclusive, Instant endInclusiveDisplay) {
+    }
+
+    private record GoalGraphData(long totalDays,
+                                 double targetValue,
+                                 String yAxisLabel,
+                                 List<GoalGraphPoint> actual,
+                                 List<GoalGraphPoint> target) {
+    }
+
+    private record GoalGraphPoint(long day, double value) {
     }
 
     @GetMapping("/trekmapper")
