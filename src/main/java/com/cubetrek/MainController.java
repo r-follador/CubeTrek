@@ -89,6 +89,9 @@ public class MainController {
     @Autowired
     private UserGoalRepository userGoalRepository;
 
+    @Autowired
+    private UserGoalParticipantRepository userGoalParticipantRepository;
+
     @Value("${maptiler.api.key}")
     String maptilerApiKey;
 
@@ -174,11 +177,12 @@ public class MainController {
     }
 
     @GetMapping("/goals")
+    @Transactional
     public String getGoals(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users) authentication.getPrincipal();
         ZoneId userZone = resolveUserZone(user.getTimezone());
-        List<UserGoal> userGoals = userGoalRepository.findByUser(user);
+        List<UserGoal> userGoals = getGoalsForUser(user);
         model.addAttribute("user", user);
         model.addAttribute("userGoals", userGoals);
         model.addAttribute("userGoalViews", userGoals.stream()
@@ -211,8 +215,9 @@ public class MainController {
         Users user = (Users) authentication.getPrincipal();
 
         UserGoal goal = new UserGoal();
-        applyGoalForm(goal, user, activityType, goalMetric, targetValue, periodType, startDate, endDate, weekStartDay, prefersMetric);
-        userGoalRepository.save(goal);
+        applyGoalForm(goal, activityType, goalMetric, targetValue, periodType, startDate, endDate, weekStartDay, prefersMetric);
+        userGoalRepository.saveAndFlush(goal);
+        ensureOwnerParticipant(goal, user);
 
         redirectAttributes.addFlashAttribute("goalCreated", true);
         logger.info("Created goal for user id '"+user.getId()+"'; Name '"+user.getName()+"'");
@@ -233,7 +238,7 @@ public class MainController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users) authentication.getPrincipal();
         UserGoal goal = getGoalForUser(goalId, user);
-        applyGoalForm(goal, user, activityType, goalMetric, targetValue, periodType, startDate, endDate, weekStartDay, prefersMetric);
+        applyGoalForm(goal, activityType, goalMetric, targetValue, periodType, startDate, endDate, weekStartDay, prefersMetric);
         userGoalRepository.save(goal);
         redirectAttributes.addFlashAttribute("goalUpdated", true);
         logger.info("Updated goal id '"+goalId+"' for user id '"+user.getId()+"'");
@@ -241,19 +246,34 @@ public class MainController {
     }
 
     @PostMapping("/goals/{goalId}/delete")
+    @Transactional
     public String deleteGoal(@PathVariable("goalId") Long goalId, RedirectAttributes redirectAttributes) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = (Users) authentication.getPrincipal();
         UserGoal goal = getGoalForUser(goalId, user);
 
+        userGoalParticipantRepository.deleteByGoal(goal);
         userGoalRepository.delete(goal);
         redirectAttributes.addFlashAttribute("goalDeleted", true);
         logger.info("Deleted goal id '"+goalId+"' for user id '"+user.getId()+"'");
         return "redirect:/goals";
     }
 
+    private List<UserGoal> getGoalsForUser(Users user) {
+        return userGoalParticipantRepository.findGoalsByUserAndStatus(user, UserGoalParticipant.ParticipantStatus.JOINED);
+    }
+
+    private void ensureOwnerParticipant(UserGoal goal, Users user) {
+        UserGoalParticipant participant = userGoalParticipantRepository.findByGoalAndUser(goal, user)
+                .orElseGet(UserGoalParticipant::new);
+        participant.setGoal(goal);
+        participant.setUser(user);
+        participant.setRole(UserGoalParticipant.ParticipantRole.OWNER);
+        participant.setStatus(UserGoalParticipant.ParticipantStatus.JOINED);
+        userGoalParticipantRepository.save(participant);
+    }
+
     private void applyGoalForm(UserGoal goal,
-                               Users user,
                                TrackData.Activitytype activityType,
                                UserGoal.GoalMetric goalMetric,
                                Double targetValue,
@@ -265,7 +285,6 @@ public class MainController {
         if (startDate == null || startDate.isBlank()) {
             throw new ExceptionHandling.UnnamedException("Invalid Goal", "Start date is required.");
         }
-        goal.setUser(user);
         goal.setActivityType(activityType);
         goal.setGoalMetric(goalMetric);
         goal.setTargetValue(convertTargetValue(goalMetric, targetValue, prefersMetric));
@@ -277,8 +296,16 @@ public class MainController {
 
     private UserGoal getGoalForUser(Long goalId, Users user) {
         return userGoalRepository.findById(goalId)
-                .filter(existingGoal -> existingGoal.getUser().getId().equals(user.getId()))
+                .filter(existingGoal -> canUserManageGoal(existingGoal, user))
                 .orElseThrow(() -> new ExceptionHandling.UnnamedException("Goal not found", "The requested goal cannot be found."));
+    }
+
+    private boolean canUserManageGoal(UserGoal goal, Users user) {
+        Optional<UserGoalParticipant> participant = userGoalParticipantRepository.findByGoalAndUser(goal, user);
+        return participant
+                .filter(value -> value.getStatus() == UserGoalParticipant.ParticipantStatus.JOINED)
+                .filter(value -> value.getRole() == UserGoalParticipant.ParticipantRole.OWNER)
+                .isPresent();
     }
 
     private int convertTargetValue(UserGoal.GoalMetric goalMetric, Double targetValue, boolean prefersMetric) {

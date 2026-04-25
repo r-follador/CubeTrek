@@ -15,13 +15,15 @@
         .goals-grid {
             display: grid;
             gap: 1.25rem;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 480px));
+            justify-content: start;
         }
 
         .goal-card-shell {
             cursor: pointer;
             min-height: 440px;
             perspective: 1200px;
+            width: min(100%, 480px);
         }
 
         .goal-card-shell.is-flipped .goal-card {

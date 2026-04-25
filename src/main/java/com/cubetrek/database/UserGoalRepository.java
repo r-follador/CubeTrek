@@ -8,8 +8,6 @@ import java.time.Instant;
 import java.util.List;
 
 public interface UserGoalRepository extends JpaRepository<UserGoal, Long> {
-    List<UserGoal> findByUser(Users user);
-    List<UserGoal> findByUserId(Long userId);
 
     @Query(value = """
             SELECT CASE
