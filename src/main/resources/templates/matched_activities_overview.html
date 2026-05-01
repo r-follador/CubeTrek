@@ -12,15 +12,136 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
 </head>
 <style>
-    .text-overlay {
-        color: white; /* Text color */
-        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-        padding: 10px; /* Padding around the text */
-        border-radius: 5px; /* Optional: rounded corners */
+    .matched-grid {
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 480px));
+        justify-content: start;
     }
-    .custom-link {
-        text-decoration: none; /* Removes the underline */
-        color: inherit; /* Inherits the color from the parent element, or you can set a specific color */
+
+    .matched-card {
+        background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
+        border: 1px solid rgba(23, 107, 135, .14);
+        border-radius: 1.35rem;
+        box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        min-height: 440px;
+        overflow: hidden;
+        text-decoration: none;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        width: min(100%, 480px);
+    }
+
+    .matched-card:hover,
+    .matched-card:focus {
+        border-color: rgba(23, 107, 135, .32);
+        box-shadow: 0 22px 52px rgba(15, 55, 70, .12);
+        color: inherit;
+        transform: translateY(-3px);
+    }
+
+    .matched-map {
+        background: #e3edf1;
+        min-height: 220px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .matched-map img {
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .35s ease;
+        width: 100%;
+    }
+
+    .matched-card:hover .matched-map img,
+    .matched-card:focus .matched-map img {
+        transform: scale(1.035);
+    }
+
+    .matched-count-badge {
+        align-items: center;
+        backdrop-filter: blur(8px);
+        background: rgba(16, 42, 54, .84);
+        border: 1px solid rgba(255, 255, 255, .22);
+        border-radius: 999px;
+        bottom: 1rem;
+        color: #fff;
+        display: inline-flex;
+        font-size: .88rem;
+        font-weight: 700;
+        gap: .35rem;
+        left: 1rem;
+        padding: .45rem .8rem;
+        position: absolute;
+    }
+
+    .matched-count-badge strong {
+        color: #f8c35a;
+        font-size: 1.05rem;
+    }
+
+    .matched-card-body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        padding: 1.5rem;
+    }
+
+    .matched-meta {
+        color: #667985;
+        font-size: .82rem;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .matched-title {
+        color: #102a36;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -.01em;
+        margin: .25rem 0 .6rem;
+    }
+
+    .matched-date {
+        color: #526873;
+        font-size: .92rem;
+    }
+
+    .matched-action {
+        align-items: center;
+        color: #176b87;
+        display: inline-flex;
+        font-weight: 700;
+        gap: .35rem;
+        margin-top: auto;
+        padding-top: 1rem;
+    }
+
+    .matched-empty-card {
+        background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
+        border: 1px solid rgba(23, 107, 135, .14);
+        border-radius: 1.35rem;
+        box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
+        max-width: 520px;
+        padding: 1.5rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .matched-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .matched-card {
+            min-height: 0;
+        }
+
+        .matched-map {
+            min-height: 190px;
+        }
     }
 </style>
 <body>
@@ -42,46 +163,41 @@
                 <h1 class="h2">Your most popular Tracks (Matched Activities)</h1>
             </div>
 
-            <div th:if="${matchedActivities.empty}" class="card m-5" style="width: 18rem;">
-                <div class="card-body">
-                    <h5 class="card-title">There are no matched Activities 😔</h5>
-                    <p class="card-text">Add more Tracks to get started. Upload your files, link your Garmin, Polar and Coros account.</p>
-                    <a href="/upload" class="btn btn-primary m-1">Upload Activity Files</a>
-                    <a href="/profile" class="btn btn-primary m-1">Link Accounts</a>
-                </div>
-            </div>
-
             <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
                 Error fetching data
             </div>
 
-            <div>
-                <div th:if="${matchedActivities.empty}">
-                    <i>No Matched Activities</i>
+            <section class="mb-4">
+                <div th:if="${matchedActivities.empty}" class="matched-empty-card">
+                    <h5>There are no matched activities yet.</h5>
+                    <p class="text-secondary mb-3">Add more tracks to get started. Upload files, or link your Garmin, Polar and Coros account.</p>
+                    <a href="/upload" class="btn btn-primary me-2 mb-2">Upload Activity Files</a>
+                    <a href="/profile" class="btn btn-outline-primary mb-2">Link Accounts</a>
                 </div>
-                <div class="row pb-5" th:each="matchedActivity : ${matchedActivities}">
-                    <div class="row mb-3" text-center>
-                        <div class="bottom-50 start-50 text-overlay" >
-                            <a th:href="'/matching/'+${matchedActivity.getTrackgroup()}" class="custom-link"><span>Matched </span><span class="h5" th:text="${matchedActivity.getCount()}"></span><span> Attempts</span></a>
-                        </div>
-                    </div>
-                    <div class="col-3  text-center">
-                        <a th:href="'/matching/'+${matchedActivity.getTrackgroup()}" class="custom-link">
-                            <img class="img-fluid rounded" th:src="'/api/static_map/'+${matchedActivity.getMost_recent_track_id()}+'/200x200.png'" width="200" height="200">
-                        </a>
-                    </div>
-                    <div class="col">
-                        <a th:href="'/matching/'+${matchedActivity.getTrackgroup()}" class="custom-link">
-                            <div class="row figure-caption">Last Attempt</div>
-                            <div class="row">
-                                <span th:text="${matchedActivity.getMost_recent_title()}">Title</span>
-                                <span th:data-date="${matchedActivity.getMost_recent_datetrack()}" th:text="${matchedActivity.getMost_recent_datetrack()}">Title</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
 
+                <div th:unless="${matchedActivities.empty}" class="matched-grid">
+                    <a class="matched-card"
+                       th:each="matchedActivity : ${matchedActivities}"
+                       th:href="'/matching/'+${matchedActivity.getTrackgroup()}">
+                        <div class="matched-map">
+                            <img th:src="'/api/static_map/'+${matchedActivity.getMost_recent_track_id()}+'/640x360.png'"
+                                 th:alt="${'Map preview for ' + matchedActivity.getMost_recent_title()}">
+                            <div class="matched-count-badge">
+                                <strong th:text="${matchedActivity.getCount()}">4</strong>
+                                <span>matched attempts</span>
+                            </div>
+                        </div>
+                        <div class="matched-card-body">
+                            <div class="matched-meta">Last attempt</div>
+                            <div class="matched-title" th:text="${matchedActivity.getMost_recent_title()}">Activity title</div>
+                            <div class="matched-date"
+                                 th:data-date="${matchedActivity.getMost_recent_datetrack()}"
+                                 th:text="${matchedActivity.getMost_recent_datetrack()}">Date</div>
+                            <div class="matched-action">View matched route <span aria-hidden="true">→</span></div>
+                        </div>
+                    </a>
+                </div>
+            </section>
 
         </main>
     </div>

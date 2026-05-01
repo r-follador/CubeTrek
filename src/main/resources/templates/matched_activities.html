@@ -12,6 +12,269 @@
     <link href=" https://cdn.jsdelivr.net/npm/maplibre-gl@3.1.0/dist/maplibre-gl.min.css " rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
     <link href="../css/dashboard.css" rel="stylesheet">
+    <style>
+        .matching-page-header {
+            gap: 1rem;
+        }
+
+        .matching-panel {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
+            border: 1px solid rgba(23, 107, 135, .14);
+            border-radius: 1.35rem;
+            box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
+        }
+
+        .matching-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 1.35rem;
+        }
+
+        .matching-panel-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .matching-meta {
+            color: #667985;
+            font-size: .82rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .matching-title {
+            color: #102a36;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            margin: .15rem 0 0;
+        }
+
+        .matching-chart-grid {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-columns: minmax(0, 2fr) minmax(220px, .9fr);
+        }
+
+        .matching-chart-grid > .matching-panel {
+            min-height: 360px;
+        }
+
+        .matching-side-grid {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-rows: minmax(140px, .9fr) minmax(160px, 1fr);
+        }
+
+        .chart-box {
+            flex: 1 1 auto;
+            height: 100%;
+            min-height: 230px;
+            width: 100%;
+        }
+
+        #graph.chart-box {
+            min-height: 260px;
+        }
+
+        #histo.chart-box {
+            min-height: 150px;
+        }
+
+        #map2d.chart-box {
+            border-radius: 1rem;
+            min-height: 190px;
+            overflow: hidden;
+        }
+
+        #map2dlegend {
+            color: #526873;
+            font-size: .82rem;
+            margin-top: .5rem;
+        }
+
+        .activity-list-panel {
+            margin-top: 1.25rem;
+        }
+
+        .activity-list-header {
+            align-items: center;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-bottom: .55rem;
+        }
+
+        .activity-list {
+            display: grid;
+            gap: 0;
+            max-height: 45vh;
+            overflow: auto;
+        }
+
+        .activity-list-columns,
+        .activity-row {
+            display: grid;
+            gap: .85rem;
+            grid-template-columns: 3rem minmax(9rem, 1.1fr) minmax(12rem, 2fr) minmax(5.5rem, .7fr) minmax(5rem, .7fr) minmax(5.5rem, .7fr) 4.5rem;
+        }
+
+        .activity-list-columns {
+            align-items: center;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
+            color: #667985;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .07em;
+            padding: 0 1rem .25rem;
+            position: sticky;
+            text-transform: uppercase;
+            top: 0;
+            z-index: 1;
+        }
+
+        .activity-row {
+            align-items: center;
+            background: transparent;
+            border-bottom: 1px solid rgba(23, 107, 135, .1);
+            cursor: pointer;
+            padding: .52rem 1rem;
+            transition: background-color .15s ease;
+        }
+
+        .activity-row:hover,
+        .activity-row.is-active {
+            background: rgba(23, 107, 135, .06);
+        }
+
+        .activity-row:last-child {
+            border-bottom: 0;
+        }
+
+        .activity-icon {
+            align-items: center;
+            background: #e5f4f8;
+            border-radius: 1rem;
+            display: inline-flex;
+            height: 2.35rem;
+            justify-content: center;
+            width: 2.35rem;
+        }
+
+        .activity-title {
+            color: #102a36;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .activity-title:hover {
+            color: #176b87;
+        }
+
+        .activity-date {
+            color: #667985;
+            font-size: .85rem;
+        }
+
+        .activity-value {
+            color: #405560;
+            font-size: .9rem;
+            font-weight: 650;
+        }
+
+        .activity-value-label {
+            display: none;
+        }
+
+        .activity-menu-button {
+            border: 1px solid rgba(23, 107, 135, .18);
+            border-radius: .75rem;
+            color: #405560;
+            padding: .25rem .55rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .matching-chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .matching-side-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .matching-panel {
+                padding: 1rem;
+            }
+
+            .matching-side-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-list-columns {
+                display: none;
+            }
+
+            .activity-row {
+                align-items: center;
+                gap: .3rem .65rem;
+                grid-template-columns: 2.35rem repeat(3, minmax(0, 1fr)) auto;
+                padding: .55rem 0;
+            }
+
+            .activity-row .activity-date {
+                grid-column: 2 / 5;
+                grid-row: 1;
+            }
+
+            .activity-title-cell {
+                grid-column: 1 / 5;
+                grid-row: 2;
+                padding-left: 0;
+            }
+
+            .activity-value {
+                background: transparent;
+                border: 0;
+                border-radius: 0;
+                font-size: .78rem;
+                grid-row: 3;
+                line-height: 1.2;
+                padding: .1rem 0 0;
+            }
+
+            .activity-value[data-label="duration"] {
+                grid-column: 1 / 3;
+            }
+
+            .activity-value[data-label="ascent"] {
+                grid-column: 3 / 4;
+            }
+
+            .activity-value[data-label="distance"] {
+                grid-column: 4 / 6;
+                text-align: right;
+            }
+
+            .activity-value-label {
+                color: #667985;
+                display: block;
+                font-weight: 500;
+            }
+
+            .activity-menu-button {
+                grid-column: 5;
+                grid-row: 1 / 3;
+                justify-self: end;
+            }
+        }
+    </style>
 </head>
 <body>
 <header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
@@ -41,55 +304,62 @@
 
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2"><span id="entrysize"></span> Matching Activities</h1>
+            <div class="matching-page-header d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div>
+                    <div class="matching-meta">Matched route group</div>
+                    <h1 class="h2 mb-0"><span id="entrysize"></span> Matching Activities</h1>
+                </div>
                 <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#editBatchModal">Rename Activities</a>
             </div>
-            <div class="row" style="height: 35vh;">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1">
-                    <h4 class="h4">Average Pace <a class="btn btn-light btn-sm" id="barGraphButton" onclick="updateGraph()">
-                        Sequential
-                    </a></h4>
 
+            <section class="matching-chart-grid">
+                <div class="matching-panel">
+                    <div class="matching-panel-header">
+                        <div>
+                            <div class="matching-meta">Average pace</div>
+                            <h2 class="matching-title">Attempts over time</h2>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" id="barGraphButton" onclick="updateGraph()">Sequential</button>
+                    </div>
+                    <div class="chart-box" id="graph"></div>
                 </div>
 
-                <div class="row">
-                    <div class="col-8 col-lg-7">
-                      <div class="p-0 m-0" id="graph" style="width: 100%; height: 100%; min-height: 60px;" ></div>
+                <div class="matching-side-grid">
+                    <div class="matching-panel">
+                        <div class="matching-meta">Pace distribution</div>
+                        <div class="chart-box" id="histo"></div>
                     </div>
-                    <div class="col-4 col-lg-2">
-                        <div class="p-0 m-0" id="histo" style="width: 100%; height: 100%; min-height: 60px;" ></div>
-                    </div>
-                    <div class="col-12 col-lg-3 ms-2">
-                        <div class="row" id="map2d" style="width: 100%; height: 100%; min-height: 60px; min-width: 60px;"></div>
-                        <div class="row" id="map2dlegend"></div>
+                    <div class="matching-panel">
+                        <div class="matching-meta">Selected attempt</div>
+                        <div class="chart-box" id="map2d"></div>
+                        <div id="map2dlegend"></div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <div class="alert alert-danger" role="alert" id="errorbox" style="display:none;">
                 Error fetching data
             </div>
 
-            <div class="row pt-4" style="height: 45vh">
-
-                <div id="activitytable" style="height: 45vh; overflow:auto;">
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th> Date </th>
-                            <th> Title </th>
-                            <th> Duration </th>
-                            <th> Ascent </th>
-                            <th> Distance </th>
-                            <th></th>
-                        </tr>
-                        </thead>
-                        <tbody id="tbody"></tbody>
-                    </table>
+            <section class="matching-panel activity-list-panel">
+                <div class="activity-list-header">
+                    <div>
+                        <div class="matching-meta">All attempts</div>
+                        <h2 class="matching-title">Activity history</h2>
+                    </div>
                 </div>
-            </div>
+                <div id="activitytable" class="activity-list">
+                    <div class="activity-list-columns">
+                        <span></span>
+                        <span>Date</span>
+                        <span>Title</span>
+                        <span>Duration</span>
+                        <span>Ascent</span>
+                        <span>Distance</span>
+                        <span></span>
+                    </div>
+                </div>
+            </section>
 
         </main>
     </div>
@@ -260,35 +530,75 @@
     let metric = true;
     const miles_per_km = 0.621371;
     const feet_per_m = 3.28084;
-    const tablebody = document.getElementById("tbody");
+    const activityTable = document.getElementById("activitytable");
     let graph;
     let histo;
 
-    function addRowInfo(row, entry) {
-        row.insertCell().innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height=20px>";
-        row.insertCell().innerHTML = (new Date(Date.parse(entry.datetrack))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
-        row.insertCell().innerHTML = (entry.favorite?"<img src='../assets/icon_favorite_select.svg' height='15px'>":"") + "<a href='/view/"+entry.id+"'>"+entry.title+"</a>";
-        row.insertCell().innerHTML = minToString(parseInt(entry.duration))+ " h";
-        row.insertCell().innerHTML = (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft");
-        row.insertCell().innerHTML = (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi");
-        row.insertCell().innerHTML = "<div onclick='menu("+entry.id+")' style='cursor:pointer' id='c"+entry.id+"'>...</div>"
-        row.onmouseover = (event) => {highlight(entry.id, false)};
-        row.onmouseout = (event) => {unhighlight(entry.id)};
-        row.onclick = (event) => {clickactivity(entry.id, false)};
+    function addActivityRow(entry) {
+        const row = document.createElement("div");
+        row.className = "activity-row";
+        row.id = "r" + entry.id;
+
+        const icon = document.createElement("div");
+        icon.className = "activity-icon";
+        icon.innerHTML = "<img src='../assets/"+icons[entry.activitytype][0]+"' alt='"+icons[entry.activitytype][1]+"' height='24'>";
+
+        const date = document.createElement("div");
+        date.className = "activity-date";
+        date.innerText = formatDateTime(entry.datetrack);
+
+        const title = document.createElement("div");
+        title.className = "activity-title-cell";
+        const favorite = entry.favorite ? "<img class='me-1' src='../assets/icon_favorite_select.svg' height='15' alt='Favorite'>" : "";
+        title.innerHTML = "<a class='activity-title' href='/view/"+entry.id+"'>"+favorite+entry.title+"</a>";
+
+        const duration = createActivityValue("Duration", minToString(parseInt(entry.duration)) + " h");
+        const ascent = createActivityValue("Ascent", (entry.elevationup*(metric?1:feet_per_m)).toFixed(0) + (metric?" m":" ft"));
+        const distance = createActivityValue("Distance", (parseFloat(entry.distance)/1000*(metric?1:miles_per_km)).toFixed(1) + (metric?" km":" mi"));
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "btn btn-sm activity-menu-button";
+        editButton.innerText = "Edit";
+        editButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            menu(entry.id);
+        });
+
+        row.appendChild(icon);
+        row.appendChild(date);
+        row.appendChild(title);
+        row.appendChild(duration);
+        row.appendChild(ascent);
+        row.appendChild(distance);
+        row.appendChild(editButton);
+        row.onmouseover = () => {highlight(entry.id, false)};
+        row.onmouseout = () => {unhighlight(entry.id)};
+        row.onclick = () => {clickactivity(entry.id, false)};
+        activityTable.appendChild(row);
+    }
+
+    function createActivityValue(label, value) {
+        const element = document.createElement("div");
+        element.className = "activity-value";
+        element.dataset.label = label.toLowerCase();
+        element.innerHTML = "<span class='activity-value-label'>" + label + ":</span>" + value;
+        return element;
+    }
+
+    function renderActivityCards() {
+        activityTable.querySelectorAll(".activity-row").forEach(row => row.remove());
+
+        for (const entry of entries.values()) {
+            addActivityRow(entry);
+        }
     }
 
 
     function initData() {
-        while (tablebody.firstChild) {
-            tablebody.removeChild(tablebody.firstChild);
-        }
-
         for (var entry of matches) {
             entries.set(entry.id, entry);
-            var newRow = tablebody.insertRow();
-            newRow.id="r"+entry.id;
-            addRowInfo(newRow, entry);
         }
+        renderActivityCards();
 
         graph = new Graph();
         histo = new Histo();
@@ -396,9 +706,7 @@
         entries.get(selectedtrackid).favorite = editFavorite;
         entries.get(selectedtrackid).sharing = editShared;
 
-        var row = document.getElementById("r"+selectedtrackid);
-        row.innerHTML="";
-        addRowInfo(row, entries.get(selectedtrackid));
+        renderActivityCards();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).hide();
     }
 
@@ -490,6 +798,10 @@
         var m = minutes % 60;
         var h = (minutes-m)/60;
         return h.toString() + ":" + (m<10?"0":"") + m.toString();
+    }
+
+    function formatDateTime(value) {
+        return (new Date(Date.parse(value))).toLocaleString([], {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
     }
 
     function minFractionToString(minutes) {
@@ -818,11 +1130,10 @@
         circle.attr("r", 8)
             .style("fill", "rgba(68,146,220,0.42)");
         let row = document.getElementById('r'+id);
-        console.log(row);
         if (scroll)
             document.getElementById('activitytable').scrollTo({top: row.offsetTop, behavior: 'smooth'});
-        row.style.transition = 'all ease 2000ms';
-        row.style.backgroundColor = "rgba(68,146,220,0.42)";
+        row.classList.add("is-active");
+        row.style.backgroundColor = "rgba(68,146,220,0.16)";
         var minfraction = datas.find(x => x.id === id).pace;
         var tooltipy = (document.getElementById('c'+id).getBoundingClientRect().top)+window.scrollY;
         var tooltipx = (document.getElementById('c'+id).getBoundingClientRect().left+22);
@@ -838,8 +1149,8 @@
         let circle = d3.select('#c'+id);
         circle.attr("r", 5).style("fill", "white");
         let row = document.getElementById('r'+id);
-        row.style.transition = 'all ease 500ms';
-        row.style.backgroundColor = "white";
+        row.classList.remove("is-active");
+        row.style.backgroundColor = "";
         tooltip.style("visibility", "hidden");
         histo.removeLine();
     }
@@ -872,6 +1183,7 @@
 
     function setMetric() {
         document.getElementById("metricCheckedLabel").innerText=(metric?"Metric Units":"Imperial Units");
+        renderActivityCards();
         graph.updateWindowSize();
         histo.updateWindowSize();
     }
