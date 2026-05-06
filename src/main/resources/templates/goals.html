@@ -362,7 +362,7 @@
                     <button type="button" class="btn btn-link p-0 align-baseline" id="emptyStateCreateButton">Create a New Goal</button>
                     to get started.
                 </div>
-                <div th:unless="${userGoalViews.empty}" class="goals-grid">
+                <div th:unless="${userGoalViews.empty}" class="ct-card-grid goals-grid">
                     <article class="goal-card-shell"
                              data-goal-card
                              th:classappend="${view.fulfilled ? ' goal-fulfilled' : ''}"
@@ -374,7 +374,7 @@
                                      endDateDisplay=${endIso != '' ? #strings.substring(endIso, 0, 10) : ''},
                                      goalTitle=${goal.activityType.displayValue + ' ' + #strings.capitalize(#strings.toLowerCase(goal.goalMetric.name()))}">
                         <div class="goal-card">
-                            <div class="goal-card-face goal-card-front">
+                            <div class="ct-card goal-card-face goal-card-front">
                                 <div class="goal-card-header">
                                     <div>
                                         <div class="goal-meta" th:text="${#strings.capitalize(#strings.toLowerCase(goal.periodType.name())) + ' goal'}">Weekly goal</div>
@@ -470,7 +470,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="goal-card-face goal-card-back">
+                            <div class="ct-card goal-card-face goal-card-back">
                                 <div class="goal-card-header">
                                     <div>
                                         <div class="goal-meta">Progress trend</div>

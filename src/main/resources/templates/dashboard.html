@@ -42,26 +42,26 @@
 <svg width="0" height="0">
     <defs>
         <linearGradient id="altitude-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#6568b5"></stop>
-            <stop offset="100%" stop-color="#c8cafa"></stop>
+            <stop offset="0%" stop-color="#176b87"></stop>
+            <stop offset="48%" stop-color="#71b7c5"></stop>
+            <stop offset="100%" stop-color="#dff2f5"></stop>
         </linearGradient>
     </defs>
 </svg>
-<header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+<header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark flex-nowrap p-0 shadow">
     <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"><img class="me-2" src="/assets/logo.svg" width="30">CubeTrek</a>
-    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="w-100"></div>
     <ul class="navbar-nav px-3">
         <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
             <img src="../assets/cubetrek_settings.svg" height="20px"></a>
     </ul>
-    <div class="navbar-nav">
+    <div class="navbar-nav ms-auto">
         <div class="nav-item text-nowrap">
             <a class="nav-link px-3" href="#" th:href="@{/logout}">Sign out</a>
         </div>
     </div>
+    <button class="navbar-toggler d-md-none collapsed me-3" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 </header>
 
 <div class="container-fluid">
@@ -167,7 +167,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex-grow-1 p-0 m-0" id="graph" style="width:100%">
+            <div class="flex-grow-1 p-0 m-0 dashboard-heatmap" id="graph" style="width:100%">
             </div>
             <div th:if="${totalActivities >= 5}">
                 <div class="pt-3">
@@ -198,7 +198,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="bargraph" style="width: 100%; height: 400px;"></div>
+                            <div id="bargraph" class="dashboard-main-chart"></div>
                         </div>
 
                         <!-- Cumulative Graph Section -->
@@ -217,7 +217,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="cumgraph" style="width: 100%; height: 400px;"></div>
+                            <div id="cumgraph" class="dashboard-main-chart"></div>
                         </div>
                     </div>
                 </div>
@@ -231,7 +231,7 @@
             </div>
 
 
-            <div id="recenttablebody" class="d-flex flex-wrap">
+            <div id="recenttablebody" class="d-grid">
 
             </div>
             <a href="/activities" th:if="${totalActivities > 10}" type="button" class="btn btn-outline-primary" th:text="'View '+ ${totalActivities} + ' Activities'">View All Activities</a>
@@ -719,7 +719,7 @@
         const svg = d3.select("#cumgraph").append("svg");
         const cumgraphElement = d3.select("#cumgraph").node();
         const cumgraphWidth = cumgraphElement.getBoundingClientRect().width;
-        const cumgraphHeight = 400;
+        const cumgraphHeight = getDashboardGraphHeight("cumgraph");
 
         const margin = {top: 20, right: 0, bottom: 20, left: 50};
         let width = cumgraphWidth-margin.left-margin.right;
@@ -842,6 +842,8 @@
             }
             minDate.setDate(minDate.getDate() + 1);
         }
+
+        datas.sort((a, b) => a.date - b.date);
     }
 
     let bargraphType = "distance";
@@ -890,7 +892,9 @@
         this.width = document.getElementById('bargraph').clientWidth;
         d3.select("#bargraph").select("svg").remove(); //clear if exists already
         this.svg = d3.select("#bargraph").append("svg");
-        barchart = BarChart(this.svg, bargraphdatasMonthly, bargraphdatasYearly, bargraphActivity);
+        barchart = BarChart(this.svg, bargraphdatasMonthly, bargraphdatasYearly, bargraphActivity, {
+            height: getDashboardGraphHeight("bargraph")
+        });
     }
 
     function updateBargraphActivity(activity) {
@@ -924,6 +928,10 @@
 
     let heatmapType = "distance";
 
+    function getDashboardGraphHeight(id) {
+        return Math.max(220, Math.round(document.getElementById(id).getBoundingClientRect().height || 400));
+    }
+
     function drawHeatmap() {
 
         d3.select("#graph").select("svg").remove(); //clear if exists already
@@ -931,7 +939,7 @@
         const heatgraphElement = d3.select("#graph").node();
         this.width = heatgraphElement.getBoundingClientRect().width;
 
-        Calendar(this.svg, datas, {
+        const heatmapConfig = {
             x: d => d.date,
             y: d => {
                 switch (heatmapType) {
@@ -943,9 +951,6 @@
                         return d.number;
                 }
             },
-            width: this.width,
-            cellSize: (this.width/60),
-            weekday: "monday",
             colors: (function(){
                 switch (heatmapType) {
                     case 'distance':
@@ -964,6 +969,11 @@
                     case 'number':
                         return formatNumberActivities;
                 }}())
+        };
+
+        Calendar(this.svg, datas, {
+            ...heatmapConfig,
+            width: this.width
         });
     }
 
@@ -985,9 +995,11 @@
         drawHeatmap();
     }
 
-    prepareHeatmapdata();
-    prepareBargraphdata();
-    settings();
+    function initializeDashboard() {
+        prepareHeatmapdata();
+        prepareBargraphdata();
+        settings();
+    }
 
     var tooltip = d3.select("body")
         .append("div")
@@ -996,126 +1008,141 @@
         .style("visibility", "hidden")
         .style("background", "rgba(245, 245, 255, 0.6)");
 
-    // Copyright 2021 Observable, Inc.
-    // Released under the ISC license.
-    // https://observablehq.com/@d3/calendar-view
     function Calendar(svg, data, {
-        x = ([x]) => x, // given d in data, returns the (temporal) x-value
-        y = ([, y]) => y, // given d in data, returns the (quantitative) y-value
-        cellSize = 20, // width and height of an individual day, in pixels
-        weekday = "monday", // either: weekday, sunday, or monday
-        formatDay = i => "SMTWTFS"[i], // given a day number in [0, 6], the day-of-week label
-        formatMonth = "%b", // format specifier string for months (above the chart)
+        x = ([x]) => x,
+        y = ([, y]) => y,
+        width = 360,
         formatingFunction = formatShortdist,
         colors = d3.interpolateYlOrRd
     } = {}) {
-        const heatgraphElement = d3.select("#graph").node();
-        width = heatgraphElement.getBoundingClientRect().width;
-
-        // Compute values.
         const X = d3.map(data, x);
         const Y = d3.map(data, y);
-        const I = d3.range(X.length);
-
-        const countDay = weekday === "sunday" ? i => i : i => (i + 6) % 7;
-        const timeWeek = weekday === "sunday" ? d3.utcSunday : d3.utcMonday;
-        const weekDays = weekday === "weekday" ? 5 : 7;
-        const height = cellSize * (weekDays + 2);
-
-        // Compute a color scale. This assumes a diverging color scheme where the pivot
-        // is zero, and we want symmetric difference around zero.
-        const max = d3.quantile(Y, 0.9975, Math.abs);
+        const dayKey = d3.timeFormat("%Y-%m-%d");
+        const monthTitle = d3.timeFormat("%b");
+        const valueByDay = new Map(X.map((date, index) => [dayKey(date), Y[index]]));
+        const dataByDay = new Map(X.map((date, index) => [dayKey(date), data[index]]));
+        const values = Y.filter(value => value !== undefined && value !== null && !Number.isNaN(value));
+        const max = d3.quantile(values, 0.9975, Math.abs) || 1;
         const color = d3.scaleSequential([0, max], colors).unknown("#eee");
-
-        // Construct formats.
-        formatMonth = d3.utcFormat(formatMonth);
-
-        // Group the index by year, in reverse input order. (Assuming that the input is
-        // chronological, this will show years in reverse chronological order.)
-        const years = d3.groups(I, i => X[i].getUTCFullYear()).reverse();
-
-        function pathMonth(t) {
-            const d = Math.max(0, Math.min(weekDays, countDay(t.getUTCDay())));
-            const w = timeWeek.count(d3.utcYear(t), t);
-            return `${d === 0 ? `M${w * cellSize},0`
-                : d === weekDays ? `M${(w + 1) * cellSize},0`
-                    : `M${(w + 1) * cellSize},0V${d * cellSize}H${w * cellSize}`}V${weekDays * cellSize}`;
+        const countDay = day => (day + 6) % 7;
+        const cellSize = Math.max(11, Math.min(14, Math.floor((width - 42) / 44)));
+        const yearLabelWidth = 28;
+        const weekdayLabelWidth = 14;
+        const monthGap = 2;
+        const rowHeight = cellSize * 9.2;
+        const availableWidth = width - yearLabelWidth - weekdayLabelWidth;
+        const getMonthLastWeekIndex = monthDate => {
+            const firstWeek = d3.timeMonday.floor(monthDate);
+            const lastDay = d3.timeDay.offset(d3.timeMonth.offset(monthDate, 1), -1);
+            return d3.timeMonday.count(firstWeek, lastDay);
+        };
+        const getMonthAdvance = monthDate => {
+            const lastDay = d3.timeDay.offset(d3.timeMonth.offset(monthDate, 1), -1);
+            return getMonthLastWeekIndex(monthDate) * cellSize + (lastDay.getDay() === 0 ? cellSize : 0) + monthGap;
+        };
+        const widestMonthWidth = cellSize * 6 + monthGap;
+        const columns = Math.max(1, Math.floor(availableWidth / widestMonthWidth));
+        const firstMonth = d3.timeMonth.floor(d3.min(X));
+        const lastMonth = d3.timeMonth.floor(new Date());
+        const months = d3.timeMonths(firstMonth, d3.timeMonth.offset(lastMonth, 1));
+        const monthRows = [];
+        let currentYear = null;
+        let currentRow = [];
+        for (const monthDate of months) {
+            const year = monthDate.getFullYear();
+            if (currentYear === null) {
+                currentYear = year;
+            }
+            if (year !== currentYear || currentRow.length >= columns) {
+                monthRows.push({year: currentYear, months: currentRow});
+                currentYear = year;
+                currentRow = [];
+            }
+            currentRow.push(monthDate);
         }
+        if (currentRow.length > 0) {
+            monthRows.push({year: currentYear, months: currentRow});
+        }
+        const height = monthRows.length * rowHeight;
 
         svg
             .attr("width", width)
-            .attr("height", height * years.length)
-            .attr("viewBox", [0, 0, width, height * years.length])
-            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height])
+            .attr("style", "max-width: 100%; height: auto;")
             .attr("font-family", "var(--bs-body-font-family)")
             .attr("font-size", "0.7rem");
 
-        const year = svg.selectAll("g")
-            .data(years)
+        const row = svg.selectAll("g.heatmap-month-row")
+            .data(monthRows)
             .join("g")
-            .attr("transform", (d, i) => `translate(40.5,${height * i + cellSize * 1.5})`);
+            .attr("class", "heatmap-month-row")
+            .attr("transform", (rowData, rowIndex) => `translate(0,${rowIndex * rowHeight + 18})`);
 
-        year.append("text")
-            .attr("x", -5)
-            .attr("y", -5)
-            .attr("font-weight", "bold")
+        row.append("text")
+            .attr("x", yearLabelWidth - 4)
+            .attr("y", cellSize * .55)
+            .attr("font-weight", "700")
             .attr("text-anchor", "end")
-            .text(([key]) => key);
+            .text(rowData => rowData.year);
 
-        year.append("g")
+        row.append("g")
             .attr("text-anchor", "end")
             .selectAll("text")
-            .data(weekday === "weekday" ? d3.range(1, 6) : d3.range(7))
+            .data(d3.range(7))
             .join("text")
-            .attr("x", -5)
-            .attr("y", i => (countDay(i) + 0.5) * cellSize)
+            .attr("x", yearLabelWidth + weekdayLabelWidth - 5)
+            .attr("y", day => day * cellSize + cellSize * 1.5)
             .attr("dy", "0.31em")
-            .text(formatDay);
+            .text(day => "MTWTFSS"[day]);
 
-        const formatDate = d3.utcFormat("%B %-d, %Y");
-        const formatValue = color.tickFormat(100, "1f");
-
-        const cell = year.append("g")
-            .selectAll("rect")
-            .data(weekday === "weekday"
-                ? ([, I]) => I.filter(i => ![0, 6].includes(X[i].getUTCDay()))
-                : ([, I]) => I)
-            .join("rect")
-            .attr("width", cellSize - 1)
-            .attr("height", cellSize - 1)
-            .attr("x", i => timeWeek.count(d3.utcYear(X[i]), X[i]) * cellSize + 0.5)
-            .attr("y", i => countDay(X[i].getUTCDay()) * cellSize + 0.5)
-            .attr("fill", i => color(Y[i]))
-            .on("mouseover", function(e, i) {
-				let thisRect = d3.select(this);
-                tooltip.style("visibility", "visible");
-                tooltip.style("top", (e.pageY-10)+"px").style("left",(e.pageX+10)+"px");
-                tooltip.html(formatDate(X[i])+"<br>"+(Y[i] === undefined?"<i>No Activity</i>":formatingFunction(Y[i])));
+        const month = row.selectAll("g.heatmap-month")
+            .data(rowData => {
+                let cursorX = 0;
+                return rowData.months.map(monthDate => {
+                    const positionedMonth = {date: monthDate, xOffset: cursorX};
+                    cursorX += getMonthAdvance(monthDate);
+                    return positionedMonth;
+                });
             })
-            .on("mouseout", function(e, i) {
-                tooltip.style("visibility", "hidden");
-            })
-            .on("click", function(e, i) {
-                if (Y[i] !== undefined) {
-                    clickDay(dataHeatmap[i].trackdata_day);
-                }
-            });
-
-        const month = year.append("g")
-            .selectAll("g")
-            .data(([, I]) => d3.utcMonths(d3.utcMonth(X[I[0]]), X[I[I.length - 1]]))
-            .join("g");
-
-        month.filter((d, i) => i).append("path")
-            .attr("fill", "none")
-            .attr("stroke", "#fff")
-            .attr("stroke-width", 3)
-            .attr("d", pathMonth);
+            .join("g")
+            .attr("class", "heatmap-month")
+            .attr("transform", positionedMonth => `translate(${yearLabelWidth + weekdayLabelWidth + positionedMonth.xOffset},0)`);
 
         month.append("text")
-            .attr("x", d => timeWeek.count(d3.utcYear(d), timeWeek.ceil(d)) * cellSize + 2)
-            .attr("y", -5)
-            .text(formatMonth);
+            .attr("x", positionedMonth => d3.timeMonday.ceil(positionedMonth.date) > positionedMonth.date ? cellSize : 0)
+            .attr("y", cellSize * .55)
+            .text(positionedMonth => monthTitle(positionedMonth.date));
+
+        month.each(function(positionedMonth) {
+            const monthDate = positionedMonth.date;
+            const group = d3.select(this);
+            const days = d3.timeDays(monthDate, d3.timeMonth.offset(monthDate, 1));
+            const firstWeek = d3.timeMonday.floor(monthDate);
+
+            group.selectAll("rect")
+                .data(days)
+                .join("rect")
+                .attr("width", cellSize - 1)
+                .attr("height", cellSize - 1)
+                .attr("x", date => d3.timeMonday.count(firstWeek, date) * cellSize)
+                .attr("y", date => countDay(date.getDay()) * cellSize + cellSize * 1.05)
+                .attr("fill", date => color(valueByDay.get(dayKey(date))))
+                .on("mouseover", function(e, date) {
+                    const value = valueByDay.get(dayKey(date));
+                    tooltip.style("visibility", "visible");
+                    tooltip.style("top", (e.pageY - 10) + "px").style("left", (e.pageX + 10) + "px");
+                    tooltip.html(d3.timeFormat("%B %-d, %Y")(date) + "<br>" + (value === undefined ? "<i>No Activity</i>" : formatingFunction(value)));
+                })
+                .on("mouseout", function() {
+                    tooltip.style("visibility", "hidden");
+                })
+                .on("click", function(e, date) {
+                    if (dataByDay.get(dayKey(date)) && valueByDay.get(dayKey(date)) !== undefined) {
+                        clickDay(date.toISOString());
+                    }
+                });
+        });
 
         return Object.assign(svg.node(), {scales: {color}});
     }
@@ -1546,7 +1573,7 @@
             entries.set(entry.id, entry);
             let newRow = document.createElement('div');
             newRow.id="r"+entry.id;
-            newRow.classList.add("shadow-sm", "col-12", "p-1", "mb-3","bg-body-tertiary", "rounded", "position-relative");
+            newRow.classList.add("ct-card", "dashboard-activity-card", "col-12", "mb-3", "position-relative");
             recenttablebody.appendChild(newRow);
             addRowInfo(newRow, entry);
         }
@@ -1556,13 +1583,15 @@
 
         row.innerHTML =
             `
-    <a type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 me-2" href="#" onclick="menu(${entry.id}); return false;">...</a>
-    <div class='row display-6 ms-1 mb-2' onclick="window.location.href='/view2d/${entry.id}';" style='cursor: pointer;'>
-        <span class="p-0 m-0"><img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height="30">${entry.title}</span>
-    </div>
-    <div class='row'>
-        <div class="col-lg-4 d-flex flex-column justify-content-center">
-            <div class="col fs-6">
+    <a type="button" class="dashboard-activity-menu-button position-absolute top-0 end-0 mt-3 me-3" href="#" aria-label="Edit activity" onclick="menu(${entry.id}); return false;">⋮</a>
+    <div class="dashboard-activity-card-header" onclick="window.location.href='/view2d/${entry.id}';" style="cursor: pointer;">
+        <div>
+            <div class="ct-meta">Recent activity</div>
+            <h2 class="ct-title dashboard-activity-title">
+                <img src='../assets/${icons[entry.activitytype][0]}' alt='${icons[entry.activitytype][1]}' height="30">
+                <span>${entry.title}</span>
+            </h2>
+            <div class="dashboard-activity-date">
                 ${entry.favorite ? "<img src='../assets/icon_favorite_select.svg' height='20px'>" : ""}
                 ${(new Date(Date.parse(entry.datetrack))).toLocaleString([], {
                 year: 'numeric',
@@ -1572,36 +1601,37 @@
                 minute: '2-digit'
             })}
             </div>
-            <a href="/view2d/${entry.id}"><img class="img-fluid rounded ps-1" src='/api/static_map/${entry.id}/500x300.png' alt="Map"></a>
         </div>
-        <div class="col-lg-4 d-flex flex-wrap">
-            <div class="m-2"><span class='fw-light'>Duration</span> <span class='fs-3'>${minToString(parseInt(entry.duration))} h</span></div>
-            <div class="m-2"><span class='fw-light'>Ascent</span> <span class='fs-3'>${(entry.elevationup * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft")}</span></div>
-            <div class="m-2"><span class='fw-light'>Distance</span> <span class='fs-3'>${(parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)).toFixed(1) + (metric ? " km" : " mi")}</span></div>
-            <div class="m-2"><span class='fw-light'>Avg Speed</span> <span class='fs-3'>${((parseFloat(entry.distance) / 1000) / (parseFloat(entry.duration) / 60) * (metric ? 1 : miles_per_km)).toFixed(1) + (metric ? " km/h" : " mi/h")}</span></div>
-            <div class="m-2"><span class='fw-light'>Pace</span> <span class="fs-3">${minFractionToString(parseFloat(entry.duration) / (parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)))} ${metric ? "min/km" : "min/mi"}</span></div>
+    </div>
+    <div class="dashboard-activity-card-body">
+        <a class="dashboard-activity-map" href="/view2d/${entry.id}">
+            <img src='/api/static_map/${entry.id}/500x300.png' alt="Map">
+        </a>
+        <div class="ct-stat-grid dashboard-activity-stats">
+            <div class="ct-stat"><span class="ct-stat-label">Duration</span><span class="ct-stat-value">${minToString(parseInt(entry.duration))} h</span></div>
+            <div class="ct-stat"><span class="ct-stat-label">Ascent</span><span class="ct-stat-value">${(entry.elevationup * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft")}</span></div>
+            <div class="ct-stat"><span class="ct-stat-label">Distance</span><span class="ct-stat-value">${(parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)).toFixed(1) + (metric ? " km" : " mi")}</span></div>
+            <div class="ct-stat"><span class="ct-stat-label">Avg Speed</span><span class="ct-stat-value">${((parseFloat(entry.distance) / 1000) / (parseFloat(entry.duration) / 60) * (metric ? 1 : miles_per_km)).toFixed(1) + (metric ? " km/h" : " mi/h")}</span></div>
+            <div class="ct-stat"><span class="ct-stat-label">Pace</span><span class="ct-stat-value">${minFractionToString(parseFloat(entry.duration) / (parseFloat(entry.distance) / 1000 * (metric ? 1 : miles_per_km)))} ${metric ? "min/km" : "min/mi"}</span></div>
         </div>
-        <div class="col-lg-4 p-3">
-            <div class="d-flex flex-column ${entry.hasHeartrate ? "h-50" : "h-100"} ">
-                <div class="flex-grow-1">
-                    <a href="${entry.trackgroup ? '/matching/' + entry.trackgroup : '/view/' + entry.id}">
-                        <div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 60px;"></div>
-                    </a>
+        <div class="dashboard-activity-insights">
+            <a class="dashboard-activity-graph-link" href="${entry.trackgroup ? '/matching/' + entry.trackgroup : '/view/' + entry.id}">
+                <div id="graph${entry.id}" style="width: 100%; height: 100%; min-height: 80px;"></div>
+                <div class="dashboard-activity-graph-overlay">
+                    ${entry.trackgroup ? "<span class='dashboard-activity-small-copy'>Percentile</span><span class='ct-stat-value' id='trackgroupRank" + entry.id + "'></span>" : "<span class='dashboard-activity-small-copy'>Highest Point ASL</span><span class='ct-stat-value'>" + (entry.highestpoint * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft") + "</span>"}
                 </div>
-                ${entry.trackgroup ? "<span class='fw-light'>Percentile</span> <span class='fs-6' id='trackgroupRank" + entry.id + "'></span>" : "<span class='fw-light mt-3'>Highest Point ASL</span><span class='fs-6'>" + (entry.highestpoint * (metric ? 1 : feet_per_m)).toFixed(0) + (metric ? " m" : " ft") + "</span>"}
-            </div>
+            </a>
             ${entry.hasHeartrate ?
-                `<div class="d-flex flex-row h-50">
-                <div class="flex-grow-1 col">
+                `<div class="dashboard-activity-heart">
                     <a href="/view/${entry.id}">
-                        <div id="heartrate${entry.id}" style="width: 100%; height: 100%; min-height: 60px;"></div>
+                        <div id="heartrate${entry.id}" style="width: 100%; height: 100%; min-height: 80px;"></div>
                     </a>
+                    <div class="d-flex flex-column justify-content-center">
+                        <span class='dashboard-activity-small-copy'>Average Heartrate</span><span id="heartrate_avg${entry.id}" class='ct-stat-value'>666</span>
+                        <span class='dashboard-activity-small-copy mt-2'>Max Heartrate</span><span id="heartrate_max${entry.id}" class='ct-stat-value'>666</span>
+                    </div>
                 </div>
-                <div class="col d-flex flex-column justify-content-center">
-                    <span class='fw-light mt-3'>Average Heartrate</span><span id="heartrate_avg${entry.id}" class='fs-6'>666</span>
-                    <span class='fw-light mt-3'>Max Heartrate</span><span id="heartrate_max${entry.id}" class='fs-6'>666</span>
-                </div>
-            </div>` : ""}
+                ` : ""}
         </div>
     </div>
         `;
@@ -2026,5 +2056,6 @@
     import { ConvertedDatas, GraphHeartrate } from "../js/graph.js";
     window.ConvertedDatas = ConvertedDatas;
     window.GraphHeartrate = GraphHeartrate;
+    window.initializeDashboard();
 </script>
 </html>

@@ -12,34 +12,18 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
 </head>
 <style>
-    .matched-grid {
-        display: grid;
-        gap: 1.25rem;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 480px));
-        justify-content: start;
-    }
-
     .matched-card {
-        background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
-        border: 1px solid rgba(23, 107, 135, .14);
-        border-radius: 1.35rem;
-        box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
         color: inherit;
         display: flex;
         flex-direction: column;
         min-height: 440px;
-        overflow: hidden;
         text-decoration: none;
-        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
         width: min(100%, 480px);
     }
 
     .matched-card:hover,
     .matched-card:focus {
-        border-color: rgba(23, 107, 135, .32);
-        box-shadow: 0 22px 52px rgba(15, 55, 70, .12);
         color: inherit;
-        transform: translateY(-3px);
     }
 
     .matched-map {
@@ -91,18 +75,7 @@
         padding: 1.5rem;
     }
 
-    .matched-meta {
-        color: #667985;
-        font-size: .82rem;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-    }
-
     .matched-title {
-        color: #102a36;
-        font-size: 1.15rem;
-        font-weight: 700;
-        letter-spacing: -.01em;
         margin: .25rem 0 .6rem;
     }
 
@@ -122,10 +95,6 @@
     }
 
     .matched-empty-card {
-        background: linear-gradient(145deg, #ffffff 0%, #f8fbfc 58%, #eef7f9 100%);
-        border: 1px solid rgba(23, 107, 135, .14);
-        border-radius: 1.35rem;
-        box-shadow: 0 18px 45px rgba(15, 55, 70, .08);
         max-width: 520px;
         padding: 1.5rem;
     }
@@ -168,15 +137,15 @@
             </div>
 
             <section class="mb-4">
-                <div th:if="${matchedActivities.empty}" class="matched-empty-card">
+                <div th:if="${matchedActivities.empty}" class="ct-card matched-empty-card">
                     <h5>There are no matched activities yet.</h5>
                     <p class="text-secondary mb-3">Add more tracks to get started. Upload files, or link your Garmin, Polar and Coros account.</p>
                     <a href="/upload" class="btn btn-primary me-2 mb-2">Upload Activity Files</a>
                     <a href="/profile" class="btn btn-outline-primary mb-2">Link Accounts</a>
                 </div>
 
-                <div th:unless="${matchedActivities.empty}" class="matched-grid">
-                    <a class="matched-card"
+                <div th:unless="${matchedActivities.empty}" class="ct-card-grid matched-grid">
+                    <a class="ct-card ct-card-hover matched-card"
                        th:each="matchedActivity : ${matchedActivities}"
                        th:href="'/matching/'+${matchedActivity.getTrackgroup()}">
                         <div class="matched-map">
@@ -188,8 +157,8 @@
                             </div>
                         </div>
                         <div class="matched-card-body">
-                            <div class="matched-meta">Last attempt</div>
-                            <div class="matched-title" th:text="${matchedActivity.getMost_recent_title()}">Activity title</div>
+                            <div class="ct-meta matched-meta">Last attempt</div>
+                            <div class="ct-title matched-title" th:text="${matchedActivity.getMost_recent_title()}">Activity title</div>
                             <div class="matched-date"
                                  th:data-date="${matchedActivity.getMost_recent_datetrack()}"
                                  th:text="${matchedActivity.getMost_recent_datetrack()}">Date</div>
