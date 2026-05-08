@@ -66,4 +66,4 @@ After clicking on the map, Turf.js is used to determine the closest track.
 - Consider becoming a Supporter of CubeTrek by getting a [subscription](https://cubetrek.com/subscribe). This helps paying the bills.
 
 ## Setting up the dev environment
-- See [here](docs/dev-environment.md)
+- See [here](docs/dev-environment.md) (Docker currently only proof of concept)
