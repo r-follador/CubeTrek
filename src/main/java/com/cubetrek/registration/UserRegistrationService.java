@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -134,8 +135,8 @@ public class UserRegistrationService {
                 messageHelper.setSubject(subject);
                 messageHelper.setText("Someone requested to reset your CubeTrek password!<br>Click to reset your password:" + "<br>" + confirmationUrl+"<br>If you did not send the request, you can safely ignore this email.", true);
                 mailSender.send(message);
-            } catch (MessagingException | UnsupportedEncodingException messagingException) {
-                logger.error("Error sending Reset Email", messagingException);
+            } catch (MessagingException | UnsupportedEncodingException | MailException mailException) {
+                logger.error("Error sending Reset Email", mailException);
             }
         } else {
             logger.info("Request to reset non-existent email address; ignore");

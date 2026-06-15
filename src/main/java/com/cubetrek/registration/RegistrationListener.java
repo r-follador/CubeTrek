@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.MessageSource;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -63,6 +64,12 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
             mailSender.send(message);
         } catch (MessagingException | UnsupportedEncodingException messagingException) {
             logger.error("Error sending Email", messagingException);
+            userRegistrationService.deleteTokenAndUser(user);
+            throw new IllegalStateException("Could not send registration confirmation email", messagingException);
+        } catch (MailException mailException) {
+            logger.error("Error sending Email", mailException);
+            userRegistrationService.deleteTokenAndUser(user);
+            throw new IllegalStateException("Could not send registration confirmation email", mailException);
         }
     }
 }
