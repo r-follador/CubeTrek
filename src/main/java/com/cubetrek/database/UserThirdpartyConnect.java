@@ -6,6 +6,8 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 @Entity
 @Getter
 @Setter
@@ -24,6 +26,23 @@ public class UserThirdpartyConnect {
     @Convert(converter = DataEncryptDecryptConverter.class)
     @Column
     private String garminUseraccesstokenSecret; //to be encrypted/decrypted
+
+    @Column(unique = true)
+    private String garminUserid;
+
+    @Convert(converter = DataEncryptDecryptConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private String garminOauth2AccessToken;
+
+    @Convert(converter = DataEncryptDecryptConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private String garminOauth2RefreshToken;
+
+    @Column
+    private Instant garminOauth2AccessTokenExpiresAt;
+
+    @Column
+    private Instant garminOauth2RefreshTokenExpiresAt;
 
     @Column
     private boolean garminEnabled = false;

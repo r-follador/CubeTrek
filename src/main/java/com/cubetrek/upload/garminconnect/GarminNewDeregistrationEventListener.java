@@ -3,58 +3,57 @@ package com.cubetrek.upload.garminconnect;
 import com.cubetrek.database.UserThirdpartyConnect;
 import com.cubetrek.database.UserThirdpartyConnectRepository;
 import lombok.Getter;
-import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-
 @Component
 public class GarminNewDeregistrationEventListener implements ApplicationListener<GarminNewDeregistrationEventListener.OnEvent> {
 
-    Logger logger = LoggerFactory.getLogger(GarminNewDeregistrationEventListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(GarminNewDeregistrationEventListener.class);
 
-    @Autowired
-    private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
+    private final UserThirdpartyConnectRepository userThirdpartyConnectRepository;
+
+    public GarminNewDeregistrationEventListener(UserThirdpartyConnectRepository userThirdpartyConnectRepository) {
+        this.userThirdpartyConnectRepository = userThirdpartyConnectRepository;
+    }
 
     @Async
     @Override
     public void onApplicationEvent(OnEvent event) {
-        this.deregUser(event);
+        deregUser(event);
     }
 
     public void deregUser(OnEvent event) {
-        UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByGarminUseraccesstoken(event.getUserAccessToken());
-        if (userThirdpartyConnect == null){
-            logger.error("GarminConnect: deregistration/permission change failed: Unknown Useracccestoken: "+event.getUserAccessToken()+"; Payload: "+event.getPayload());
+        UserThirdpartyConnect connection = event.garminUserid != null
+                ? userThirdpartyConnectRepository.findByGarminUserid(event.garminUserid)
+                : userThirdpartyConnectRepository.findByGarminUseraccesstoken(event.legacyAccessToken);
+        if (connection == null) {
+            logger.error("Garmin Connect deregistration/permission change failed: unknown connected account");
             return;
         }
 
-        userThirdpartyConnect.setGarminEnabled(event.isEnabled);
-        userThirdpartyConnectRepository.save(userThirdpartyConnect);
-        logger.info("GarminConnect: User id '"+userThirdpartyConnect.getUser().getId()+"' changed permission to "+(event.isEnabled?"ENABLED":"DISABLED"));
+        connection.setGarminEnabled(event.enabled);
+        userThirdpartyConnectRepository.save(connection);
+        logger.info("Garmin Connect user {} changed activity-export permission to {}",
+                connection.getUser().getId(), event.enabled ? "enabled" : "disabled");
     }
 
     @Getter
-    @Setter
     public static class OnEvent extends ApplicationEvent {
 
-        String userAccessToken;
+        private final String garminUserid;
+        private final String legacyAccessToken;
+        private final boolean enabled;
 
-        boolean isEnabled;
-
-        String payload;
-
-        public OnEvent(String userAccessToken, boolean isEnabled, String payload) {
-            super(userAccessToken);
-            this.userAccessToken = userAccessToken;
-            this.isEnabled = isEnabled;
-            this.payload = payload;
+        public OnEvent(String garminUserid, String legacyAccessToken, boolean enabled) {
+            super(garminUserid != null ? garminUserid : legacyAccessToken);
+            this.garminUserid = garminUserid;
+            this.legacyAccessToken = legacyAccessToken;
+            this.enabled = enabled;
         }
     }
-
 }
