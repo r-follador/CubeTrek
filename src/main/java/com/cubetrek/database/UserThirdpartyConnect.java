@@ -45,15 +45,6 @@ public class UserThirdpartyConnect {
     private Instant garminOauth2RefreshTokenExpiresAt;
 
     @Column
-    private Instant garminOauth2ExchangeStartedAt;
-
-    @Column
-    private Instant garminOauth2MigrationCompletedAt;
-
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    private boolean garminOauth2ReconnectRequired = false;
-
-    @Column
     private boolean garminEnabled = false;
 
     @Convert(converter = DataEncryptDecryptConverter.class)
