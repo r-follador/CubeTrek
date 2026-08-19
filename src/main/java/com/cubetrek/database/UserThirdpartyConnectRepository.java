@@ -8,6 +8,10 @@ public interface UserThirdpartyConnectRepository extends JpaRepository<UserThird
 
     UserThirdpartyConnect findByGarminUseraccesstoken(String GarminUseraccesstoken);
 
+    UserThirdpartyConnect findByGarminUserid(String garminUserid);
+
+    List<UserThirdpartyConnect> findByGarminEnabledTrueAndGarminUseridIsNullAndGarminUseraccesstokenIsNotNull();
+
     UserThirdpartyConnect findByPolarUserid(String PolarUserid);
 
     UserThirdpartyConnect findByCorosUserid(String CorosUserid);
