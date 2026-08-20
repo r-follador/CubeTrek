@@ -166,7 +166,7 @@ public class StorageService {
             trackData.setTrackrawfile(trackRawfile);
         } catch (IOException e) {
             if (e.getMessage().startsWith("FIT fixstatus: 201")) {
-                logger.error("File upload - Failed because IOException 2: FIT fixstatus 201 - by User "+user.getId() + " - Filename: '"+filename+"'; Size: "+(filedata.length/1000)+"kb");
+                logger.info("File upload - FIT file contains no GPS data - by User "+user.getId() + " - Filename: '"+filename+"'; Size: "+(filedata.length/1000)+"kb");
                 throw new ExceptionHandling.FileNotAccepted("File does not contain GPS data");
             } else {
                 logger.error("File upload - Failed because IOException 2 - by User " + user.getId() + " - Filename: '" + filename + "'", e);
