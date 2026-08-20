@@ -71,8 +71,11 @@ public class GarminNewFileEventListener implements ApplicationListener<GarminNew
             String filename = "garmin-push_" + event.activityId + "." + event.fileType;
             UploadResponse uploadResponse = storageService.store(user, fileData, filename);
             logger.info("Garmin Connect activity download successful: user={}, track={}", user.getId(), uploadResponse.getTrackID());
+        } catch (ExceptionHandling.FileNotAccepted e) {
+            logger.info("Garmin Connect activity ignored: user={}, activity={}, reason={}",
+                    user.getId(), event.activityId, e.msg);
         } catch (IOException | InterruptedException | OAuthMessageSignerException | OAuthExpectationFailedException |
-                 OAuthCommunicationException | ExceptionHandling.FileNotAccepted e) {
+                 OAuthCommunicationException e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
