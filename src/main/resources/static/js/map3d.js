@@ -27,14 +27,24 @@ export class Map3D {
 
         this.kdtree = new KdTree(geojson.geometry.coordinates);
 
-        this.scene = this.delayCreateScene().then(scene => {
+        // Hover events can arrive from the 2D map while the 3D assets are loading.
+        this.scene = null;
+        this.ready = this.delayCreateScene().then(scene => {
             this.scene = scene;
+            this.changeMapstyle(sharedObjects.maptype);
             this.engine.runRenderLoop(() => {
                 if (this.scene.activeCamera) {
                     this.scene.render();
                 }
             });
-        })
+        }).catch(error => {
+            this.scene = null;
+            this.engine.dispose();
+            document.getElementById("errormessage").innerText = "Error Loading 3D View; Try again.";
+            document.getElementById("errormessage").style.display = "block";
+            document.getElementById("progressdiv").style.display = "none";
+            console.error(error);
+        });
 
         document.getElementById("btnradio1").addEventListener('click', () =>  {this.changeMapstyle('standard')});
         document.getElementById("btnradio3").addEventListener('click', () =>  {this.changeMapstyle('satellite')});
@@ -64,7 +74,7 @@ export class Map3D {
 
         //Background
         var backgroundLayer = new BABYLON.Layer('','../assets/bkgrd.png', scene, true);
-        scene.clearColor = new BABYLON.Color3.FromHexString("#2e3c4d");
+        scene.clearColor = BABYLON.Color4.FromHexString("#2e3c4dff");
 
         //Lighting
         this.helperLight = new BABYLON.HemisphericLight("DirectionalLightAbove", new BABYLON.Vector3(0,0, -1), scene);
@@ -116,116 +126,106 @@ export class Map3D {
         particleSystem.maxSize = 150*Math.pow(2,14-this.zoomfactor);
         particleSystem.emitter.z = -2000;
 
-        this.changeMapstyle(sharedObjects.maptype);
-
         return scene;
     }
 
     async loadMeshAndTexture(scene) {
-        try {
-            const rootPath = sharedObjects.root + "gltf/";
-            const fileName = sharedObjects.trackid + ".gltf?maptype="+sharedObjects.maptype;
+        const rootPath = sharedObjects.root + "gltf/";
+        const fileName = sharedObjects.trackid + ".gltf?maptype="+sharedObjects.maptype;
 
-            // Progress callback
-            const onProgress = (evt) => {
-                let loadedPercent = 0;
-                if (evt.lengthComputable) {
-                    loadedPercent = (evt.loaded * 100 / evt.total).toFixed();
-                } else {
-                    const dlCount = evt.loaded / (1024 * 1024); // Convert bytes to MB
-                    loadedPercent = Math.floor(dlCount * 100.0) / 100.0;
+        // Progress callback
+        const onProgress = (evt) => {
+            let loadedPercent = 0;
+            if (evt.lengthComputable) {
+                loadedPercent = (evt.loaded * 100 / evt.total).toFixed();
+            } else {
+                const dlCount = evt.loaded / (1024 * 1024); // Convert bytes to MB
+                loadedPercent = Math.floor(dlCount * 100.0) / 100.0;
+            }
+            document.getElementById("progressbar").setAttribute("style", "width: " + loadedPercent + "%");
+        };
+        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, rootPath, fileName, scene, onProgress);
+        document.getElementById("progressdiv").style.display = "none";
+
+        //Loop through all meshes, Z-scale them, compute the normals (they are not properly set in the GLTF),
+        // and add the relevent meshes to the this.meshes list
+        let bounds = result.meshes[0].getHierarchyBoundingVectors();
+        this.globalBoundingInfo = new BABYLON.BoundingInfo(bounds.min, bounds.max);
+        result.meshes.forEach(parentMesh => {
+            parentMesh.getChildren().forEach(mesh => {
+                mesh.scaling.z = zscaling;
+                var normals = [];
+                BABYLON.VertexData.ComputeNormals(mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind), mesh.getIndices(), normals);
+                mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind, normals);
+                if (mesh.getVerticesData(BABYLON.VertexBuffer.UVKind)) {
+                    this.meshes.push(mesh);
                 }
-                document.getElementById("progressbar").setAttribute("style", "width: " + loadedPercent + "%");
-            };
-            const result = await BABYLON.SceneLoader.ImportMeshAsync(null, rootPath, fileName, scene, onProgress);
-            document.getElementById("progressdiv").style.display = "none";
-
-            //Loop through all meshes, Z-scale them, compute the normals (they are not properly set in the GLTF),
-            // and add the relevent meshes to the this.meshes list
-            let bounds = result.meshes[0].getHierarchyBoundingVectors();
-            this.globalBoundingInfo = new BABYLON.BoundingInfo(bounds.min, bounds.max);
-            result.meshes.forEach(parentMesh => {
-                parentMesh.getChildren().forEach(mesh => {
-                    mesh.scaling.z = zscaling;
-                    var normals = [];
-                    BABYLON.VertexData.ComputeNormals(mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind), mesh.getIndices(), normals);
-                    mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind, normals);
-                    if (mesh.getVerticesData(BABYLON.VertexBuffer.UVKind)) {
-                        this.meshes.push(mesh);
-                    }
-                    //mesh.forceSharedVertices();
-                })
+                //mesh.forceSharedVertices();
             })
+        })
 
-            //Draw the GPS Path onto emissive DynamicTextures
+        //Draw the GPS Path onto emissive DynamicTextures
 
-            //for each mesh, add a DynamicTexture with emissive property (for the path drawing)
-            const textureSize = 512;
-            let textureContexts = [];
-            const strokeStyle = "#ff8001";
-            const lineWidth = 5;
+        //for each mesh, add a DynamicTexture with emissive property (for the path drawing)
+        const textureSize = 512;
+        let textureContexts = [];
+        const strokeStyle = "#ff8001";
+        const lineWidth = 5;
 
-            //Create an emissive, dynamic texture for each mesh
-            for (let i =0; i < this.meshes.length; i++ ) {
-                var myDynamicTexture = new BABYLON.DynamicTexture("dtx"+i, textureSize, scene);
-                var textureContext = myDynamicTexture.getContext();
-                textureContexts.push(textureContext);
-                this.meshes[i].material.emissiveTexture = myDynamicTexture; //pBR texture
-                this.meshes[i].material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                //textureContext.strokeStyle = "#2a84de";
-                textureContext.strokeStyle = strokeStyle;
-                textureContext.lineWidth = lineWidth;
-                textureContext.beginPath();
-            }
+        //Create an emissive, dynamic texture for each mesh
+        for (let i =0; i < this.meshes.length; i++ ) {
+            var myDynamicTexture = new BABYLON.DynamicTexture("dtx"+i, textureSize, scene);
+            var textureContext = myDynamicTexture.getContext();
+            textureContexts.push(textureContext);
+            this.meshes[i].material.emissiveTexture = myDynamicTexture; //pBR texture
+            this.meshes[i].material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+            //textureContext.strokeStyle = "#2a84de";
+            textureContext.strokeStyle = strokeStyle;
+            textureContext.lineWidth = lineWidth;
+            textureContext.beginPath();
+        }
 
-            //Use the GeoJson to draw the path onto the DynamicTexture
-            let tileIndex = -1;
-            let px_perDegree_lat = 0;
-            let px_perDegree_lon = 0;
-            for (let i=0; i < this.geojson.geometry.coordinates.length; i++) {
-                let track = this.geojson.geometry.coordinates[i];
-                //track is an array of latitudes/longitudes of the gps track
-                //track[j][0] is longitude, track[j][1] is latitude
-                for (let j = 1; j < track.length; j++) {
+        //Use the GeoJson to draw the path onto the DynamicTexture
+        let tileIndex = -1;
+        let px_perDegree_lat = 0;
+        let px_perDegree_lon = 0;
+        for (let i=0; i < this.geojson.geometry.coordinates.length; i++) {
+            let track = this.geojson.geometry.coordinates[i];
+            //track is an array of latitudes/longitudes of the gps track
+            //track[j][0] is longitude, track[j][1] is latitude
+            for (let j = 1; j < track.length; j++) {
 
-                    if (tileIndex===-1 || !(this.geojson.properties.tileBBoxes[tileIndex].n_Bound > track[j][1] && this.geojson.properties.tileBBoxes[tileIndex].s_Bound < track[j][1] && this.geojson.properties.tileBBoxes[tileIndex].w_Bound < track[j][0] && this.geojson.properties.tileBBoxes[tileIndex].e_Bound > track[j][0])) {
-                        if (tileIndex !== -1) {//before tile switch; draw into void of old tile to keep lines correct
-                            let x=(track[j][0]-this.geojson.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
-                            let y=(track[j][1]-this.geojson.properties.tileBBoxes[tileIndex].s_Bound)*px_perDegree_lat;
-                            textureContexts[tileIndex].lineTo(x, y);
-                        }
-                        for (let k = 0; k < this.geojson.properties.tileBBoxes.length; k++) {
-                            if (this.geojson.properties.tileBBoxes[k].n_Bound > track[j][1] && this.geojson.properties.tileBBoxes[k].s_Bound < track[j][1] && this.geojson.properties.tileBBoxes[k].w_Bound < track[j][0] && this.geojson.properties.tileBBoxes[k].e_Bound > track[j][0]) {
-                                tileIndex = k;
-                                px_perDegree_lon = textureSize / this.geojson.properties.tileBBoxes[tileIndex].widthLonDegree;
-                                px_perDegree_lat = textureSize / this.geojson.properties.tileBBoxes[tileIndex].widthLatDegree;
+                if (tileIndex===-1 || !(this.geojson.properties.tileBBoxes[tileIndex].n_Bound > track[j][1] && this.geojson.properties.tileBBoxes[tileIndex].s_Bound < track[j][1] && this.geojson.properties.tileBBoxes[tileIndex].w_Bound < track[j][0] && this.geojson.properties.tileBBoxes[tileIndex].e_Bound > track[j][0])) {
+                    if (tileIndex !== -1) {//before tile switch; draw into void of old tile to keep lines correct
+                        let x=(track[j][0]-this.geojson.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
+                        let y=(track[j][1]-this.geojson.properties.tileBBoxes[tileIndex].s_Bound)*px_perDegree_lat;
+                        textureContexts[tileIndex].lineTo(x, y);
+                    }
+                    for (let k = 0; k < this.geojson.properties.tileBBoxes.length; k++) {
+                        if (this.geojson.properties.tileBBoxes[k].n_Bound > track[j][1] && this.geojson.properties.tileBBoxes[k].s_Bound < track[j][1] && this.geojson.properties.tileBBoxes[k].w_Bound < track[j][0] && this.geojson.properties.tileBBoxes[k].e_Bound > track[j][0]) {
+                            tileIndex = k;
+                            px_perDegree_lon = textureSize / this.geojson.properties.tileBBoxes[tileIndex].widthLonDegree;
+                            px_perDegree_lat = textureSize / this.geojson.properties.tileBBoxes[tileIndex].widthLatDegree;
 
-                                //after tile switch; move to previous point into void of new tile to keep lines correct
-                                let x=(track[j-1][0]-this.geojson.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
-                                let y=(track[j-1][1]-this.geojson.properties.tileBBoxes[tileIndex].s_Bound)*px_perDegree_lat;
-                                textureContexts[tileIndex].moveTo(x, y);
-                                break;
-                            }
+                            //after tile switch; move to previous point into void of new tile to keep lines correct
+                            let x=(track[j-1][0]-this.geojson.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
+                            let y=(track[j-1][1]-this.geojson.properties.tileBBoxes[tileIndex].s_Bound)*px_perDegree_lat;
+                            textureContexts[tileIndex].moveTo(x, y);
+                            break;
                         }
                     }
-
-                    let x=(track[j][0]-this.geojson.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
-                    let y=(track[j][1]-this.geojson.properties.tileBBoxes[tileIndex].s_Bound)*px_perDegree_lat;
-                    textureContexts[tileIndex].lineTo(x, y);
                 }
-            }
 
-            //Update all the textures
-            for (let i =0; i < this.meshes.length; i++ ) {
-                textureContexts[i].stroke();
-                this.meshes[i].material.emissiveTexture.update();
+                let x=(track[j][0]-this.geojson.properties.tileBBoxes[tileIndex].w_Bound)*px_perDegree_lon;
+                let y=(track[j][1]-this.geojson.properties.tileBBoxes[tileIndex].s_Bound)*px_perDegree_lat;
+                textureContexts[tileIndex].lineTo(x, y);
             }
+        }
 
-        } catch (error) {
-            document.getElementById("errormessage").innerText = "Error Loading Assets; Try again.";
-            document.getElementById("errormessage").style.display = "block";
-            document.getElementById("progressdiv").style.display = "none";
-            console.error(error);
+        //Update all the textures
+        for (let i =0; i < this.meshes.length; i++ ) {
+            textureContexts[i].stroke();
+            this.meshes[i].material.emissiveTexture.update();
         }
     }
 
@@ -331,10 +331,13 @@ export class Map3D {
     }
 
     hideMarker() {
-        this.scene.particleSystems[0].stop();
+        this.scene?.particleSystems[0]?.stop();
     }
 
     moveMarker(lat, lon) {
+        if (!this.scene)
+            return false;
+
         let hit = this.getPosition(lat,lon, this.scene);
         if (hit) {
             this.scene.particleSystems[0].emitter = hit;
@@ -345,6 +348,9 @@ export class Map3D {
     }
 
     changeMapstyle(style) {
+        if (!this.scene)
+            return;
+
         let styletype;
         switch(style) {
             case 'satellite':
