@@ -9,6 +9,9 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Component
 public class GarminNewDeregistrationEventListener implements ApplicationListener<GarminNewDeregistrationEventListener.OnEvent> {
@@ -23,6 +26,7 @@ public class GarminNewDeregistrationEventListener implements ApplicationListener
 
     @Async
     @Override
+    @Transactional
     public void onApplicationEvent(OnEvent event) {
         deregUser(event);
     }
@@ -36,7 +40,16 @@ public class GarminNewDeregistrationEventListener implements ApplicationListener
             return;
         }
 
+        connection = userThirdpartyConnectRepository.lockById(connection.getId()).orElseThrow();
+        if (event.garminUserid != null ? !Objects.equals(event.garminUserid, connection.getGarminUserid())
+                : !Objects.equals(event.legacyAccessToken, connection.getGarminUseraccesstoken())) return;
+
         connection.setGarminEnabled(event.enabled);
+        if (event.deregistration) {
+            GarminTokens.clear(connection);
+            connection.setGarminUseraccesstoken(null);
+            connection.setGarminUseraccesstokenSecret(null);
+        }
         userThirdpartyConnectRepository.save(connection);
         logger.info("Garmin Connect user {} changed activity-export permission to {}",
                 connection.getUser().getId(), event.enabled ? "enabled" : "disabled");
@@ -49,11 +62,21 @@ public class GarminNewDeregistrationEventListener implements ApplicationListener
         private final String legacyAccessToken;
         private final boolean enabled;
 
+        private final boolean deregistration;
+
         public OnEvent(String garminUserid, String legacyAccessToken, boolean enabled) {
+            this(garminUserid, legacyAccessToken, enabled, false);
+        }
+
+        public OnEvent(String garminUserid, String legacyAccessToken, boolean enabled, boolean deregistration) {
             super(garminUserid != null ? garminUserid : legacyAccessToken);
             this.garminUserid = garminUserid;
             this.legacyAccessToken = legacyAccessToken;
             this.enabled = enabled;
+            this.deregistration = deregistration;
         }
+
+        @Override
+        public String toString() { return "GarminPermissionNotification[redacted]"; }
     }
 }
