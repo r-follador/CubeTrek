@@ -1,117 +1,109 @@
 package com.cubetrek.upload.garminconnect;
 
 import com.cubetrek.ExceptionHandling;
-import com.cubetrek.database.UserThirdpartyConnect;
-import com.cubetrek.database.UserThirdpartyConnectRepository;
 import com.cubetrek.database.Users;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
 import oauth.signpost.basic.DefaultOAuthConsumer;
 import oauth.signpost.basic.DefaultOAuthProvider;
-import oauth.signpost.exception.OAuthCommunicationException;
-import oauth.signpost.exception.OAuthExpectationFailedException;
-import oauth.signpost.exception.OAuthMessageSignerException;
-import oauth.signpost.exception.OAuthNotAuthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Objects;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Controller
 public class GarminconnectController {
-    Logger logger = LoggerFactory.getLogger(GarminconnectController.class);
+    private static final Logger logger = LoggerFactory.getLogger(GarminconnectController.class);
+    private final String consumerKey;
+    private final String consumerSecret;
+    private final String callbackUrl;
+    private final boolean oauth2SignupEnabled;
+    private final GarminconnectAuthSession session;
+    private final GarminApiClient api;
+    private final GarminConnectionService connections;
 
-    @Value("${garmin.consumer.key}")
-    String garminConsumerKey;
-    @Value("${garmin.consumer.secret}")
-    String garminConsumerSecret;
+    public GarminconnectController(@Value("${garmin.consumer.key}") String consumerKey,
+                                   @Value("${garmin.consumer.secret}") String consumerSecret,
+                                   @Value("${cubetrek.address}") String address,
+                                   @Value("${garmin.oauth2.signup-enabled:false}") boolean oauth2SignupEnabled,
+                                   GarminconnectAuthSession session, GarminApiClient api, GarminConnectionService connections) {
+        this.consumerKey = consumerKey;
+        this.consumerSecret = consumerSecret;
+        this.callbackUrl = address.replaceAll("/+$", "") + "/profile/connectGarmin-step2";
+        this.oauth2SignupEnabled = oauth2SignupEnabled;
+        this.session = session;
+        this.api = api;
+        this.connections = connections;
+    }
 
-    @Value("${cubetrek.address}")
-    private String httpAddress;
-
-    @Autowired
-    private UserThirdpartyConnectRepository userThirdpartyConnectRepository;
-
-    @Autowired
-    private GarminconnectAuthSession garminconnectAuthSession;
-
-    //Get the Authentications
-
-    final String requestTokenEndpointUrl = "https://connectapi.garmin.com/oauth-service/oauth/request_token";
-    final String accessTokenEndpointUrl = "https://connectapi.garmin.com/oauth-service/oauth/access_token";
-    final String authorizeWebsiteUrl = "https://connect.garmin.com/oauthConfirm";
-
-
-
-    @GetMapping(value="/profile/connectGarmin-step1")
-    public String connectToGarmin() {
-        final String callbackUrl = httpAddress+"/profile/connectGarmin-step2";
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-        logger.info("GarminConnect User tries to Link Garmin Account: User id '"+user.getId()+"'");
-        OAuthConsumer consumer = new DefaultOAuthConsumer(garminConsumerKey, garminConsumerSecret);
-        OAuthProvider provider = new DefaultOAuthProvider(requestTokenEndpointUrl, accessTokenEndpointUrl, authorizeWebsiteUrl);
-        garminconnectAuthSession.setOAuthConsumer(consumer);
-        garminconnectAuthSession.setOAuthProvider(provider); //store provider for this session to be reused on step2
+    @GetMapping("/profile/connectGarmin-step1")
+    public String connectToGarmin(Authentication authentication) {
+        Users user = (Users) authentication.getPrincipal();
         try {
+            if (oauth2SignupEnabled) {
+                String clientId = api.oauth2ClientId();
+                var pending = session.beginOAuth2(user.getId(), callbackUrl);
+                return "redirect:" + UriComponentsBuilder.fromUriString("https://connect.garmin.com/oauth2Confirm")
+                        .queryParam("response_type", "code").queryParam("client_id", clientId)
+                        .queryParam("state", pending.state()).queryParam("redirect_uri", callbackUrl)
+                        .queryParam("code_challenge", pending.challenge()).queryParam("code_challenge_method", "S256")
+                        .build().encode().toUriString();
+            }
+            OAuthConsumer consumer = new DefaultOAuthConsumer(consumerKey, consumerSecret);
+            OAuthProvider provider = new DefaultOAuthProvider(
+                    "https://connectapi.garmin.com/oauth-service/oauth/request_token",
+                    "https://connectapi.garmin.com/oauth-service/oauth/access_token",
+                    "https://connect.garmin.com/oauthConfirm");
             String url = provider.retrieveRequestToken(consumer, callbackUrl);
-            url += "&oauth_callback="+callbackUrl; // no clue why this is not automatically added
-            return "redirect:"+url;
-        } catch (OAuthMessageSignerException | OAuthNotAuthorizedException | OAuthExpectationFailedException |
-                 OAuthCommunicationException e) {
-            logger.error("Connect to Garmin - Step 1: User id '"+user.getId()+"'", e);
-            throw new ExceptionHandling.TrackViewerException("Error: Cannot connect to Garmin");
+            session.beginOAuth1(user.getId(), consumer, provider);
+            return "redirect:" + url + "&oauth_callback="
+                    + java.net.URLEncoder.encode(callbackUrl, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            logger.warn("Garmin authorization could not start: user={}, errorType={}", user.getId(), e.getClass().getSimpleName());
+            throw new ExceptionHandling.UnnamedException("Failed", "Cannot connect to Garmin. Please try again.");
         }
     }
 
-    @GetMapping(value="/profile/connectGarmin-step2")
-    public String connectToGarmin2(@RequestParam("oauth_token") String oauth_token, @RequestParam("oauth_verifier") String oauth_verifier) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Users user = (Users)authentication.getPrincipal();
-
-        OAuthConsumer consumer = garminconnectAuthSession.getOAuthConsumer();
-        OAuthProvider provider = garminconnectAuthSession.getOAuthProvider();
-
+    @GetMapping("/profile/connectGarmin-step2")
+    public String connectToGarmin2(Authentication authentication,
+                                  @RequestParam(required = false) String oauth_token,
+                                  @RequestParam(required = false) String oauth_verifier,
+                                  @RequestParam(required = false) String code,
+                                  @RequestParam(required = false) String state,
+                                  @RequestParam(required = false) String error) {
+        Users user = (Users) authentication.getPrincipal();
         try {
-            provider.retrieveAccessToken(consumer, oauth_verifier);
-
-            String userAccessToken = consumer.getToken();
-            String userAccessTokenSecret = consumer.getTokenSecret();
-
-            UserThirdpartyConnect userThirdpartyConnect = userThirdpartyConnectRepository.findByUser(user);
-
-            UserThirdpartyConnect other = userThirdpartyConnectRepository.findByGarminUseraccesstoken(userAccessToken);
-
-            if ((other != null && userThirdpartyConnect != null && !Objects.equals(other.getId(), userThirdpartyConnect.getId())) || other != null && userThirdpartyConnect == null) {
-                throw new ExceptionHandling.UnnamedException("Failed", "This Garmin Account is already linked to another CubeTrek account");
-            }
-
-            if (userThirdpartyConnect==null) {
-                UserThirdpartyConnect utc = new UserThirdpartyConnect();
-                utc.setGarminEnabled(true);
-                utc.setGarminUseraccesstoken(userAccessToken);
-                utc.setGarminUseraccesstokenSecret(userAccessTokenSecret);
-                utc.setUser(user);
-                userThirdpartyConnectRepository.save(utc);
+            if (state != null || code != null || error != null) {
+                var pending = session.consumeOAuth2(user.getId(), state);
+                if (error != null || code == null || code.isBlank()) {
+                    throw new IllegalArgumentException("Garmin consent was declined");
+                }
+                GarminTokens tokens = api.exchangeCode(code, pending.verifier(), pending.redirectUri());
+                String userId = api.userId(tokens.accessToken());
+                boolean allowed = api.activityExportAllowed(tokens.accessToken());
+                connections.linkOAuth2(user, userId, tokens, allowed);
             } else {
-                userThirdpartyConnect.setGarminEnabled(true);
-                userThirdpartyConnect.setGarminUseraccesstoken(userAccessToken);
-                userThirdpartyConnect.setGarminUseraccesstokenSecret(userAccessTokenSecret);
-                userThirdpartyConnectRepository.save(userThirdpartyConnect);
+                var pending = session.consumeOAuth1(user.getId(), oauth_token);
+                if (oauth_verifier == null || oauth_verifier.isBlank()) {
+                    throw new IllegalArgumentException("Missing Garmin OAuth verifier");
+                }
+                pending.provider().retrieveAccessToken(pending.consumer(), oauth_verifier);
+                String token = pending.consumer().getToken();
+                String secret = pending.consumer().getTokenSecret();
+                connections.linkOAuth1(user, api.userIdOAuth1(token, secret), token, secret);
             }
-            logger.info("GarminConnect User successfully linked Garmin Account: User id '"+user.getId()+"'; Garmin User Access Token: '"+userAccessToken.substring(0,10)+"xxx'");
+            logger.info("Garmin account linked: user={}", user.getId());
             return "redirect:/profile";
-        } catch (OAuthMessageSignerException | OAuthNotAuthorizedException | OAuthExpectationFailedException |
-                 OAuthCommunicationException e) {
-            logger.error("Connect to Garmin - Step 2: User id '"+user.getId()+"'", e);
-            throw new ExceptionHandling.UnnamedException("Failed", "Cannot link Account to Garmin");
+        } catch (ExceptionHandling.UnnamedException e) {
+            throw e;
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            logger.warn("Garmin account link failed: user={}, errorType={}", user.getId(), e.getClass().getSimpleName());
+            throw new ExceptionHandling.UnnamedException("Failed", "Cannot link Garmin account. Please start the connection again.");
         }
     }
 }
