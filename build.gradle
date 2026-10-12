@@ -49,3 +49,14 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+springBoot {
+    mainClass = 'com.cubetrek.CubetrekApplication'
+}
+
+tasks.register('garminMigrate', JavaExec) {
+    description = 'Run the isolated Garmin token migration CLI (dry run by default)'
+    group = 'application'
+    classpath = sourceSets.main.runtimeClasspath.filter { !it.name.startsWith('spring-boot-devtools-') }
+    mainClass = 'com.cubetrektools.garmin.GarminMigrationApplication'
+}

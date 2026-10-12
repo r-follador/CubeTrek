@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.context.ApplicationEvent;
 
 @Controller
 public class GarminpingController {
@@ -30,50 +33,54 @@ public class GarminpingController {
     public ResponseEntity<Void> uploadFile(@RequestBody String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
-            boolean processed = processActivities(root.path("activityFiles"));
-            processed |= processDeregistrations(root.path("deregistrations"));
-            processed |= processPermissionChanges(root.path("userPermissionsChange"));
+            if (root == null || !root.isObject()) throw new IllegalArgumentException("Expected a JSON object");
+            List<ApplicationEvent> events = new ArrayList<>();
+            boolean processed = processActivities(summary(root, "activityFiles"), events);
+            processed |= processDeregistrations(summary(root, "deregistrations"), events);
+            processed |= processPermissionChanges(summary(root, "userPermissionsChange"), events);
+            events.forEach(eventPublisher::publishEvent);
             if (!processed) {
                 logger.info("Garmin Connect PING received without a supported notification summary");
             }
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException | JsonProcessingException e) {
-            logger.warn("Garmin Connect PING rejected: {}", e.getMessage());
+            logger.warn("Garmin Connect PING rejected: malformed notification ({})", e.getClass().getSimpleName());
             return ResponseEntity.badRequest().build();
         }
     }
 
-    private boolean processActivities(JsonNode activities) {
+    private boolean processActivities(JsonNode activities, List<ApplicationEvent> events) {
         if (!activities.isArray() || activities.isEmpty()) {
             return false;
         }
         for (JsonNode activity : activities) {
             String activityId = optionalText(activity, "activityId");
+            if (activity.path("activityId").isIntegralNumber()) activityId = activity.path("activityId").asText();
             if (activityId == null) {
                 activityId = "garmin-" + UUID.randomUUID();
             }
             String callbackUrl = requiredText(activity, "callbackURL");
             String fileType = requiredText(activity, "fileType");
             GarminIdentity identity = requiredIdentity(activity);
-            eventPublisher.publishEvent(new GarminNewFileEventListener.OnEvent(
+            events.add(new GarminNewFileEventListener.OnEvent(
                     activityId, identity.userId(), identity.legacyAccessToken(), callbackUrl, fileType));
         }
         return true;
     }
 
-    private boolean processDeregistrations(JsonNode deregistrations) {
+    private boolean processDeregistrations(JsonNode deregistrations, List<ApplicationEvent> events) {
         if (!deregistrations.isArray() || deregistrations.isEmpty()) {
             return false;
         }
         for (JsonNode deregistration : deregistrations) {
             GarminIdentity identity = requiredIdentity(deregistration);
-            eventPublisher.publishEvent(new GarminNewDeregistrationEventListener.OnEvent(
-                    identity.userId(), identity.legacyAccessToken(), false));
+            events.add(new GarminNewDeregistrationEventListener.OnEvent(
+                    identity.userId(), identity.legacyAccessToken(), false, true));
         }
         return true;
     }
 
-    private boolean processPermissionChanges(JsonNode permissionChanges) {
+    private boolean processPermissionChanges(JsonNode permissionChanges, List<ApplicationEvent> events) {
         if (!permissionChanges.isArray() || permissionChanges.isEmpty()) {
             return false;
         }
@@ -83,7 +90,7 @@ public class GarminpingController {
             if (permissions == null || permissions.isNull()) {
                 throw new IllegalArgumentException("permission change omitted permissions");
             }
-            eventPublisher.publishEvent(new GarminNewDeregistrationEventListener.OnEvent(
+            events.add(new GarminNewDeregistrationEventListener.OnEvent(
                     identity.userId(), identity.legacyAccessToken(), hasActivityExportPermission(permissions)));
         }
         return true;
@@ -104,13 +111,25 @@ public class GarminpingController {
     private static boolean hasActivityExportPermission(JsonNode permissions) {
         if (permissions.isArray()) {
             for (JsonNode permission : permissions) {
+                if (!permission.isTextual()) throw new IllegalArgumentException("Invalid permission array");
+            }
+            for (JsonNode permission : permissions) {
                 if ("ACTIVITY_EXPORT".equals(permission.asText())) {
                     return true;
                 }
             }
             return false;
         }
-        return permissions.isTextual() && permissions.asText().contains("ACTIVITY_EXPORT");
+        if (!permissions.isTextual()) throw new IllegalArgumentException("Invalid permissions");
+        return java.util.Arrays.asList(permissions.asText().split("[,\\s]+" )).contains("ACTIVITY_EXPORT");
+    }
+
+    private static JsonNode summary(JsonNode root, String name) {
+        JsonNode value = root.path(name);
+        if (!value.isMissingNode() && !value.isNull() && !value.isArray()) {
+            throw new IllegalArgumentException("Expected a notification array");
+        }
+        return value;
     }
 
     private static String requiredText(JsonNode node, String name) {
