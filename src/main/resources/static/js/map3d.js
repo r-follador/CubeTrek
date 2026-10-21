@@ -309,16 +309,16 @@ export class Map3D {
         const mesh = this.meshes[i];
         const bbox = this.geojson.properties.tileBBoxes[i];
         const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-        const normals = mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
         const indices = mesh.getIndices();
         const world = mesh.computeWorldMatrix(true);
         const size = textureSize;
+        this.vertexSlopes ??= this.meshVertexSlopes();
+        const vertexSlope = this.vertexSlopes[i];
 
-        //Vertex positions in texture pixels, slope from the normals (local z is up and not exaggerated)
+        //Vertex positions in texture pixels
         const vertexCount = positions.length / 3;
         let px = new Float32Array(vertexCount);
         let py = new Float32Array(vertexCount);
-        let vertexSlope = new Float32Array(vertexCount);
         let worldPos = new BABYLON.Vector3();
         for (let k = 0; k < vertexCount; k++) {
             BABYLON.Vector3.TransformCoordinatesFromFloatsToRef(positions[3*k], positions[3*k+1], positions[3*k+2], world, worldPos);
@@ -326,7 +326,6 @@ export class Map3D {
             let lon = this.coordinateSystem.centerLon-(worldPos.x/this.coordinateSystem.metersPerDegreeLon);
             px[k] = (lon - bbox.w_Bound) / bbox.widthLonDegree * size;
             py[k] = (lat - bbox.s_Bound) / bbox.widthLatDegree * size;
-            vertexSlope[k] = Math.acos(Math.min(1, Math.abs(normals[3*k+2]))) * 180 / Math.PI;
         }
 
         //Rasterize the triangles, interpolating the vertex slopes
@@ -359,6 +358,60 @@ export class Map3D {
         const cellSize = rowStart < vertexCount ? Math.abs(positions[3*rowStart+1] - positions[1]) : null;
 
         return {width: size, height: size, slope: slope, cellSize: cellSize};
+    }
+
+    //Slope in degrees at each vertex of each terrain mesh, from the vertex normals (local z is up and not exaggerated).
+    //Neighboring tiles share their border vertices, but each tile's normals only see its own triangles,
+    //so the normals of shared vertices are combined to avoid jumps in slope along the tile borders.
+    meshVertexSlopes() {
+        //Shared vertices match to well below a meter, other vertices are tens of meters apart
+        const keyOf = (x, y) => Math.round(x) + "," + Math.round(y);
+        let borderNormals = new Map();
+        let worldPos = new BABYLON.Vector3();
+
+        //Upward vertex normals per mesh, with the normals of border vertices summed up by position
+        const meshes = this.meshes.map(mesh => {
+            const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+            const normals = mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+            const world = mesh.computeWorldMatrix(true);
+            const vertexCount = positions.length / 3;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (let k = 0; k < vertexCount; k++) {
+                minX = Math.min(minX, positions[3*k]);
+                maxX = Math.max(maxX, positions[3*k]);
+                minY = Math.min(minY, positions[3*k+1]);
+                maxY = Math.max(maxY, positions[3*k+1]);
+            }
+            let up = new Float32Array(normals.length);
+            let borderKeys = new Map();
+            for (let k = 0; k < vertexCount; k++) {
+                const sign = normals[3*k+2] < 0 ? -1 : 1;
+                up[3*k] = sign * normals[3*k];
+                up[3*k+1] = sign * normals[3*k+1];
+                up[3*k+2] = sign * normals[3*k+2];
+                const x = positions[3*k], y = positions[3*k+1];
+                if (x === minX || x === maxX || y === minY || y === maxY) {
+                    BABYLON.Vector3.TransformCoordinatesFromFloatsToRef(x, y, positions[3*k+2], world, worldPos);
+                    const key = keyOf(worldPos.x, worldPos.y);
+                    let sum = borderNormals.get(key) ?? [0, 0, 0];
+                    sum[0] += up[3*k];
+                    sum[1] += up[3*k+1];
+                    sum[2] += up[3*k+2];
+                    borderNormals.set(key, sum);
+                    borderKeys.set(k, key);
+                }
+            }
+            return {up: up, borderKeys: borderKeys};
+        });
+
+        return meshes.map(({up, borderKeys}) => {
+            let slope = new Float32Array(up.length / 3);
+            for (let k = 0; k < slope.length; k++) {
+                const n = borderKeys.has(k) ? borderNormals.get(borderKeys.get(k)) : [up[3*k], up[3*k+1], up[3*k+2]];
+                slope[k] = Math.acos(Math.min(1, n[2] / Math.hypot(n[0], n[1], n[2]))) * 180 / Math.PI;
+            }
+            return slope;
+        });
     }
 
     //Color a slope raster with the slope classes and draw it over the whole texture
