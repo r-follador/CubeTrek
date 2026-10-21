@@ -2,6 +2,18 @@ import {KdTree} from "./kd-tree.js";
 import eventBus from './EventBus.js';
 
 const zscaling = 1.5;
+const textureSize = 512;
+const trackLineWidth = 5;
+
+//Slope classes of swisstopo (ch.swisstopo.hangneigung-ueber_30); terrain below 30° stays uncolored
+const slopeClasses = [
+    {min: 30, label: "30–35°", color: "#F2E50A"},
+    {min: 35, label: "35–40°", color: "#F46F24"},
+    {min: 40, label: "40–45°", color: "#DE055B"},
+    {min: 45, label: "45–50°", color: "#C889BB"},
+    {min: 50, label: "50°+", color: "#4B4B4B"},
+];
+const slopeOverlayAlpha = 0.8;
 
 export class Map3D {
 
@@ -25,6 +37,11 @@ export class Map3D {
 
         this.meshes = [];
 
+        //Slope overlay meshes, built on first use
+        this.slopeOverlays = null;
+        //Returns the slope raster for a terrain tile; swap to use other elevation data than the mesh
+        this.slopeSource = this.slopeFromMesh;
+
         this.kdtree = new KdTree(geojson.geometry.coordinates);
 
         // Hover events can arrive from the 2D map while the 3D assets are loading.
@@ -32,6 +49,7 @@ export class Map3D {
         this.ready = this.delayCreateScene().then(scene => {
             this.scene = scene;
             this.changeMapstyle(sharedObjects.maptype);
+            this.showSlope(document.getElementById("slopeToggle").checked);
             this.engine.runRenderLoop(() => {
                 if (this.scene.activeCamera) {
                     this.scene.render();
@@ -48,6 +66,7 @@ export class Map3D {
 
         document.getElementById("btnradio1").addEventListener('click', () =>  {this.changeMapstyle('standard')});
         document.getElementById("btnradio3").addEventListener('click', () =>  {this.changeMapstyle('satellite')});
+        document.getElementById("slopeToggle").addEventListener('change', evt => {this.showSlope(evt.target.checked)});
     }
 
     async delayCreateScene() {
@@ -167,10 +186,8 @@ export class Map3D {
         //Draw the GPS Path onto emissive DynamicTextures
 
         //for each mesh, add a DynamicTexture with emissive property (for the path drawing)
-        const textureSize = 512;
         let textureContexts = [];
         const strokeStyle = "#ff8001";
-        const lineWidth = 5;
 
         //Create an emissive, dynamic texture for each mesh
         for (let i =0; i < this.meshes.length; i++ ) {
@@ -181,11 +198,21 @@ export class Map3D {
             this.meshes[i].material.emissiveColor = new BABYLON.Color3(1, 1, 1);
             //textureContext.strokeStyle = "#2a84de";
             textureContext.strokeStyle = strokeStyle;
-            textureContext.lineWidth = lineWidth;
+            textureContext.lineWidth = trackLineWidth;
             textureContext.beginPath();
         }
 
-        //Use the GeoJson to draw the path onto the DynamicTexture
+        this.tracePath(textureContexts);
+
+        //Update all the textures
+        for (let i =0; i < this.meshes.length; i++ ) {
+            textureContexts[i].stroke();
+            this.meshes[i].material.emissiveTexture.update();
+        }
+    }
+
+    //Use the GeoJson to trace the path onto one texture context per mesh (stroking is left to the caller)
+    tracePath(textureContexts) {
         let tileIndex = -1;
         let px_perDegree_lat = 0;
         let px_perDegree_lon = 0;
@@ -221,11 +248,162 @@ export class Map3D {
                 textureContexts[tileIndex].lineTo(x, y);
             }
         }
+    }
 
-        //Update all the textures
-        for (let i =0; i < this.meshes.length; i++ ) {
-            textureContexts[i].stroke();
-            this.meshes[i].material.emissiveTexture.update();
+    showSlope(visible) {
+        if (!this.scene)
+            return;
+
+        if (visible && !this.slopeOverlays)
+            this.buildSlopeOverlays();
+        this.slopeOverlays?.forEach(overlay => overlay.setEnabled(visible));
+        document.getElementById("slopeLegend").style.display = visible ? "block" : "none";
+    }
+
+    //Each terrain tile gets a transparent copy on top, textured with its slope classes
+    buildSlopeOverlays() {
+        let overlayContexts = [];
+        this.slopeOverlays = this.meshes.map((mesh, i) => {
+            let texture = new BABYLON.DynamicTexture("slope"+i, textureSize, this.scene);
+            texture.hasAlpha = true;
+            let context = texture.getContext();
+            let raster = this.slopeSource(i);
+            this.slopeCellSize = raster.cellSize;
+            this.paintSlope(context, raster);
+            overlayContexts.push(context);
+
+            let material = new BABYLON.PBRMaterial("slopeMaterial"+i, this.scene);
+            material.albedoTexture = texture;
+            material.useAlphaFromAlbedoTexture = true;
+            material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+            material.metallic = 0;
+            material.roughness = 1;
+            material.zOffset = -2;
+
+            let overlay = mesh.clone(mesh.name + "_slope");
+            overlay.parent = mesh.parent;
+            overlay.material = material;
+            overlay.isPickable = false;
+            return overlay;
+        });
+
+        //Cut the track out of the overlay so the path underneath stays visible
+        for (let context of overlayContexts) {
+            context.globalCompositeOperation = "destination-out";
+            context.lineWidth = trackLineWidth + 2;
+            context.beginPath();
+        }
+        this.tracePath(overlayContexts);
+        this.slopeOverlays.forEach((overlay, i) => {
+            overlayContexts[i].stroke();
+            overlay.material.albedoTexture.update();
+        });
+
+        this.fillSlopeLegend();
+    }
+
+    //Default slope source: interpolates the slope of the loaded mesh, so it follows the resolution
+    //of the elevation data behind the glTF. Returns a raster in degrees covering tileBBoxes[i],
+    //row 0 at the south edge like the path textures, NaN where there is no terrain.
+    slopeFromMesh(i) {
+        const mesh = this.meshes[i];
+        const bbox = this.geojson.properties.tileBBoxes[i];
+        const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+        const normals = mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+        const indices = mesh.getIndices();
+        const world = mesh.computeWorldMatrix(true);
+        const size = textureSize;
+
+        //Vertex positions in texture pixels, slope from the normals (local z is up and not exaggerated)
+        const vertexCount = positions.length / 3;
+        let px = new Float32Array(vertexCount);
+        let py = new Float32Array(vertexCount);
+        let vertexSlope = new Float32Array(vertexCount);
+        let worldPos = new BABYLON.Vector3();
+        for (let k = 0; k < vertexCount; k++) {
+            BABYLON.Vector3.TransformCoordinatesFromFloatsToRef(positions[3*k], positions[3*k+1], positions[3*k+2], world, worldPos);
+            let lat = (worldPos.y/this.coordinateSystem.metersPerDegreeLat)+this.coordinateSystem.centerLat;
+            let lon = this.coordinateSystem.centerLon-(worldPos.x/this.coordinateSystem.metersPerDegreeLon);
+            px[k] = (lon - bbox.w_Bound) / bbox.widthLonDegree * size;
+            py[k] = (lat - bbox.s_Bound) / bbox.widthLatDegree * size;
+            vertexSlope[k] = Math.acos(Math.min(1, Math.abs(normals[3*k+2]))) * 180 / Math.PI;
+        }
+
+        //Rasterize the triangles, interpolating the vertex slopes
+        let slope = new Float32Array(size * size).fill(NaN);
+        for (let t = 0; t < indices.length; t += 3) {
+            const a = indices[t], b = indices[t+1], c = indices[t+2];
+            const area = (px[b]-px[a])*(py[c]-py[a]) - (px[c]-px[a])*(py[b]-py[a]);
+            if (Math.abs(area) < 1e-9)
+                continue;
+            const minX = Math.max(0, Math.floor(Math.min(px[a], px[b], px[c])));
+            const maxX = Math.min(size-1, Math.ceil(Math.max(px[a], px[b], px[c])));
+            const minY = Math.max(0, Math.floor(Math.min(py[a], py[b], py[c])));
+            const maxY = Math.min(size-1, Math.ceil(Math.max(py[a], py[b], py[c])));
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    const sx = x + 0.5, sy = y + 0.5;
+                    const wa = ((px[b]-sx)*(py[c]-sy) - (px[c]-sx)*(py[b]-sy)) / area;
+                    const wb = ((px[c]-sx)*(py[a]-sy) - (px[a]-sx)*(py[c]-sy)) / area;
+                    const wc = 1 - wa - wb;
+                    if (wa >= 0 && wb >= 0 && wc >= 0)
+                        slope[y*size + x] = wa*vertexSlope[a] + wb*vertexSlope[b] + wc*vertexSlope[c];
+                }
+            }
+        }
+
+        //Grid spacing between rows of vertices, shown in the legend
+        let rowStart = 1;
+        while (rowStart < vertexCount && positions[3*rowStart+1] === positions[1])
+            rowStart++;
+        const cellSize = rowStart < vertexCount ? Math.abs(positions[3*rowStart+1] - positions[1]) : null;
+
+        return {width: size, height: size, slope: slope, cellSize: cellSize};
+    }
+
+    //Color a slope raster with the slope classes and draw it over the whole texture
+    paintSlope(context, raster) {
+        const colors = slopeClasses.map(c => BABYLON.Color3.FromHexString(c.color).scale(255));
+        let canvas = document.createElement("canvas");
+        canvas.width = raster.width;
+        canvas.height = raster.height;
+        let canvasContext = canvas.getContext("2d");
+        let image = canvasContext.createImageData(raster.width, raster.height);
+        for (let p = 0; p < raster.slope.length; p++) {
+            for (let c = slopeClasses.length - 1; c >= 0; c--) {
+                if (raster.slope[p] >= slopeClasses[c].min) {
+                    image.data[4*p] = colors[c].r;
+                    image.data[4*p+1] = colors[c].g;
+                    image.data[4*p+2] = colors[c].b;
+                    image.data[4*p+3] = 255 * slopeOverlayAlpha;
+                    break;
+                }
+            }
+        }
+        canvasContext.putImageData(image, 0, 0);
+        context.drawImage(canvas, 0, 0, textureSize, textureSize);
+    }
+
+    fillSlopeLegend() {
+        let legend = document.getElementById("slopeLegend");
+        legend.replaceChildren();
+        let title = document.createElement("div");
+        title.className = "fw-bold";
+        title.textContent = "Slope angle";
+        legend.appendChild(title);
+        for (let slopeClass of slopeClasses) {
+            let row = document.createElement("div");
+            let swatch = document.createElement("span");
+            swatch.className = "d-inline-block align-middle me-2 rounded-1";
+            swatch.style.cssText = `width: 14px; height: 14px; background-color: ${slopeClass.color};`;
+            row.append(swatch, slopeClass.label);
+            legend.appendChild(row);
+        }
+        if (this.slopeCellSize) {
+            let note = document.createElement("div");
+            note.className = "text-muted";
+            note.textContent = `from ${Math.round(this.slopeCellSize / 10) * 10} m terrain`;
+            legend.appendChild(note);
         }
     }
 
