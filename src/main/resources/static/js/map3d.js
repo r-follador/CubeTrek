@@ -281,6 +281,7 @@ export class Map3D {
             material.zOffset = -2;
 
             let overlay = mesh.clone(mesh.name + "_slope");
+            overlay.alphaIndex = 0; // Draw before transparent peak labels.
             overlay.parent = mesh.parent;
             overlay.material = material;
             overlay.isPickable = false;

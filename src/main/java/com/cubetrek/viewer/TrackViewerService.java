@@ -50,6 +50,7 @@ public class TrackViewerService {
     private String hgt_3dem_files;
 
     HGTFileLoader_LocalStorage hgtFileLoader_3DEM;
+    HGTFileLoader_LocalStorage hgtFileLoader_1DEM;
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE), 4326);
     @Autowired
     private ActivitityService activitityService;
@@ -57,7 +58,8 @@ public class TrackViewerService {
     @PostConstruct
     public void init() {
         //akrobatik needed to use @values in constructor
-        hgtFileLoader_3DEM= new HGTFileLoader_LocalStorage( hgt_3dem_files);
+        hgtFileLoader_3DEM = new HGTFileLoader_LocalStorage(hgt_3dem_files);
+        hgtFileLoader_1DEM = new HGTFileLoader_LocalStorage(hgt_1dem_files);
     }
 
     final static public String noAccessMessage = "Track ID does not exist or access denied";
@@ -89,7 +91,8 @@ public class TrackViewerService {
     //make this function cacheable end using the id as key
     @Cacheable(cacheNames = "gltf", key = "#id")
     public String getGLTFString_cacheable(long id, LatLonBoundingBox boundingBox, String maptype) throws IOException {
-        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_3DEM)
+        GLTFDatafile gltfDatafile = new GLTFWorker.GLTFBuilder(boundingBox, hgtFileLoader_1DEM)
+                .setDemType(HGTDatafile.HGT_Type.DEM1)
                 .setZoomlevel(calculateZoomlevel(boundingBox))
                 .setEnclosement(true)
                 .setTextureUrl("map/"+maptype+"/%d/%d/%d.png")
